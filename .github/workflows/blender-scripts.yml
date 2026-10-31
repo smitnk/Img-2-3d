@@ -52,7 +52,9 @@ jobs:
               print(f.split("/o/")[1], "meshes", len(s.geometry), "faces", n, "extents", s.extents.round(3))
               assert n > 300
           PY
-          mkdir glbs && cp rootfs/tmp/o/*/*.glb glbs/
+          mkdir -p glbs
+          for f in rootfs/tmp/o/*/*.glb; do sudo cp "$f" "glbs/$(basename "$(dirname "$f")")_$(basename "$f")"; done
+          sudo chown -R "$(id -u)" glbs && ls -la glbs
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: script-glbs, path: glbs/ }

@@ -129,7 +129,10 @@ def main():
 
     so = ort.SessionOptions()
     s_enc = ort.InferenceSession(enc_path, so, providers=["CPUExecutionProvider"])
-    scene_onnx = s_enc.run(None, {"rgb": rgb.numpy(), "mask": mask.numpy()})[0]
+    # get_scene_codes never reads mask_cond, so ONNX prunes that input; feed only what the graph declares.
+    feed = {k: v for k, v in {"rgb": rgb.numpy(), "mask": mask.numpy()}.items() if k in {i.name for i in s_enc.get_inputs()}}
+    print("encoder inputs", list(feed), flush=True)
+    scene_onnx = s_enc.run(None, feed)[0]
     enc_rel = float(np.abs(scene_onnx - scene_ref.numpy()).max() / np.abs(scene_ref.numpy()).max())
     s_f = ort.InferenceSession(field_path, so, providers=["CPUExecutionProvider"])
     f_onnx = s_f.run(None, {"scene_code": scene_ref[0].numpy(), "positions": pts.numpy()})
@@ -149,7 +152,7 @@ def main():
 
     files = ["sf3d_encoder.onnx", "sf3d_encoder.onnx.data", "sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
     info = {
-        "version": 1, "cond_image_size": S, "radius": cfg.radius, "isosurface_resolution": cfg.isosurface_resolution,
+        "version": 1, "encoder_inputs": [i.name for i in s_enc.get_inputs()], "cond_image_size": S, "radius": cfg.radius, "isosurface_resolution": cfg.isosurface_resolution,
         "isosurface_threshold": cfg.isosurface_threshold, "background_color": list(cfg.background_color),
         "points_range": list(tets.points_range), "bbox": model.bbox.tolist(), "decoder_heads": heads, "estimator_outputs": est_names,
         "tets": {"vertices": list(tv.shape), "indices": list(ti.shape)}, "scene_shape": list(scene_ref.shape[1:]),

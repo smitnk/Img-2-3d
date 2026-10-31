@@ -84,7 +84,14 @@ def main():
             return tuple(out[h] for h in heads)
 
     enc, field = Encoder(model).eval(), Field(model).eval()
+    # DINOv2's interpolate_pos_encoding feeds tensor scale factors to bicubic interpolate, which the tracer
+    # rejects. Input size is fixed, so record the eager result once and replay it: identical values.
+    emb = model.image_tokenizer.model.embeddings
+    orig_pe, cache = emb.interpolate_pos_encoding, {}
+    emb.interpolate_pos_encoding = lambda e, h, w: cache.setdefault("pe", orig_pe(e, h, w).detach())
     scene_ref = enc(rgb, mask)
+    emb.interpolate_pos_encoding = lambda e, h, w: cache["pe"]
+    assert torch.allclose(enc(rgb, mask), scene_ref, atol=1e-5), "frozen position encoding changed the output"
     pts = (torch.rand(4096, 3) * 2 - 1) * cfg.radius
 
     enc_path = os.path.join(a.out, "sf3d_encoder.onnx")

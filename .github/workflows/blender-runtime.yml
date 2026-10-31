@@ -62,7 +62,7 @@ jobs:
           sudo apt-get install -y -qq libtalloc-dev uthash-dev libarchive-dev
           git clone --depth 1 https://github.com/termux/proot /tmp/proot
           set -o pipefail
-          make -C /tmp/proot/src -j4 2>&1 | tail -n 30 | tee -a run.log
+          make -C /tmp/proot/src -j4 HAS_LOADER_32BIT= 2>&1 | tail -n 30 | tee -a run.log
           sudo cp /tmp/proot/src/proot /usr/local/bin/proot-termux
           ls /tmp/proot/src/loader | tee -a run.log
       - name: Run every generator through proot (same mechanism as the phone)

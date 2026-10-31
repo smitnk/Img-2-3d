@@ -12,6 +12,7 @@ Outputs in --out:
 import argparse, hashlib, json, os, sys
 
 import numpy as np
+import PIL.Image  # noqa: F401  (sf3d.models.utils uses PIL.Image without importing it)
 import torch
 
 

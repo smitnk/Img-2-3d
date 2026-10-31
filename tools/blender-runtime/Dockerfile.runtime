@@ -4,5 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY pkgs.txt /tmp/pkgs.txt
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-numpy $(cat /tmp/pkgs.txt) \
     && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /usr/share/locale /var/cache/* /usr/share/info /tmp/pkgs.txt
+COPY --from=blender-build /usr/local/lib /usr/local/lib
+RUN ldconfig
 COPY --from=blender-build /opt/blender /opt/blender
 COPY forge /opt/forge

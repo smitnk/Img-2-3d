@@ -1,0 +1,126 @@
+name: System A - Blender 4.2.3 ARM64 runtime
+
+# Builds Blender 4.2.3 LTS (headless, bpy + glTF exporter) for linux-aarch64, packs it into a minimal
+# Ubuntu userland, runs every Model Forge generator through proot on an ARM64 runner exactly the way the
+# Forge app does on the phone, and publishes the runtime to the blender-runtime-v1 release.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        type: boolean
+        default: true
+permissions:
+  contents: write
+
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"; df -h /
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Blender 4.2.3 (cached)
+        run: |
+          set -o pipefail
+          docker buildx build --load -t blender-build -f tools/blender-runtime/Dockerfile.build \
+            --cache-from type=gha,scope=blender-build --cache-to type=gha,mode=max,scope=blender-build \
+            --progress plain tools/blender-runtime > build.log 2>&1 || rc=$?
+          tail -n 150 build.log >> run.log; tail -n 30 build.log; exit ${rc:-0}
+      - name: Blender version (build image)
+        run: docker run --rm blender-build /opt/blender/blender -b --factory-startup --version | tee -a run.log
+      - name: Resolve runtime packages
+        run: |
+          docker run --rm -v "$PWD/tools/blender-runtime:/t" blender-build sh /t/list_runtime_pkgs.sh > tools/blender-runtime/pkgs.txt
+          cat tools/blender-runtime/pkgs.txt | tee -a run.log
+      - name: Add Model Forge generators
+        run: |
+          git clone --depth 1 https://github.com/smitnk/Android-3D-Model-Forge /tmp/forge-src
+          mkdir -p tools/blender-runtime/forge
+          cp -r /tmp/forge-src/scripts /tmp/forge-src/assets tools/blender-runtime/forge/
+          (cd /tmp/forge-src && git rev-parse HEAD) > tools/blender-runtime/forge/FORGE_COMMIT
+      - name: Build runtime userland
+        run: set -o pipefail; docker buildx build --builder default --load -t blender-runtime -f tools/blender-runtime/Dockerfile.runtime --build-context blender-build=docker-image://blender-build tools/blender-runtime 2>&1 | tail -n 40 | tee -a run.log
+      - name: Export rootfs
+        run: |
+          cid=$(docker create blender-runtime)
+          mkdir rootfs && docker export "$cid" | sudo tar -x -C rootfs
+          sudo du -sh rootfs | tee -a run.log
+      - name: Run every generator through proot (same mechanism as the phone)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq proot
+          set -o pipefail
+          for t in chibi_humanoid clay_chibi snow_buddy round_buddy gorilla lizard_warrior lizard_refined; do
+            start=$(date +%s.%N)
+            /usr/bin/time -f "$t maxRSS_KB=%M" proot -R rootfs -w /opt/forge /opt/blender/blender -b --factory-startup \
+              --python-exit-code 1 --python scripts/generate_model.py -- --model-type $t --out /tmp/out/$t 2>&1 | tail -n 4 | tee -a run.log
+            echo "$t seconds=$(echo "$(date +%s.%N) - $start" | bc)" | tee -a run.log
+            ls -la rootfs/tmp/out/$t/*.glb | tee -a run.log
+          done
+      - name: Validate GLBs
+        run: |
+          pip install -q trimesh
+          python - <<'PY' | tee -a run.log
+          import glob, trimesh
+          for f in sorted(glob.glob("rootfs/tmp/out/*/*.glb")):
+              s = trimesh.load(f)
+              n = sum(len(g.faces) for g in s.geometry.values())
+              print(f.split("/")[-1], "meshes", len(s.geometry), "faces", n, "extents", s.extents.round(3))
+              assert n > 500
+          PY
+          mkdir -p glbs && cp rootfs/tmp/out/*/*.glb glbs/
+      - name: Fetch Android (bionic) proot from Termux
+        run: |
+          mkdir -p android && cd android
+          base=https://packages.termux.dev/apt/termux-main
+          curl -fsSL "$base/dists/stable/main/binary-aarch64/Packages" -o Packages
+          for p in proot libtalloc; do
+            f=$(awk -v p="$p" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2}' Packages | tail -n1)
+            echo "$p -> $f" | tee -a ../run.log
+            curl -fsSL "$base/$f" -o "$p.deb"
+            mkdir "$p" && dpkg-deb -x "$p.deb" "$p"
+          done
+          find . -type f \( -name proot -o -name loader -o -name 'libtalloc.so*' \) | tee -a ../run.log
+          cp proot/data/data/com.termux/files/usr/bin/proot ./proot
+          cp proot/data/data/com.termux/files/usr/libexec/proot/loader ./proot-loader
+          cp -L libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2 ./libtalloc.so.2
+          file proot proot-loader libtalloc.so.2 | tee -a ../run.log
+      - name: Package runtime
+        run: |
+          rm -rf rootfs/tmp/out
+          sudo tar -C rootfs --numeric-owner -czf blender-runtime-arm64.tar.gz .
+          ls -la blender-runtime-arm64.tar.gz android/proot android/proot-loader android/libtalloc.so.2 | tee -a run.log
+          python - <<'PY'
+          import hashlib, json, os
+          files = {"blender-runtime-arm64.tar.gz": "blender-runtime-arm64.tar.gz", "proot": "android/proot",
+                   "proot-loader": "android/proot-loader", "libtalloc.so.2": "android/libtalloc.so.2"}
+          def sha(p):
+              h = hashlib.sha256()
+              with open(p, "rb") as f:
+                  for b in iter(lambda: f.read(1 << 20), b""): h.update(b)
+              return h.hexdigest()
+          info = {"version": 1, "blender": "4.2.3", "forge_commit": open("tools/blender-runtime/forge/FORGE_COMMIT").read().strip(),
+                  "files": {k: {"bytes": os.path.getsize(v), "sha256": sha(v)} for k, v in files.items()}}
+          json.dump(info, open("runtime_info.json", "w"), indent=2)
+          print(json.dumps(info, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forge-glbs
+          path: glbs/
+      - name: Publish blender-runtime-v1
+        if: inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view blender-runtime-v1 >/dev/null 2>&1 || gh release create blender-runtime-v1 --title "Blender 4.2.3 ARM64 runtime v1" \
+            --notes "Headless Blender 4.2.3 LTS for linux-aarch64 in an Ubuntu 24.04 userland, plus Termux proot for Android. Used by the Img-2-3D Forge app (System A)."
+          gh release upload blender-runtime-v1 --clobber runtime_info.json blender-runtime-arm64.tar.gz \
+            android/proot android/proot-loader android/libtalloc.so.2
+      - name: Push run log to ci-logs branch
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          cp "$GITHUB_WORKSPACE/run.log" log.txt 2>/dev/null || echo "no log" > log.txt
+          git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "runtime log $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

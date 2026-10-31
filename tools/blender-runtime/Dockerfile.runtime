@@ -1,0 +1,8 @@
+# Minimal Ubuntu 24.04 aarch64 userland that the Android app runs Blender in (via proot).
+FROM ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
+COPY pkgs.txt /tmp/pkgs.txt
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-numpy $(cat /tmp/pkgs.txt) \
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /usr/share/locale /var/cache/* /usr/share/info /tmp/pkgs.txt
+COPY --from=blender-build /opt/blender /opt/blender
+COPY forge /opt/forge

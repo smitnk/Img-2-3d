@@ -98,8 +98,7 @@ def main():
         dt.use_vert_data = True
         dt.data_types_verts = {"COLOR_VERTEX"}
         dt.vert_mapping = "POLYINTERP_NEAREST"
-        dt.layers_vcol_vert_select_src = name
-        dt.layers_vcol_vert_select_dst = name
+        # defaults: all source colour layers -> matching layer names on the target
         bake(out)
         out.data.color_attributes.active_color = out.data.color_attributes[name]
         # Vertex colours only reach the GLB through a material that uses them.

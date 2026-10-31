@@ -158,7 +158,8 @@ def main():
     # Weight-only int8 candidate, so the app can pick it if fp32 does not fit in phone RAM. Accuracy measured below.
     from onnxruntime.quantization import QuantType, quantize_dynamic
     q_path = os.path.join(a.out, "sf3d_encoder_int8.onnx")
-    quantize_dynamic(enc_path, q_path, weight_type=QuantType.QInt8, use_external_data_format=False)
+    quantize_dynamic(enc_path, q_path, weight_type=QuantType.QInt8, use_external_data_format=False,
+                     op_types_to_quantize=["MatMul", "Gemm"])  # ORT CPU has no ConvInteger kernel; MatMuls hold ~all weights
     stage(f"int8 encoder {os.path.getsize(q_path)/1e9:.2f} GB")
 
     so = ort.SessionOptions()

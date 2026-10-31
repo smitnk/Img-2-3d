@@ -100,12 +100,12 @@ jobs:
             f=$(awk -v p="$p" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2}' Packages | tail -n1)
             echo "$p -> $f" | tee -a ../run.log
             curl -fsSL "$base/$f" -o "$p.deb"
-            mkdir "$p" && dpkg-deb -x "$p.deb" "$p"
+            mkdir "x_$p" && dpkg-deb -x "$p.deb" "x_$p"
           done
           find . -type f \( -name proot -o -name loader -o -name 'libtalloc.so*' \) | tee -a ../run.log
-          cp proot/data/data/com.termux/files/usr/bin/proot ./proot
-          cp proot/data/data/com.termux/files/usr/libexec/proot/loader ./proot-loader
-          cp -L libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2 ./libtalloc.so.2
+          cp x_proot/data/data/com.termux/files/usr/bin/proot ./proot
+          cp x_proot/data/data/com.termux/files/usr/libexec/proot/loader ./proot-loader
+          cp -L x_libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2* ./libtalloc.so.2
           file proot proot-loader libtalloc.so.2 | tee -a ../run.log
       - name: Package runtime
         run: |

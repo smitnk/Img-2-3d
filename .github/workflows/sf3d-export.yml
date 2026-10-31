@@ -28,7 +28,8 @@ jobs:
           git clone --depth 1 https://github.com/Stability-AI/stable-fast-3d /tmp/sf3d
           pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
           pip install "numpy<2" einops==0.7.0 jaxtyping==0.2.31 omegaconf==2.3.0 transformers==4.42.3 open_clip_torch==2.24.0 \
-            trimesh==4.4.1 huggingface-hub==0.23.4 rembg==2.0.57 onnxruntime==1.20.0 onnx==1.17.0 Pillow setuptools wheel
+            trimesh==4.4.1 huggingface-hub==0.23.4 rembg==2.0.57 onnxruntime==1.20.0 onnx==1.17.0 Pillow setuptools wheel \
+            gpytoolbox==0.2.0 pynanoinstantmeshes==0.0.3 safetensors tqdm
           pip install --no-build-isolation /tmp/sf3d/texture_baker /tmp/sf3d/uv_unwrapper
       - name: Export + verify
         run: |

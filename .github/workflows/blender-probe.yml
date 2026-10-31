@@ -1,0 +1,20 @@
+name: Blender ARM64 probe
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  probe:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Probe
+        run: |
+          {
+          echo "== arch"; uname -m
+          echo "== official 4.2 builds"; curl -s https://download.blender.org/release/Blender4.2/ | grep -o 'blender-4\.2\.[0-9]*-[a-z0-9-]*\.tar\.xz' | sort -u
+          echo "== official 4.5 builds"; curl -s https://download.blender.org/release/Blender4.5/ | grep -o 'blender-4\.5\.[0-9]*-[a-z0-9-]*\.tar\.xz' | sort -u | head
+          echo "== apt blender"; apt-cache policy blender | head -5
+          echo "== snap"; snap info blender 2>/dev/null | grep -E "4.2|arch" | head
+          } 2>&1 | tee probe.txt
+          mkdir /tmp/l && cd /tmp/l && git init -q -b ci-logs && cp $GITHUB_WORKSPACE/probe.txt log.txt 2>/dev/null || cp ~/work/*/*/probe.txt log.txt || true
+      - name: Push
+        run: |
+          cd /tmp/l; cp "$GITHUB_WORKSPACE/probe.txt" log.txt 2>/dev/null; ls; git add -A && git -c user.name=ci -c user.email=ci@l commit -qm probe && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

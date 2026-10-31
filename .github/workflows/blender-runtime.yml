@@ -105,7 +105,7 @@ jobs:
           find . -type f \( -name proot -o -name loader -o -name 'libtalloc.so*' \) | tee -a ../run.log
           cp x_proot/data/data/com.termux/files/usr/bin/proot ./proot
           cp x_proot/data/data/com.termux/files/usr/libexec/proot/loader ./proot-loader
-          cp -L x_libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2* ./libtalloc.so.2
+          cp -L "$(ls x_libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2* | head -n1)" ./libtalloc.so.2
           file proot proot-loader libtalloc.so.2 | tee -a ../run.log
       - name: Package runtime
         run: |

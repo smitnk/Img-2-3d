@@ -52,7 +52,8 @@ def main():
     torch.manual_seed(0)
     mesh, glob_dict = model.run_image(img, bake_resolution=1024, remesh="none")
     mesh.export(os.path.join(a.out, "reference", "sf3d_reference.glb"), include_normals=True)
-    print("reference mesh", len(mesh.vertices), "verts", len(mesh.faces), "faces", flush=True)
+    ref_counts = (len(mesh.vertices), len(mesh.faces))
+    print("reference mesh", *ref_counts, flush=True)
 
     mask, rgb = model.prepare_image(img)
     rgb, mask = rgb[None], mask[None]  # [1,S,S,3], [1,S,S,1]
@@ -127,38 +128,48 @@ def main():
                           input_names=["image"], output_names=est_names, opset_version=17, dynamo=False)
         print("estimator outputs", est_names, "eval", model.image_estimator.cfg.distribution_eval, flush=True)
 
-    so = ort.SessionOptions()
-    s_enc = ort.InferenceSession(enc_path, so, providers=["CPUExecutionProvider"])
-    # get_scene_codes never reads mask_cond, so ONNX prunes that input; feed only what the graph declares.
-    feed = {k: v for k, v in {"rgb": rgb.numpy(), "mask": mask.numpy()}.items() if k in {i.name for i in s_enc.get_inputs()}}
-    print("encoder inputs", list(feed), flush=True)
-    scene_onnx = s_enc.run(None, feed)[0]
-    enc_rel = float(np.abs(scene_onnx - scene_ref.numpy()).max() / np.abs(scene_ref.numpy()).max())
-    s_f = ort.InferenceSession(field_path, so, providers=["CPUExecutionProvider"])
-    f_onnx = s_f.run(None, {"scene_code": scene_ref[0].numpy(), "positions": pts.numpy()})
-    f_ref = field(scene_ref[0], pts)
-    field_rel = max(float(np.abs(o - r.numpy()).max() / (np.abs(r.numpy()).max() + 1e-6)) for o, r in zip(f_onnx, f_ref))
-    print(f"encoder rel err {enc_rel:.2e}, field rel err {field_rel:.2e}", flush=True)
-    assert enc_rel < 1e-3 and field_rel < 1e-3, "ONNX export does not match PyTorch"
-
+    # Keep only small reference values, then free PyTorch before loading the ~1.7 GB ONNX encoder:
+    # holding both exceeds the 16 GB CI runner (job was OOM-killed, exit 143).
+    f_ref = [t.numpy() for t in field(scene_ref[0], pts)]
+    scene_np, rgb_np, mask_np, pts_np = scene_ref.numpy(), rgb.numpy(), mask.numpy(), pts.numpy()
     tets = model.isosurface_helper
     tv = tets.grid_vertices.numpy().astype(np.float32)
     ti = tets.indices.numpy().astype(np.int32)
+    points_range, bbox = list(tets.points_range), model.bbox.tolist()
+    radius, iso_res, iso_thr, bg = cfg.radius, cfg.isosurface_resolution, cfg.isosurface_threshold, list(cfg.background_color)
+    del enc, field, model, tets, mesh
+    import gc; gc.collect()
+
+    so = ort.SessionOptions()
+    so.enable_cpu_mem_arena = False
+    s_enc = ort.InferenceSession(enc_path, so, providers=["CPUExecutionProvider"])
+    # get_scene_codes never reads mask_cond, so ONNX prunes that input; feed only what the graph declares.
+    feed = {k: v for k, v in {"rgb": rgb_np, "mask": mask_np}.items() if k in {i.name for i in s_enc.get_inputs()}}
+    print("encoder inputs", list(feed), flush=True)
+    scene_onnx = s_enc.run(None, feed)[0]
+    enc_rel = float(np.abs(scene_onnx - scene_np).max() / np.abs(scene_np).max())
+    enc_inputs = [i.name for i in s_enc.get_inputs()]
+    del s_enc, scene_onnx; gc.collect()
+    s_f = ort.InferenceSession(field_path, so, providers=["CPUExecutionProvider"])
+    f_onnx = s_f.run(None, {"scene_code": scene_np[0], "positions": pts_np})
+    field_rel = max(float(np.abs(o - r).max() / (np.abs(r).max() + 1e-6)) for o, r in zip(f_onnx, f_ref))
+    print(f"encoder rel err {enc_rel:.2e}, field rel err {field_rel:.2e}", flush=True)
+    assert enc_rel < 1e-3 and field_rel < 1e-3, "ONNX export does not match PyTorch"
+
     with open(os.path.join(a.out, "sf3d_tets.bin"), "wb") as f:
         f.write(tv.tobytes()); f.write(ti.tobytes())
-    np.save(os.path.join(a.out, "reference", "scene_codes.npy"), scene_ref.numpy())
-    rgb.numpy().tofile(os.path.join(a.out, "reference", "rgb.f32"))
-    mask.numpy().tofile(os.path.join(a.out, "reference", "mask.f32"))
+    np.save(os.path.join(a.out, "reference", "scene_codes.npy"), scene_np)
+    rgb_np.tofile(os.path.join(a.out, "reference", "rgb.f32"))
+    mask_np.tofile(os.path.join(a.out, "reference", "mask.f32"))
 
     files = ["sf3d_encoder.onnx", "sf3d_encoder.onnx.data", "sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
     info = {
-        "version": 1, "encoder_inputs": [i.name for i in s_enc.get_inputs()], "cond_image_size": S, "radius": cfg.radius, "isosurface_resolution": cfg.isosurface_resolution,
-        "isosurface_threshold": cfg.isosurface_threshold, "background_color": list(cfg.background_color),
-        "points_range": list(tets.points_range), "bbox": model.bbox.tolist(), "decoder_heads": heads, "estimator_outputs": est_names,
-        "tets": {"vertices": list(tv.shape), "indices": list(ti.shape)}, "scene_shape": list(scene_ref.shape[1:]),
+        "version": 1, "encoder_inputs": enc_inputs, "cond_image_size": S, "radius": radius, "isosurface_resolution": iso_res,
+        "isosurface_threshold": iso_thr, "background_color": bg, "points_range": points_range, "bbox": bbox, "decoder_heads": heads, "estimator_outputs": est_names,
+        "tets": {"vertices": list(tv.shape), "indices": list(ti.shape)}, "scene_shape": list(scene_np.shape[1:]),
         "files": {f: {"bytes": os.path.getsize(os.path.join(a.out, f)), "sha256": sha256(os.path.join(a.out, f))} for f in files},
         "verification": {"encoder_rel_err": enc_rel, "field_rel_err": field_rel,
-                         "reference_vertices": len(mesh.vertices), "reference_faces": len(mesh.faces)},
+                         "reference_vertices": ref_counts[0], "reference_faces": ref_counts[1]},
     }
     json.dump(info, open(os.path.join(a.out, "model_info.json"), "w"), indent=2)
     print(json.dumps({k: v for k, v in info.items() if k != "files"}, indent=2))

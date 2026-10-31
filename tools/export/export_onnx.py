@@ -88,6 +88,14 @@ def main():
     enc = Encoder(model).eval()
     assert torch.allclose(enc(rgb_cond), scene_ref, atol=1e-5), "encoder wrapper diverges from TSR.forward"
 
+    # ViT's interpolate_pos_encoding passes tensor scale factors to bicubic interpolate, which the
+    # tracer rejects. The input size is fixed (512), so freeze its eager result: identical values.
+    emb = model.image_tokenizer.model.embeddings
+    n_patches = (size // emb.patch_embeddings.patch_size[0]) ** 2
+    frozen_pe = emb.interpolate_pos_encoding(torch.zeros(1, n_patches + 1, emb.position_embeddings.shape[-1]), size, size).detach()
+    emb.interpolate_pos_encoding = lambda embeddings, height, width: frozen_pe
+    assert torch.allclose(enc(rgb_cond), scene_ref, atol=1e-5), "frozen position encoding changed the output"
+
     enc_path = os.path.join(args.out, "triposr_encoder.onnx")
     torch.onnx.export(enc, (rgb_cond,), enc_path, input_names=["image"], output_names=["scene_codes"],
                       opset_version=17, dynamo=False, do_constant_folding=True)

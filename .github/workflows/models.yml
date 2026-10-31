@@ -60,18 +60,19 @@ jobs:
           cli/build/install/cli/bin/cli models tools/export/chair.png out_png_256.glb 256 | tee -a e2e_png.txt
       - name: Validate GLB files
         run: |
-          python - <<'PY'
+          python - <<'PY' | tee glb_check.txt
           import trimesh
           for f in ["out_ref.glb", "out_png.glb", "out_png_256.glb"]:
               m = trimesh.load(f, force="mesh")
               print(f, "verts", len(m.vertices), "faces", len(m.faces), "watertight", m.is_watertight, "extents", m.extents.round(3))
               assert len(m.faces) > 5000
           PY
-      - name: Push failure log to ci-logs branch
-        if: failure()
+        shell: bash -o pipefail {0}
+      - name: Push run log to ci-logs branch
+        if: always()
         run: |
           mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
-          { tail -n 80 $GITHUB_WORKSPACE/export.log; tail -n 40 $GITHUB_WORKSPACE/e2e_*.txt; } > log.txt 2>&1 || true
+          { grep -v Downloading $GITHUB_WORKSPACE/export.log | tail -n 40; tail -n 40 $GITHUB_WORKSPACE/e2e_*.txt $GITHUB_WORKSPACE/glb_check.txt; } > log.txt 2>&1 || true
           git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "CI log $GITHUB_RUN_ID"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs
       - uses: actions/upload-artifact@v4

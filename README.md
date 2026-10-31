@@ -56,17 +56,24 @@ Requires JDK 17, Android SDK 35, Gradle 8.11.
 
 Licenses: TripoSR MIT (`LICENSE-TripoSR`), torchmcubes MIT (`core/LICENSE-torchmcubes`).
 
-## System A: Model Forge (procedural characters with real Blender)
+## Img-2-3D Studio: two engines, one app
 
-A second, independent app (`:forge`, package `com.smitnk.forge3d`) runs the
-[Android-3D-Model-Forge](https://github.com/smitnk/Android-3D-Model-Forge) Blender Python generators on the phone.
-It shares only the 3D viewer module (`:viewer`) with Img-2-3D; System B is unchanged.
+The app runs two independent on-device engines and shares one library, viewer and export path between them.
 
-- **Engine:** Blender 4.2.3 LTS compiled for linux-aarch64 (headless, bpy, bmesh, OpenSubdiv, OpenVDB voxel remesh,
-  official glTF exporter) inside a minimal Ubuntu 24.04 userland, run through Termux's proot.
-  Built and tested by `.github/workflows/blender-runtime.yml`, published as release `blender-runtime-v1` (≈126 MB download, ≈385 MB installed).
-- **Flow:** pick a generator → set name / colours / rig / .blend → the app runs
-  `blender -b --factory-startup --python scripts/generate_model.py -- …` → GLB opens in the viewer and is saved in the library.
-- **Why targetSdk 28:** Android 10+ blocks executing binaries from app storage for apps targeting newer SDKs. Sideload only.
-- **Verified in CI (ARM64 Linux, same proot source):** all 7 generators produce valid GLBs in 2–25 s with 170–310 MB peak RSS.
-  Not yet verified on an Android device.
+| Mode | Engine | What it does |
+|---|---|---|
+| Photo → 3D | System B: TripoSR (ONNX) | Raw reconstructed mesh with vertex colours |
+| Photo → Character | B then A | TripoSR mesh → Blender `refine_mesh.py`: upright, scaled, voxel remesh, smooth, colours transferred back, optional decimate and auto-rig |
+| Refine in Blender | A | Same refine step on any existing photo model |
+| Character Builder | A: `character_builder.py` | 13 proportion sliders, 9 style choices, 7 colours, T-pose, 17-bone rig + Model Forge self-tests |
+| Python script | A: `run_custom.py` | Import any `.py` written by any AI (rules: `assets/blender/SCRIPT_CONTRACT.md`, copyable in-app) |
+| Text to 3D (optional) | Claude API writes the script, A builds it | Needs your Anthropic API key; “Fix with AI” sends the Blender error back for a repair |
+| Presets | A: Model Forge `generate_model.py` | The 7 Model Forge generators |
+
+- **Blender engine:** Blender 4.2.3 LTS compiled for linux-aarch64 (headless, bpy, bmesh, OpenSubdiv, OpenVDB voxel
+  remesh, glTF exporter) in a minimal Ubuntu 24.04 userland, run through Termux's proot. Built by
+  `.github/workflows/blender-runtime.yml`, published as release `blender-runtime-v1` (≈126 MB download).
+  The app's own scripts live in `app/src/main/assets/blender` and are bind-mounted, so they change without rebuilding Blender;
+  `.github/workflows/blender-scripts.yml` runs them on ARM64 and validates every GLB.
+- **targetSdk 28:** Android 10+ blocks executing binaries from app storage for apps targeting newer SDKs, so the app is sideload-only.
+- **One job at a time** across both engines; each engine's resources are released after its step.

@@ -7,7 +7,6 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
-import com.smitnk.img23d.core.GlbReader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.microedition.khronos.egl.EGLConfig
@@ -36,9 +35,9 @@ class ModelView(context: Context) : GLSurfaceView(context) {
         contentDescription = "Interactive 3D model viewer"
     }
 
-    fun load(glb: ByteArray) {
-        val r = GlbReader(glb)
-        renderer.mesh = r
+    /** Parse with [GltfMesh] off the main thread, then hand the result here. */
+    fun load(mesh: GltfMesh) {
+        renderer.mesh = mesh
         resetCamera()
     }
 
@@ -96,8 +95,8 @@ private class MeshRenderer : GLSurfaceView.Renderer {
     @Volatile var touching = false
 
     // Uploaded lazily on the GL thread: data set before the EGL context exists (or after a context loss) must survive.
-    @Volatile var mesh: GlbReader? = null
-    private var uploaded: GlbReader? = null
+    @Volatile var mesh: GltfMesh? = null
+    private var uploaded: GltfMesh? = null
     private var program = 0
     private var vao = 0
     private var indexCount = 0
@@ -115,7 +114,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         uploaded = null
     }
 
-    private fun upload(r: GlbReader) {
+    private fun upload(r: GltfMesh) {
         if (vao != 0) GLES30.glDeleteVertexArrays(1, intArrayOf(vao), 0)
         val p = r.positions
         val lo = FloatArray(3) { Float.MAX_VALUE }
@@ -125,7 +124,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         Matrix.setIdentityM(model, 0)
         Matrix.scaleM(model, 0, 1.6f / ext, 1.6f / ext, 1.6f / ext)
         Matrix.translateM(model, 0, -(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -(lo[2] + hi[2]) / 2)
-        val colors = r.colors ?: FloatArray(p.size) { 0.8f }
+        val colors = r.colors
 
         val ids = IntArray(1)
         GLES30.glGenVertexArrays(1, ids, 0); vao = ids[0]

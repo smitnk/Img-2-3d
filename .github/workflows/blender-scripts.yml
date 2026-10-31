@@ -63,3 +63,16 @@ jobs:
           cat "$GITHUB_WORKSPACE/results.txt" > log.txt 2>/dev/null || echo "no results" > log.txt
           git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "scripts log $GITHUB_RUN_ID"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs
+  viewer:
+    # The app's viewer must load every GLB real Blender produces (multi-mesh, skins, node transforms).
+    needs: scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: script-glbs, path: viewer/src/test/resources/blender }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - run: gradle :viewer:testDebugUnitTest --console=plain -i | grep -E "verts|FAILED|PASSED|tests completed" || true; gradle :viewer:testDebugUnitTest --console=plain

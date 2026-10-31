@@ -16,4 +16,6 @@ android {
 
 dependencies {
     api(project(":core"))
+    testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303") // real org.json for JVM unit tests (Android's is a stub)
 }

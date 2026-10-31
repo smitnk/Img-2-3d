@@ -21,7 +21,7 @@ jobs:
       - name: Core unit tests (marching cubes, GLB, preprocessing)
         run: |
           set -o pipefail
-          gradle :core:test :app:testDebugUnitTest --console=plain 2>&1 | tee -a build.log
+          gradle :core:test :viewer:testDebugUnitTest :app:testDebugUnitTest --console=plain 2>&1 | tee -a build.log
       - name: Build APKs
         run: |
           set -o pipefail

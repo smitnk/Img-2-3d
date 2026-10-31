@@ -77,6 +77,7 @@ import com.smitnk.img23d.UiState
 import com.smitnk.img23d.data.Model
 import com.smitnk.img23d.data.Settings
 import com.smitnk.img23d.data.Source
+import com.smitnk.img23d.viewer.GltfMesh
 import com.smitnk.img23d.viewer.ModelView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -130,15 +131,21 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
     var renaming by remember { mutableStateOf(false) }
     var showScript by remember { mutableStateOf(false) }
     var spin by remember { mutableStateOf(settings.autoRotate) }
-    val glb by produceState<ByteArray?>(null, m.id) { value = withContext(Dispatchers.IO) { m.glb.readBytes() } }
+    // Parse off the main thread; a broken or unsupported file shows a message instead of crashing the app.
+    val mesh by produceState<Result<GltfMesh>?>(null, m.id) { value = withContext(Dispatchers.Default) { runCatching { GltfMesh(m.glb.readBytes()) } } }
     val view = remember { mutableStateOf<ModelView?>(null) }
     LaunchedEffect(spin, view.value) { view.value?.setAutoRotate(spin) }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp).clip(MaterialTheme.shapes.extraLarge)
             .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.surfaceContainerLowest)))) {
-            val bytes = glb
-            if (bytes == null) CircularProgressIndicator(Modifier.align(Alignment.Center))
-            else AndroidView(factory = { ModelView(it).apply { load(bytes); view.value = this } }, modifier = Modifier.fillMaxSize())
+            val loaded = mesh
+            when {
+                loaded == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                loaded.isFailure -> Text("Preview unavailable: ${loaded.exceptionOrNull()?.message}\nThe GLB can still be shared or saved.",
+                    Modifier.align(Alignment.Center).padding(24.dp), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> AndroidView(factory = { ModelView(it).apply { load(loaded.getOrThrow()); view.value = this } }, modifier = Modifier.fillMaxSize())
+            }
             Row(Modifier.align(Alignment.TopEnd).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilledTonalIconButton(onClick = { spin = !spin }) { Icon(if (spin) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (spin) "Stop turntable" else "Turntable") }
             }

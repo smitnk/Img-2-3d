@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  issues: write
 
 jobs:
   export:
@@ -68,13 +67,13 @@ jobs:
               print(f, "verts", len(m.vertices), "faces", len(m.faces), "watertight", m.is_watertight, "extents", m.extents.round(3))
               assert len(m.faces) > 5000
           PY
-      - name: Report failure log on the CI-logs issue
+      - name: Push failure log to ci-logs branch
         if: failure()
-        env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          { echo '```'; tail -n 60 export.log 2>/dev/null; tail -n 40 e2e_strict.txt e2e_png.txt 2>/dev/null; echo '```'; } > fail.md
-          n=$(gh issue list --label ci-log --state open --json number --jq '.[0].number')
-          if [ -z "$n" ]; then gh label create ci-log -f >/dev/null 2>&1; gh issue create --title "Model export CI log" --label ci-log --body-file fail.md; else gh issue comment "$n" --body-file fail.md; fi
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          { tail -n 80 $GITHUB_WORKSPACE/export.log; tail -n 40 $GITHUB_WORKSPACE/e2e_*.txt; } > log.txt 2>&1 || true
+          git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "CI log $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs
       - uses: actions/upload-artifact@v4
         with:
           name: verification

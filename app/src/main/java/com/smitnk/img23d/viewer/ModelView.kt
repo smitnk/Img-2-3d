@@ -38,7 +38,7 @@ class ModelView(context: Context) : GLSurfaceView(context) {
 
     fun load(glb: ByteArray) {
         val r = GlbReader(glb)
-        queueEvent { renderer.upload(r) }
+        renderer.mesh = r
         resetCamera()
     }
 
@@ -86,6 +86,9 @@ private class MeshRenderer : GLSurfaceView.Renderer {
     @Volatile var panX = 0f
     @Volatile var panY = 0f
 
+    // Uploaded lazily on the GL thread: data set before the EGL context exists (or after a context loss) must survive.
+    @Volatile var mesh: GlbReader? = null
+    private var uploaded: GlbReader? = null
     private var program = 0
     private var vao = 0
     private var indexCount = 0
@@ -99,10 +102,11 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         GLES30.glClearColor(0.06f, 0.09f, 0.16f, 1f)
         GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         program = link(VS, FS)
-        Matrix.setIdentityM(model, 0)
+        vao = 0
+        uploaded = null
     }
 
-    fun upload(r: GlbReader) {
+    private fun upload(r: GlbReader) {
         if (vao != 0) GLES30.glDeleteVertexArrays(1, intArrayOf(vao), 0)
         val p = r.positions
         val lo = FloatArray(3) { Float.MAX_VALUE }
@@ -144,7 +148,9 @@ private class MeshRenderer : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(gl: GL10?) {
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
-        if (indexCount == 0) return
+        val m = mesh
+        if (m != null && m !== uploaded) { upload(m); uploaded = m }
+        if (uploaded == null) return
         val yr = Math.toRadians(yaw.toDouble())
         val pr = Math.toRadians(pitch.toDouble())
         val ex = (distance * Math.cos(pr) * Math.sin(yr)).toFloat()

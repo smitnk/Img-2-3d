@@ -12,6 +12,6 @@ class HomeScreenTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
 
     @Test fun homeOffersImagePicker() {
-        rule.onNodeWithText("Choose an image").assertExists()
+        rule.onNodeWithText("Photo → 3D").assertExists()
     }
 }

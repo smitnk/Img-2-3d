@@ -1,8 +1,8 @@
-package com.smitnk.forge3d.engine
+package com.smitnk.img23d.blender
 
 import android.content.Context
 import android.system.Os
-import com.smitnk.forge3d.BuildConfig
+import com.smitnk.img23d.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -41,7 +41,11 @@ class BlenderRuntime(context: Context) {
     private val info = File(dir, "runtime_info.json")
     private val ready = File(dir, ".ready")
 
-    fun isReady() = ready.isFile && File(rootfs, "opt/blender/blender").exists() && File(bin, "proot").canExecute()
+    fun isReady() = ready.isFile && File(rootfs, "opt/blender/blender").exists() && File(bin, "proot").canExecute() &&
+        runCatching { JSONObject(ready.readText()).optInt("version") >= REQUIRED_VERSION }.getOrDefault(false)
+
+    /** True when an older runtime is installed and must be updated (e.g. v1 lacked libandroid-shmem). */
+    fun needsUpdate() = ready.isFile && !isReady()
 
     suspend fun install(onStatus: (RuntimeStatus) -> Unit) = withContext(Dispatchers.IO) {
         ready.delete()
@@ -160,6 +164,9 @@ class BlenderRuntime(context: Context) {
     }
 
     companion object {
+        /** v2 ships proot's full shared-library closure (libtalloc, libandroid-shmem, ...). */
+        const val REQUIRED_VERSION = 2
+
         fun sha256(f: File): String {
             if (!f.isFile) return ""
             val md = MessageDigest.getInstance("SHA-256")

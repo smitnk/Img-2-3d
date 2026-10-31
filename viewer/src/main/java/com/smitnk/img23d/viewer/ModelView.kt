@@ -42,6 +42,12 @@ class ModelView(context: Context) : GLSurfaceView(context) {
         resetCamera()
     }
 
+    /** Slow turntable spin; pauses while the user is touching the model. */
+    fun setAutoRotate(on: Boolean) {
+        renderer.spin = on
+        renderMode = if (on) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
+    }
+
     fun resetCamera() {
         renderer.yaw = 30f; renderer.pitch = 15f; renderer.distance = 2.6f; renderer.panX = 0f; renderer.panY = 0f
         requestRender()
@@ -49,6 +55,7 @@ class ModelView(context: Context) : GLSurfaceView(context) {
 
     override fun onTouchEvent(e: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(e)
+        renderer.touching = e.actionMasked != MotionEvent.ACTION_UP && e.actionMasked != MotionEvent.ACTION_CANCEL
         val x = (0 until e.pointerCount).map { e.getX(it) }.average().toFloat()
         val y = (0 until e.pointerCount).map { e.getY(it) }.average().toFloat()
         when (e.actionMasked) {
@@ -85,6 +92,8 @@ private class MeshRenderer : GLSurfaceView.Renderer {
     @Volatile var distance = 2.6f
     @Volatile var panX = 0f
     @Volatile var panY = 0f
+    @Volatile var spin = false
+    @Volatile var touching = false
 
     // Uploaded lazily on the GL thread: data set before the EGL context exists (or after a context loss) must survive.
     @Volatile var mesh: GlbReader? = null
@@ -151,6 +160,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         val m = mesh
         if (m != null && m !== uploaded) { upload(m); uploaded = m }
         if (uploaded == null) return
+        if (spin && !touching) yaw += 0.35f
         val yr = Math.toRadians(yaw.toDouble())
         val pr = Math.toRadians(pitch.toDouble())
         val ex = (distance * Math.cos(pr) * Math.sin(yr)).toFloat()

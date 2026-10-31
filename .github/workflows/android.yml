@@ -16,14 +16,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: "8.11.1" }
       - name: Core unit tests (marching cubes, GLB, preprocessing)
-        run: gradle :core:test :forge:testDebugUnitTest --stacktrace
+        run: gradle :core:test :app:testDebugUnitTest --stacktrace
       - name: Build APKs
-        run: gradle :app:assembleDebug :app:assembleRelease :forge:assembleRelease :app:assembleDebugAndroidTest :cli:installDist --stacktrace
+        run: gradle :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest :cli:installDist --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: img-2-3d-apk
           path: |
             app/build/outputs/apk/release/app-release.apk
-            forge/build/outputs/apk/release/forge-release.apk
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk

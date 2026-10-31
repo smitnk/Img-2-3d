@@ -1,0 +1,120 @@
+package com.smitnk.img23d.blender
+
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.File
+import java.io.IOException
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.coroutineContext
+
+class BlenderResult(val glb: File, val blend: File?, val info: JSONObject, val seconds: Double, val log: List<String>)
+
+class BlenderException(message: String, val log: List<String>) : IOException(message)
+
+/**
+ * Runs headless Blender inside the runtime via proot. Guest paths:
+ *   /opt/forge/scripts  Model Forge generators (part of the runtime)
+ *   /opt/app            this app's scripts (assets/blender, bind-mounted, so no runtime rebuild needed)
+ *   /opt/job            per-job inputs (input GLB, user script), bind-mounted
+ *   /tmp/forge-job      output, read back from app storage
+ * One job at a time.
+ */
+class BlenderRunner(private val context: Context, private val runtime: BlenderRuntime) {
+    @Volatile private var process: Process? = null
+    val jobIn = File(context.cacheDir, "blender-job-in")
+
+    fun cancel() { process?.destroyForcibly() }
+
+    suspend fun run(script: String, args: List<String>, threads: Int, onLine: (String) -> Unit): BlenderResult = withContext(Dispatchers.IO) {
+        check(runtime.isReady()) { "Blender engine is not installed" }
+        val scripts = ScriptAssets.install(context)
+        val guestOut = "/tmp/forge-job"
+        val hostOut = File(runtime.rootfs, guestOut.removePrefix("/"))
+        hostOut.deleteRecursively()
+        hostOut.mkdirs()
+        jobIn.mkdirs()
+        val tmp = File(context.cacheDir, "proot-tmp").apply { deleteRecursively(); mkdirs() }
+
+        val cmd = listOf(
+            File(runtime.bin, "proot").path,
+            "--kill-on-exit", "--link2symlink", "-0",
+            "-r", runtime.rootfs.path,
+            "-b", "/dev", "-b", "/proc", "-b", "/sys",
+            "-b", "${scripts.path}:/opt/app",
+            "-b", "${jobIn.path}:/opt/job",
+            "-w", "/opt/app",
+            "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
+            "--python-exit-code", "1", "--python", script, "--",
+        ) + args + listOf("--out", guestOut)
+
+        val pb = ProcessBuilder(cmd).redirectErrorStream(true).directory(runtime.dir)
+        pb.environment().apply {
+            clear() // never leak Android's LD_PRELOAD/BOOTCLASSPATH etc. into the guest
+            put("PROOT_TMP_DIR", tmp.path)
+            put("PROOT_LOADER", File(runtime.bin, "proot-loader").path)
+            put("LD_LIBRARY_PATH", runtime.bin.path) // proot's bionic shared libraries
+            put("HOME", "/root")
+            put("TMPDIR", "/tmp")
+            put("LANG", "C.UTF-8")
+            put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+        }
+        val log = ArrayDeque<String>()
+        val t0 = System.nanoTime()
+        val p = pb.start().also { process = it }
+        try {
+            p.inputStream.bufferedReader().useLines { lines ->
+                for (line in lines) {
+                    coroutineContext.ensureActive()
+                    if (log.size >= 600) log.removeFirst()
+                    log.addLast(line)
+                    onLine(line)
+                }
+            }
+            p.waitFor(30, TimeUnit.SECONDS)
+            coroutineContext.ensureActive()
+            val code = if (p.isAlive) -1 else p.exitValue()
+            val glb = hostOut.listFiles { f -> f.extension == "glb" }?.firstOrNull()
+            if (code != 0 || glb == null || glb.length() == 0L) {
+                throw BlenderException("Blender exited with code $code\n" + log.takeLast(25).joinToString("\n"), log.toList())
+            }
+            val infoFile = File(hostOut, "generation.json")
+            val info = if (infoFile.isFile) JSONObject(infoFile.readText()) else JSONObject()
+            BlenderResult(glb, hostOut.listFiles { f -> f.extension == "blend" }?.firstOrNull(), info, (System.nanoTime() - t0) / 1e9, log.toList())
+        } finally {
+            if (p.isAlive) p.destroyForcibly()
+            process = null
+        }
+    }
+}
+
+/** Copies assets/blender into app storage once per app version (bind-mounted at /opt/app). */
+object ScriptAssets {
+    fun install(context: Context): File {
+        val dir = File(context.filesDir, "blender-scripts")
+        val stamp = File(dir, ".version")
+        val version = context.packageManager.getPackageInfo(context.packageName, 0).let {
+            "${it.versionName}-${it.lastUpdateTime}"
+        }
+        if (stamp.isFile && stamp.readText() == version) return dir
+        dir.deleteRecursively()
+        copy(context, "blender", dir)
+        stamp.writeText(version)
+        return dir
+    }
+
+    fun read(context: Context, path: String): String = context.assets.open("blender/$path").bufferedReader().use { it.readText() }
+
+    private fun copy(context: Context, asset: String, dest: File) {
+        val children = context.assets.list(asset).orEmpty()
+        if (children.isEmpty()) {
+            dest.parentFile?.mkdirs()
+            context.assets.open(asset).use { i -> dest.outputStream().use { i.copyTo(it) } }
+        } else {
+            dest.mkdirs()
+            children.forEach { copy(context, "$asset/$it", File(dest, it)) }
+        }
+    }
+}

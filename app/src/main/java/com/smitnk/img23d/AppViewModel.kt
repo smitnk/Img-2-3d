@@ -6,14 +6,26 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
-import android.os.Debug
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.smitnk.img23d.ai.ScriptWriter
+import com.smitnk.img23d.blender.BlenderException
+import com.smitnk.img23d.blender.BlenderResult
+import com.smitnk.img23d.blender.BlenderRunner
+import com.smitnk.img23d.blender.BlenderRuntime
+import com.smitnk.img23d.blender.BuilderSpec
+import com.smitnk.img23d.blender.MemoryProbe
+import com.smitnk.img23d.blender.Preset
+import com.smitnk.img23d.blender.RuntimeStatus
+import com.smitnk.img23d.blender.ScriptAssets
 import com.smitnk.img23d.core.TripoSR
+import com.smitnk.img23d.data.Library
+import com.smitnk.img23d.data.Model
 import com.smitnk.img23d.data.ModelManager
 import com.smitnk.img23d.data.ModelStatus
-import com.smitnk.img23d.data.Project
-import com.smitnk.img23d.data.ProjectStore
+import com.smitnk.img23d.data.Settings
+import com.smitnk.img23d.data.SettingsStore
+import com.smitnk.img23d.data.Source
 import com.smitnk.img23d.data.verifyLocal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -26,189 +38,401 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.File
 import java.io.OutputStream
 
-sealed interface Screen {
-    data object Home : Screen
-    data object Create : Screen
-    data object Generating : Screen
-    data class Result(val projectId: String) : Screen
-    data object History : Screen
-    data object Models : Screen
+enum class PhotoMode { MESH, CHARACTER }
+
+sealed interface Dest {
+    data object Home : Dest
+    data object Library : Dest
+    data object Settings : Dest
+    data class Photo(val mode: PhotoMode) : Dest
+    data object Builder : Dest
+    data object Script : Dest
+    data object Text : Dest
+    data object Presets : Dest
+    data class PresetConfig(val preset: Preset) : Dest
+    data object Running : Dest
+    data class Result(val id: String) : Dest
 }
 
-data class GenSettings(
-    val resolution: Int = 256,
-    val removeBackground: Boolean = true,
-    val vertexColors: Boolean = true,
-    val foregroundRatio: Float = TripoSR.FOREGROUND_RATIO,
+data class RunState(
+    val title: String = "",
+    val engine: String = "",
+    val stage: String = "",
+    val fraction: Float? = null,
+    val step: Int = 1,
+    val steps: Int = 1,
+    val lines: List<String> = emptyList(),
+    val elapsedMs: Long = 0,
+    val memMb: Int = 0,
+    val peakMb: Int = 0,
 )
 
-data class Progress(
-    val stage: TripoSR.Stage = TripoSR.Stage.BACKGROUND,
-    val fraction: Float = 0f,
-    val elapsedMs: Long = 0,
-    val pssMb: Int = 0,
-    val peakPssMb: Int = 0,
+data class ScriptState(val fileName: String = "", val code: String = "", val params: String = "{}")
+
+data class TextState(
+    val description: String = "",
+    val style: String = "Stylized cartoon",
+    val detail: String = "medium",
+    val draft: ScriptWriter.Draft? = null,
+    val writing: Boolean = false,
+    val lastLog: String = "",
 )
+
+data class Failure(val title: String, val message: String, val canRepair: Boolean = false)
 
 data class UiState(
-    val backStack: List<Screen> = listOf(Screen.Home),
+    val stack: List<Dest> = listOf(Dest.Home),
     val modelStatus: ModelStatus = ModelStatus.Checking,
+    val runtime: RuntimeStatus = RuntimeStatus.NotInstalled,
     val image: Bitmap? = null,
-    val settings: GenSettings = GenSettings(),
-    val progress: Progress = Progress(),
-    val error: String? = null,
-    val projects: List<Project> = emptyList(),
+    val builder: BuilderSpec = BuilderSpec(),
+    val presetName: String = "",
+    val presetColors: Map<String, String> = emptyMap(),
+    val script: ScriptState = ScriptState(),
+    val text: TextState = TextState(),
+    val run: RunState = RunState(),
+    val models: List<Model> = emptyList(),
+    val filter: Source? = null,
+    val query: String = "",
+    val failure: Failure? = null,
+    val storageMb: Long = 0,
 ) {
-    val screen: Screen get() = backStack.last()
+    val dest: Dest get() = stack.last()
+    val visibleModels get() = models.filter { (filter == null || it.source == filter) && (query.isBlank() || it.name.contains(query, true)) }
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val models = ModelManager(app)
-    private val store = ProjectStore(app)
+    val runtime = BlenderRuntime(app)
+    private val runner = BlenderRunner(app, runtime)
+    private val library = Library(app)
+    private val settingsStore = SettingsStore(app)
+    val settings: StateFlow<Settings> = settingsStore.state
+    private val writer by lazy { ScriptWriter(ScriptAssets.read(app, "SCRIPT_CONTRACT.md"), ScriptAssets.read(app, "examples/robot.py")) }
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
     private var job: Job? = null
-    private var pipeline: TripoSR? = null
+    private var tripo: TripoSR? = null
 
     init {
-        refreshModels()
-        refreshProjects()
+        refreshEngines()
+        refreshLibrary()
     }
 
-    fun navigate(s: Screen) = _state.update { it.copy(backStack = it.backStack + s, error = null) }
+    private val s get() = settings.value
+
+    // ---------- navigation ----------
+    fun go(d: Dest) = _state.update { it.copy(stack = it.stack + d, failure = null) }
+
+    fun tab(d: Dest) = _state.update { it.copy(stack = listOf(Dest.Home) + if (d == Dest.Home) emptyList() else listOf(d)) }
 
     /** @return false when already at the root so the activity can finish. */
     fun back(): Boolean {
         val st = _state.value
-        if (st.screen == Screen.Generating) { cancel(); return true }
-        if (st.backStack.size <= 1) return false
-        _state.update { it.copy(backStack = it.backStack.dropLast(1), error = null) }
+        if (st.dest == Dest.Running) { cancel(); return true }
+        if (st.stack.size <= 1) return false
+        _state.update { it.copy(stack = it.stack.dropLast(1)) }
         return true
     }
 
-    fun dismissError() = _state.update { it.copy(error = null) }
+    fun dismissFailure() = _state.update { it.copy(failure = null) }
 
-    fun refreshModels() {
-        val cur = _state.value.modelStatus
-        if (cur is ModelStatus.Downloading || cur is ModelStatus.Verifying) return
-        _state.update { it.copy(modelStatus = if (models.isReady()) ModelStatus.Ready else ModelStatus.Missing(models.dir.path)) }
-    }
+    fun updateSettings(f: (Settings) -> Settings) = settingsStore.update(f)
 
-    fun refreshProjects() = viewModelScope.launch(Dispatchers.IO) {
-        val list = store.list()
-        _state.update { it.copy(projects = list) }
+    // ---------- engines ----------
+    fun refreshEngines() {
+        val st = _state.value
+        val busyB = st.modelStatus is ModelStatus.Downloading || st.modelStatus is ModelStatus.Verifying
+        val busyA = st.runtime is RuntimeStatus.Downloading || st.runtime is RuntimeStatus.Verifying || st.runtime is RuntimeStatus.Extracting
+        _state.update {
+            it.copy(
+                modelStatus = if (busyB) it.modelStatus else if (models.isReady()) ModelStatus.Ready else ModelStatus.Missing(models.dir.path),
+                runtime = if (busyA) it.runtime else if (runtime.isReady()) RuntimeStatus.Ready else RuntimeStatus.NotInstalled,
+            )
+        }
     }
 
     fun downloadModels() = viewModelScope.launch {
-        runCatching { models.download { s -> _state.update { it.copy(modelStatus = s) } } }
+        runCatching { models.download { m -> _state.update { it.copy(modelStatus = m) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(modelStatus = ModelStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun verifyPushedModels() = viewModelScope.launch {
-        runCatching { models.verifyLocal { s -> _state.update { it.copy(modelStatus = s) } } }
+        runCatching { models.verifyLocal { m -> _state.update { it.copy(modelStatus = m) } } }
             .onFailure { e -> _state.update { it.copy(modelStatus = ModelStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun deleteModels() {
-        models.delete()
-        refreshModels()
+    fun deleteModels() { models.delete(); refreshEngines() }
+
+    fun installRuntime() = viewModelScope.launch {
+        runCatching { runtime.install { r -> _state.update { it.copy(runtime = r) } } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(runtime = RuntimeStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun pickImage(uri: Uri) = viewModelScope.launch {
+    fun uninstallRuntime() { runtime.uninstall(); refreshEngines() }
+
+    // ---------- library ----------
+    fun refreshLibrary() = viewModelScope.launch(Dispatchers.IO) {
+        val list = library.list()
+        val mb = library.bytesUsed() / 1_000_000
+        _state.update { it.copy(models = list, storageMb = mb) }
+    }
+
+    fun setFilter(f: Source?) = _state.update { it.copy(filter = f) }
+    fun setQuery(q: String) = _state.update { it.copy(query = q) }
+    fun model(id: String) = _state.value.models.firstOrNull { it.id == id } ?: library.get(id)
+    fun rename(m: Model, name: String) = viewModelScope.launch(Dispatchers.IO) { library.rename(m, name); refreshLibrary() }
+    fun delete(m: Model) = viewModelScope.launch(Dispatchers.IO) { library.delete(m); refreshLibrary() }
+    fun clearLibrary() = viewModelScope.launch(Dispatchers.IO) { library.clear(); refreshLibrary() }
+
+    fun export(m: Model, out: OutputStream, blend: Boolean = false) = viewModelScope.launch(Dispatchers.IO) {
+        runCatching { out.use { o -> (if (blend) m.blend!! else m.glb).inputStream().use { it.copyTo(o) } } }
+            .onFailure { e -> fail("Export failed", e.message ?: e.toString()) }
+    }
+
+    // ---------- inputs ----------
+    fun pickImage(uri: Uri, mode: PhotoMode) = viewModelScope.launch {
         runCatching { withContext(Dispatchers.IO) { decode(uri) } }
-            .onSuccess { bmp -> _state.update { it.copy(image = bmp) }; navigate(Screen.Create) }
-            .onFailure { e -> _state.update { it.copy(error = "Could not open image: ${e.message}") } }
+            .onSuccess { bmp -> _state.update { it.copy(image = bmp) }; if (_state.value.dest !is Dest.Photo) go(Dest.Photo(mode)) }
+            .onFailure { e -> fail("Could not open image", e.message ?: e.toString()) }
     }
 
-    fun updateSettings(f: (GenSettings) -> GenSettings) = _state.update { it.copy(settings = f(it.settings)) }
+    fun editBuilder(f: (BuilderSpec) -> BuilderSpec) = _state.update { it.copy(builder = f(it.builder)) }
 
-    fun generate() {
+    fun importScript(uri: Uri) = viewModelScope.launch {
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val cr = getApplication<Application>().contentResolver
+                val name = uri.lastPathSegment?.substringAfterLast('/') ?: "script.py"
+                val code = cr.openInputStream(uri)!!.use { it.readBytes() }
+                require(code.size < 1_000_000) { "Script is larger than 1 MB" }
+                name to String(code)
+            }
+        }.onSuccess { (n, c) -> _state.update { it.copy(script = it.script.copy(fileName = n, code = c)) } }
+            .onFailure { e -> fail("Could not read script", e.message ?: e.toString()) }
+    }
+
+    fun loadExampleScript() = _state.update {
+        it.copy(script = it.script.copy(fileName = "robot.py", code = ScriptAssets.read(getApplication(), "examples/robot.py")))
+    }
+
+    fun setScriptParams(p: String) = _state.update { it.copy(script = it.script.copy(params = p)) }
+
+    fun scriptContract() = ScriptAssets.read(getApplication(), "SCRIPT_CONTRACT.md")
+
+    fun editText(f: (TextState) -> TextState) = _state.update { it.copy(text = f(it.text)) }
+
+    fun setPreset(name: String, colors: Map<String, String>) = _state.update { it.copy(presetName = name, presetColors = colors) }
+
+    // ---------- AI script writing (optional, cloud) ----------
+    fun writeTextScript() {
+        val t = _state.value.text
+        if (t.description.isBlank() || t.writing) return
+        editText { it.copy(writing = true, draft = null) }
+        viewModelScope.launch {
+            runCatching { writer.write(s.apiKey, s.apiModel, t.description, t.style, t.detail) }
+                .onSuccess { d -> editText { it.copy(writing = false, draft = d, lastLog = "") } }
+                .onFailure { e -> editText { it.copy(writing = false) }; fail("Script writing failed", e.message ?: e.toString()) }
+        }
+    }
+
+    fun repairTextScript() {
+        val t = _state.value.text
+        val d = t.draft ?: return
+        dismissFailure()
+        editText { it.copy(writing = true) }
+        viewModelScope.launch {
+            runCatching { writer.repair(s.apiKey, s.apiModel, t.description, d.script, t.lastLog) }
+                .onSuccess { nd -> editText { it.copy(writing = false, draft = nd) }; runText() }
+                .onFailure { e -> editText { it.copy(writing = false) }; fail("Repair failed", e.message ?: e.toString()) }
+        }
+    }
+
+    // ---------- jobs ----------
+    fun runPhoto(mode: PhotoMode) {
+        val bmp = _state.value.image ?: return
+        if (_state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
+        if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
+        val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
+        launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", "TripoSR", steps) { report ->
+            val (res, opt) = tripoSR(bmp, report)
+            val thumb = previewBitmap(res.preprocessed)
+            if (mode == PhotoMode.MESH) {
+                library.add("Photo model", Source.PHOTO, { f -> f.outputStream().buffered().use { res.mesh.writeGlb(it) } },
+                    res.mesh.vertexCount(), res.mesh.faceCount(), resolution = opt.resolution, timings = res.timingsMs,
+                    peakMemMb = 0, detail = "TripoSR ${opt.resolution}³", thumbnail = thumb)
+            } else {
+                val input = File(runner.jobIn.apply { mkdirs() }, "input.glb")
+                input.outputStream().buffered().use { res.mesh.writeGlb(it) }
+                report.step(2, "Blender")
+                val b = blender("refine_mesh.py", refineArgs("Photo character"), report)
+                saveBlender(b, "Photo character", Source.CHARACTER, res.timingsMs, thumb = thumb, detail = "TripoSR ${opt.resolution}³ + Blender refine")
+            }
+        }
+    }
+
+    fun refine(m: Model) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        launchJob("Refine in Blender", "Blender", 1) { report ->
+            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
+            val b = blender("refine_mesh.py", refineArgs("${m.name} refined"), report)
+            saveBlender(b, "${m.name} refined", Source.REFINED, thumbFile = m.thumbnail, detail = "Blender refine of ${m.name}")
+        }
+    }
+
+    fun runBuilder() = blenderJob("Character Builder") { report ->
+        val spec = _state.value.builder
+        val b = blender("character_builder.py", spec.args(s.rig, s.saveBlend), report)
+        saveBlender(b, spec.name, Source.BUILDER, detail = "Builder · ${spec.picks.values.joinToString(" · ")}")
+    }
+
+    fun runScript() {
+        val sc = _state.value.script
+        if (sc.code.isBlank()) return
+        blenderJob(sc.fileName.ifBlank { "Python script" }) { report ->
+            val file = File(runner.jobIn.apply { mkdirs() }, "user_script.py").apply { writeText(sc.code) }
+            JSONObject(sc.params.ifBlank { "{}" }) // validate before spending a Blender run
+            val name = sc.fileName.removeSuffix(".py").ifBlank { "Custom model" }
+            val b = blender("run_custom.py", listOf("--script", "/opt/job/${file.name}", "--name", name, "--params", sc.params.ifBlank { "{}" }) +
+                if (s.saveBlend) listOf("--blend") else emptyList(), report)
+            saveBlender(b, name, Source.SCRIPT, script = sc.code, detail = "Script ${sc.fileName}")
+        }
+    }
+
+    fun runText() {
+        val t = _state.value.text
+        val d = t.draft ?: return
+        blenderJob("Text to 3D") { report ->
+            val file = File(runner.jobIn.apply { mkdirs() }, "ai_script.py").apply { writeText(d.script) }
+            val name = t.description.take(32).trim().ifBlank { "AI character" }
+            try {
+                val b = blender("run_custom.py", listOf("--script", "/opt/job/${file.name}", "--name", name), report)
+                saveBlender(b, name, Source.TEXT, script = d.script, detail = t.description.take(200))
+            } catch (e: BlenderException) {
+                editText { it.copy(lastLog = e.log.takeLast(80).joinToString("\n")) }
+                throw e
+            }
+        }
+    }
+
+    fun runPreset(p: Preset) = blenderJob(p.title) { report ->
         val st = _state.value
-        val bmp = st.image ?: return
-        if (job?.isActive == true) return // one inference job at a time
-        if (st.modelStatus != ModelStatus.Ready) { navigate(Screen.Models); return }
-        _state.update { it.copy(progress = Progress(), error = null) }
-        navigate(Screen.Generating)
-        val pipe = TripoSR(models.dir).also { pipeline = it }
+        val b = blender("/opt/forge/scripts/generate_model.py", p.args(st.presetName, st.presetColors, s.rig, s.saveBlend), report)
+        saveBlender(b, st.presetName.ifBlank { p.title }, Source.PRESET, detail = "Model Forge · ${p.title}")
+    }
+
+    fun cancel() {
+        tripo?.cancel()
+        runner.cancel()
+        job?.cancel()
+    }
+
+    // ---------- internals ----------
+    inner class Report(private val start: Long) {
+        fun step(n: Int, engine: String) = _state.update { it.copy(run = it.run.copy(step = n, engine = engine, stage = "", fraction = null, lines = emptyList())) }
+        fun stage(text: String, fraction: Float?) = _state.update { it.copy(run = it.run.copy(stage = text, fraction = fraction)) }
+        fun line(l: String) = _state.update { it.copy(run = it.run.copy(lines = (it.run.lines + l).takeLast(300), stage = l.take(90))) }
+        fun peak() = _state.value.run.peakMb
+        val elapsed get() = System.currentTimeMillis() - start
+    }
+
+    private fun blenderJob(title: String, block: suspend (Report) -> Model) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        launchJob(title, "Blender", 1, block)
+    }
+
+    private fun launchJob(title: String, engine: String, steps: Int, block: suspend (Report) -> Model) {
+        if (job?.isActive == true) return // one job at a time, both engines
+        _state.update { it.copy(run = RunState(title = title, engine = engine, steps = steps), failure = null) }
+        go(Dest.Running)
         job = viewModelScope.launch {
-            val start = System.currentTimeMillis()
-            var peak = 0
+            val report = Report(System.currentTimeMillis())
             val monitor = launch(Dispatchers.Default) {
                 while (isActive) {
-                    val pss = (Debug.getPss() / 1024).toInt()
-                    peak = maxOf(peak, pss)
-                    _state.update { it.copy(progress = it.progress.copy(elapsedMs = System.currentTimeMillis() - start, pssMb = pss, peakPssMb = peak)) }
+                    val mem = MemoryProbe.appTreeRssMb() // app + proot/Blender children
+                    _state.update { it.copy(run = it.run.copy(elapsedMs = report.elapsed, memMb = mem, peakMb = maxOf(it.run.peakMb, mem))) }
                     delay(500)
                 }
             }
             try {
-                val project = withContext(Dispatchers.Default) {
-                    val w = bmp.width
-                    val h = bmp.height
-                    val argb = IntArray(w * h).also { bmp.getPixels(it, 0, w, 0, 0, w, h) }
-                    val rgba = IntArray(w * h * 4)
-                    val alpha = bmp.hasAlpha()
-                    for (i in argb.indices) {
-                        val p = argb[i]
-                        rgba[i * 4] = (p shr 16) and 255
-                        rgba[i * 4 + 1] = (p shr 8) and 255
-                        rgba[i * 4 + 2] = p and 255
-                        rgba[i * 4 + 3] = if (alpha) p ushr 24 else 255
-                    }
-                    val opt = TripoSR.Options().apply {
-                        resolution = st.settings.resolution
-                        removeBackground = st.settings.removeBackground
-                        vertexColors = st.settings.vertexColors
-                        foregroundRatio = st.settings.foregroundRatio
-                        threads = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
-                    }
-                    val res = pipe.run(rgba, w, h, opt) { stage, f ->
-                        _state.update { it.copy(progress = it.progress.copy(stage = stage, fraction = f)) }
-                    }
-                    peak = maxOf(peak, (Debug.getPss() / 1024).toInt())
-                    store.create(
-                        glb = { file -> file.outputStream().buffered().use { res.mesh.writeGlb(it) } },
-                        preview = previewBitmap(res.preprocessed),
-                        vertices = res.mesh.vertexCount(), faces = res.mesh.faceCount(),
-                        resolution = opt.resolution, timings = res.timingsMs, peakPssMb = peak,
-                    )
-                }
-                refreshProjects()
-                _state.update { it.copy(backStack = it.backStack.dropLast(1) + Screen.Result(project.id)) }
+                val m = withContext(Dispatchers.Default) { block(report) }
+                withContext(Dispatchers.IO) { patchPeak(m, report.peak()) }
+                refreshLibrary()
+                _state.update { it.copy(stack = it.stack.dropLast(1) + Dest.Result(m.id)) }
             } catch (e: CancellationException) {
-                _state.update { it.copy(backStack = it.backStack.dropLast(1)) }
+                _state.update { it.copy(stack = it.stack.dropLast(1)) }
             } catch (e: Throwable) {
-                val msg = when (e) {
-                    is OutOfMemoryError -> "Out of memory. Try a lower mesh resolution."
-                    else -> e.message ?: e.toString()
-                }
-                _state.update { it.copy(backStack = it.backStack.dropLast(1), error = "Generation failed: $msg") }
+                val msg = if (e is OutOfMemoryError) "Out of memory. Lower the mesh resolution in Settings." else e.message ?: e.toString()
+                val repair = e is BlenderException && _state.value.run.title == "Text to 3D" && s.apiKey.isNotBlank()
+                _state.update { it.copy(stack = it.stack.dropLast(1), failure = Failure("$title failed", msg, repair)) }
             } finally {
                 monitor.cancel()
-                pipeline = null
+                tripo = null
                 System.gc()
             }
         }
     }
 
-    fun cancel() {
-        pipeline?.cancel()
-        job?.cancel()
+    private fun patchPeak(m: Model, peak: Int) {
+        val f = File(m.dir, "meta.json")
+        f.writeText(JSONObject(f.readText()).put("peakPssMb", peak).toString(2))
     }
 
-    fun project(id: String): Project? = _state.value.projects.firstOrNull { it.id == id } ?: store.get(id)
+    private suspend fun blender(script: String, args: List<String>, report: Report): BlenderResult =
+        runner.run(script, args, s.threadCount()) { report.line(it) }
 
-    fun deleteProject(p: Project) = viewModelScope.launch(Dispatchers.IO) {
-        store.delete(p)
-        refreshProjects()
+    private fun refineArgs(name: String) = buildList {
+        addAll(listOf("--in", "/opt/job/input.glb", "--name", name,
+            "--height", s.refineHeight.toString(), "--voxel", s.refineVoxel.toString(),
+            "--smooth", s.refineSmooth.toString(), "--decimate", s.refineDecimate.toString()))
+        if (!s.vertexColors) add("--no-colors")
+        if (s.refineRig) add("--rig")
+        if (s.saveBlend) add("--blend")
     }
 
-    fun exportGlb(p: Project, out: OutputStream) = viewModelScope.launch(Dispatchers.IO) {
-        runCatching { out.use { o -> p.glb.inputStream().use { it.copyTo(o) } } }
-            .onFailure { e -> _state.update { it.copy(error = "Export failed: ${e.message}") } }
+    private fun saveBlender(
+        b: BlenderResult, name: String, source: Source, extraTimings: Map<String, Long> = emptyMap(),
+        thumb: Bitmap? = null, thumbFile: File? = null, script: String? = null, detail: String = "",
+    ): Model {
+        val i = b.info
+        return library.add(
+            name = i.optString("name", name).ifBlank { name }, source = source, writeGlb = { b.glb.copyTo(it, overwrite = true) },
+            vertices = i.optInt("vertices"), faces = i.optInt("triangles"), bones = i.optJSONObject("rig")?.optInt("bones") ?: 0,
+            timings = extraTimings + ("blender" to (b.seconds * 1000).toLong()), peakMemMb = 0, detail = detail,
+            thumbnail = thumb, thumbnailFrom = thumbFile, blend = b.blend, script = script, extra = i,
+        )
     }
+
+    private fun tripoSR(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
+        val w = bmp.width
+        val h = bmp.height
+        val argb = IntArray(w * h).also { bmp.getPixels(it, 0, w, 0, 0, w, h) }
+        val rgba = IntArray(w * h * 4)
+        val alpha = bmp.hasAlpha()
+        for (i in argb.indices) {
+            val p = argb[i]
+            rgba[i * 4] = (p shr 16) and 255
+            rgba[i * 4 + 1] = (p shr 8) and 255
+            rgba[i * 4 + 2] = p and 255
+            rgba[i * 4 + 3] = if (alpha) p ushr 24 else 255
+        }
+        val opt = TripoSR.Options().apply {
+            resolution = s.resolution
+            removeBackground = s.removeBackground
+            vertexColors = s.vertexColors
+            foregroundRatio = s.foregroundRatio
+            threads = s.threadCount()
+        }
+        val pipe = TripoSR(models.dir).also { tripo = it }
+        val res = pipe.run(rgba, w, h, opt) { stage, f -> report.stage(STAGES[stage] ?: stage.name, if (f > 0f && f < 1f) f else null) }
+        return res to opt
+    }
+
+    private fun fail(title: String, msg: String) = _state.update { it.copy(failure = Failure(title, msg)) }
 
     private fun decode(uri: Uri): Bitmap {
         val cr = getApplication<Application>().contentResolver
@@ -216,35 +440,44 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return if (Build.VERSION.SDK_INT >= 28) {
             ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, uri)) { d, info, _ ->
                 d.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-                val s = info.size
-                val scale = MAX_SIDE.toFloat() / maxOf(s.width, s.height)
-                if (scale < 1f) d.setTargetSize((s.width * scale).toInt().coerceAtLeast(1), (s.height * scale).toInt().coerceAtLeast(1))
+                val sz = info.size
+                val scale = MAX_SIDE.toFloat() / maxOf(sz.width, sz.height)
+                if (scale < 1f) d.setTargetSize((sz.width * scale).toInt().coerceAtLeast(1), (sz.height * scale).toInt().coerceAtLeast(1))
             }
         } else {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             cr.openInputStream(uri).use { BitmapFactory.decodeStream(it, null, bounds) }
             var sample = 1
             while (maxOf(bounds.outWidth, bounds.outHeight) / sample > MAX_SIDE) sample *= 2
-            cr.openInputStream(uri).use {
-                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
-            } ?: error("Unsupported image")
+            cr.openInputStream(uri).use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
+                ?: error("Unsupported image")
         }
     }
 
     private fun previewBitmap(img: FloatArray): Bitmap {
-        val s = TripoSR.IMAGE_SIZE
-        val px = IntArray(s * s) { i ->
+        val sz = TripoSR.IMAGE_SIZE
+        val px = IntArray(sz * sz) { i ->
             val r = (img[i * 3] * 255f).toInt().coerceIn(0, 255)
             val g = (img[i * 3 + 1] * 255f).toInt().coerceIn(0, 255)
             val b = (img[i * 3 + 2] * 255f).toInt().coerceIn(0, 255)
             (255 shl 24) or (r shl 16) or (g shl 8) or b
         }
-        return Bitmap.createBitmap(px, s, s, Bitmap.Config.ARGB_8888)
+        return Bitmap.createBitmap(px, sz, sz, Bitmap.Config.ARGB_8888)
     }
 
     override fun onCleared() = cancel()
 
     companion object {
         const val MAX_SIDE = 1536
+        val STAGES = mapOf(
+            TripoSR.Stage.BACKGROUND to "Removing background",
+            TripoSR.Stage.PREPROCESS to "Preparing image",
+            TripoSR.Stage.ENCODER_LOAD to "Loading TripoSR weights",
+            TripoSR.Stage.ENCODER to "Running TripoSR network",
+            TripoSR.Stage.FIELD to "Evaluating density field",
+            TripoSR.Stage.MARCHING_CUBES to "Marching cubes",
+            TripoSR.Stage.COLORS to "Sampling vertex colours",
+            TripoSR.Stage.DONE to "Saving",
+        )
     }
 }

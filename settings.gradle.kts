@@ -5,4 +5,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "Img-2-3D"
-include(":core", ":cli", ":viewer", ":app", ":forge")
+include(":core", ":cli", ":viewer", ":app")

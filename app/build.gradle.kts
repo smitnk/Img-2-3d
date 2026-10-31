@@ -11,11 +11,15 @@ android {
     defaultConfig {
         applicationId = "com.smitnk.img23d"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        // Blender (System A) runs as a Linux binary under proot from app storage; Android 10+ only allows exec of
+        // app-data files for apps targeting <= 28. Sideload-only by design.
+        @Suppress("ExpiredTargetSdkVersion")
+        targetSdk = 28
+        versionCode = 2
+        versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a") }
+        buildConfigField("String", "RUNTIME_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/blender-runtime-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }
 
@@ -36,11 +40,13 @@ android {
         buildConfig = true
     }
     packaging { jniLibs { useLegacyPackaging = false } }
+    lint { disable += setOf("ExpiredTargetSdkVersion", "OldTargetApi") }
 }
 
 dependencies {
     implementation(project(":viewer"))
     implementation(libs.onnxruntime.android)
+    implementation(libs.commons.compress)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

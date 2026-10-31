@@ -169,6 +169,7 @@ fun ResolutionPicker(value: Int, onPick: (Int) -> Unit) {
 
 // ---------------------------------------------------------------- Character builder (System A)
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun BuilderScreen(state: UiState, vm: AppViewModel) {
     val spec = state.builder

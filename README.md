@@ -55,3 +55,18 @@ Requires JDK 17, Android SDK 35, Gradle 8.11.
 - GPU/NNAPI acceleration is not enabled: not yet validated for numerical equivalence with these graphs.
 
 Licenses: TripoSR MIT (`LICENSE-TripoSR`), torchmcubes MIT (`core/LICENSE-torchmcubes`).
+
+## System A: Model Forge (procedural characters with real Blender)
+
+A second, independent app (`:forge`, package `com.smitnk.forge3d`) runs the
+[Android-3D-Model-Forge](https://github.com/smitnk/Android-3D-Model-Forge) Blender Python generators on the phone.
+It shares only the 3D viewer module (`:viewer`) with Img-2-3D; System B is unchanged.
+
+- **Engine:** Blender 4.2.3 LTS compiled for linux-aarch64 (headless, bpy, bmesh, OpenSubdiv, OpenVDB voxel remesh,
+  official glTF exporter) inside a minimal Ubuntu 24.04 userland, run through Termux's proot.
+  Built and tested by `.github/workflows/blender-runtime.yml`, published as release `blender-runtime-v1` (≈126 MB download, ≈385 MB installed).
+- **Flow:** pick a generator → set name / colours / rig / .blend → the app runs
+  `blender -b --factory-startup --python scripts/generate_model.py -- …` → GLB opens in the viewer and is saved in the library.
+- **Why targetSdk 28:** Android 10+ blocks executing binaries from app storage for apps targeting newer SDKs. Sideload only.
+- **Verified in CI (ARM64 Linux, same proot source):** all 7 generators produce valid GLBs in 2–25 s with 170–310 MB peak RSS.
+  Not yet verified on an Android device.

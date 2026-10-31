@@ -19,8 +19,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Require HF token
         run: '[ -n "$HF_TOKEN" ] || { echo "Add repository secret HF_TOKEN (HuggingFace token with access to stabilityai/stable-fast-3d)"; exit 1; }'
-      - name: Free disk space
-        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+      - name: Free disk space + add swap (SF3D export peaks above the runner's 16 GB RAM)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 20G /swapfile2 && sudo chmod 600 /swapfile2 && sudo mkswap /swapfile2 && sudo swapon /swapfile2
+          free -h; df -h /
       - uses: actions/setup-python@v5
         with: { python-version: "3.10" }
       - name: Original SF3D + dependencies (CPU)
@@ -48,7 +51,7 @@ jobs:
         run: |
           gh release view sf3d-v1 >/dev/null 2>&1 || gh release create sf3d-v1 --title "SF3D ONNX models v1" \
             --notes "Original stabilityai/stable-fast-3d exported to ONNX (tools/sf3d/export_sf3d.py). Stability AI Community License."
-          cd sf3d_models && gh release upload sf3d-v1 --clobber model_info.json sf3d_*.onnx sf3d_encoder.onnx.data sf3d_tets.bin
+          cd sf3d_models && gh release upload sf3d-v1 --clobber model_info.json sf3d_*.onnx* sf3d_tets.bin
       - name: Push log to ci-logs branch
         if: always()
         run: |

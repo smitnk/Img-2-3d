@@ -24,6 +24,12 @@ def sha256(p):
     return h.hexdigest()
 
 
+def stage(name):
+    """GitHub annotation: survives even if the runner is OOM-killed before the log upload."""
+    import resource
+    print(f"::notice::{name} (peak RSS {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024} MB)", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sf3d", required=True)
@@ -53,6 +59,7 @@ def main():
     mesh, glob_dict = model.run_image(img, bake_resolution=1024, remesh="none")
     mesh.export(os.path.join(a.out, "reference", "sf3d_reference.glb"), include_normals=True)
     ref_counts = (len(mesh.vertices), len(mesh.faces))
+    stage(f"reference done {ref_counts}")
     print("reference mesh", *ref_counts, flush=True)
 
     mask, rgb = model.prepare_image(img)
@@ -98,13 +105,7 @@ def main():
     enc_path = os.path.join(a.out, "sf3d_encoder.onnx")
     torch.onnx.export(enc, (rgb, mask), enc_path, input_names=["rgb", "mask"], output_names=["scene_codes"],
                       opset_version=17, dynamo=False)
-    m = onnx.load(enc_path, load_external_data=True)
-    for f in os.listdir(a.out):
-        if f.startswith("sf3d_encoder") and f != "sf3d_encoder.onnx":
-            os.remove(os.path.join(a.out, f))
-    onnx.save_model(m, enc_path, save_as_external_data=True, all_tensors_to_one_file=True,
-                    location="sf3d_encoder.onnx.data", size_threshold=1024)
-    del m
+    stage("encoder exported")
     field_path = os.path.join(a.out, "sf3d_field.onnx")
     torch.onnx.export(field, (scene_ref[0], pts), field_path, input_names=["scene_code", "positions"], output_names=heads,
                       dynamic_axes={"positions": {0: "n"}, **{h: {0: "n"} for h in heads}}, opset_version=17, dynamo=False)
@@ -139,6 +140,7 @@ def main():
     radius, iso_res, iso_thr, bg = cfg.radius, cfg.isosurface_resolution, cfg.isosurface_threshold, list(cfg.background_color)
     del enc, field, model, tets, mesh
     import gc; gc.collect()
+    stage("pytorch freed")
 
     so = ort.SessionOptions()
     so.enable_cpu_mem_arena = False
@@ -153,6 +155,7 @@ def main():
     s_f = ort.InferenceSession(field_path, so, providers=["CPUExecutionProvider"])
     f_onnx = s_f.run(None, {"scene_code": scene_np[0], "positions": pts_np})
     field_rel = max(float(np.abs(o - r).max() / (np.abs(r).max() + 1e-6)) for o, r in zip(f_onnx, f_ref))
+    stage(f"verified enc {enc_rel:.2e} field {field_rel:.2e}")
     print(f"encoder rel err {enc_rel:.2e}, field rel err {field_rel:.2e}", flush=True)
     assert enc_rel < 1e-3 and field_rel < 1e-3, "ONNX export does not match PyTorch"
 
@@ -162,7 +165,7 @@ def main():
     rgb_np.tofile(os.path.join(a.out, "reference", "rgb.f32"))
     mask_np.tofile(os.path.join(a.out, "reference", "mask.f32"))
 
-    files = ["sf3d_encoder.onnx", "sf3d_encoder.onnx.data", "sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
+    files = [f for f in sorted(os.listdir(a.out)) if f.startswith("sf3d_encoder")] + ["sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
     info = {
         "version": 1, "encoder_inputs": enc_inputs, "cond_image_size": S, "radius": radius, "isosurface_resolution": iso_res,
         "isosurface_threshold": iso_thr, "background_color": bg, "points_range": points_range, "bbox": bbox, "decoder_heads": heads, "estimator_outputs": est_names,

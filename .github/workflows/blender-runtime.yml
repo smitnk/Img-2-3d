@@ -96,32 +96,52 @@ jobs:
           mkdir -p android && cd android
           base=https://packages.termux.dev/apt/termux-main
           curl -fsSL "$base/dists/stable/main/binary-aarch64/Packages" -o Packages
-          for p in proot libtalloc; do
-            f=$(awk -v p="$p" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2}' Packages | tail -n1)
-            echo "$p -> $f" | tee -a ../run.log
-            curl -fsSL "$base/$f" -o "$p.deb"
-            mkdir "x_$p" && dpkg-deb -x "$p.deb" "x_$p"
-          done
-          find . -type f \( -name proot -o -name loader -o -name 'libtalloc.so*' \) | tee -a ../run.log
+          fetch() {  # termux package name -> extracted under x_<name>
+            f=$(awk -v p="$1" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2}' Packages | tail -n1)
+            [ -n "$f" ] || { echo "no termux package $1"; exit 1; }
+            echo "$1 -> $f" | tee -a ../run.log
+            curl -fsSL "$base/$f" -o "$1.deb" && mkdir -p "x_$1" && dpkg-deb -x "$1.deb" "x_$1"
+          }
+          fetch proot
           cp x_proot/data/data/com.termux/files/usr/bin/proot ./proot
           cp x_proot/data/data/com.termux/files/usr/libexec/proot/loader ./proot-loader
-          cp -L "$(ls x_libtalloc/data/data/com.termux/files/usr/lib/libtalloc.so.2* | head -n1)" ./libtalloc.so.2
-          file proot proot-loader libtalloc.so.2 | tee -a ../run.log
+          # Ship the full NEEDED closure: every non-system library proot (and its libs) links against.
+          SYSTEM="libc.so libm.so libdl.so liblog.so libz.so libandroid.so"
+          todo="proot"
+          while [ -n "$todo" ]; do
+            next=""
+            for bin in $todo; do
+              for so in $(readelf -d "$bin" | awk '/NEEDED/{gsub(/[\[\]]/,"",$5); print $5}'); do
+                case " $SYSTEM " in *" $so "*) continue;; esac
+                [ -f "$so" ] && continue
+                pkg="${so%%.so*}"
+                [ -d "x_$pkg" ] || fetch "$pkg"
+                src=$(find "x_$pkg" -name "$so*" \( -type f -o -type l \) | head -n1)
+                [ -n "$src" ] || { echo "cannot find $so in $pkg"; exit 1; }
+                cp -L "$src" "./$so"
+                next="$next $so"
+              done
+            done
+            todo="$next"
+          done
+          ls -la | tee -a ../run.log
+          for f in proot proot-loader lib*.so*; do echo "== $f"; readelf -d "$f" | grep NEEDED || true; done | tee -a ../run.log
       - name: Package runtime
         run: |
           rm -rf rootfs/tmp/out
           sudo tar -C rootfs --numeric-owner -czf blender-runtime-arm64.tar.gz .
-          ls -la blender-runtime-arm64.tar.gz android/proot android/proot-loader android/libtalloc.so.2 | tee -a run.log
+          ls -la blender-runtime-arm64.tar.gz android | tee -a run.log
           python - <<'PY'
           import hashlib, json, os
-          files = {"blender-runtime-arm64.tar.gz": "blender-runtime-arm64.tar.gz", "proot": "android/proot",
-                   "proot-loader": "android/proot-loader", "libtalloc.so.2": "android/libtalloc.so.2"}
+          import glob
+          files = {"blender-runtime-arm64.tar.gz": "blender-runtime-arm64.tar.gz", "proot": "android/proot", "proot-loader": "android/proot-loader"}
+          files.update({os.path.basename(p): p for p in glob.glob("android/lib*.so*")})
           def sha(p):
               h = hashlib.sha256()
               with open(p, "rb") as f:
                   for b in iter(lambda: f.read(1 << 20), b""): h.update(b)
               return h.hexdigest()
-          info = {"version": 1, "blender": "4.2.3", "forge_commit": open("tools/blender-runtime/forge/FORGE_COMMIT").read().strip(),
+          info = {"version": 2, "blender": "4.2.3", "forge_commit": open("tools/blender-runtime/forge/FORGE_COMMIT").read().strip(),
                   "files": {k: {"bytes": os.path.getsize(v), "sha256": sha(v)} for k, v in files.items()}}
           json.dump(info, open("runtime_info.json", "w"), indent=2)
           print(json.dumps(info, indent=2))
@@ -137,7 +157,7 @@ jobs:
           gh release view blender-runtime-v1 >/dev/null 2>&1 || gh release create blender-runtime-v1 --title "Blender 4.2.3 ARM64 runtime v1" \
             --notes "Headless Blender 4.2.3 LTS for linux-aarch64 in an Ubuntu 24.04 userland, plus Termux proot for Android. Used by the Img-2-3D Forge app (System A)."
           gh release upload blender-runtime-v1 --clobber runtime_info.json blender-runtime-arm64.tar.gz \
-            android/proot android/proot-loader android/libtalloc.so.2
+            android/proot android/proot-loader android/lib*.so*
       - name: Push run log to ci-logs branch
         if: always()
         run: |

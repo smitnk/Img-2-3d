@@ -1,0 +1,65 @@
+name: Blender scripts (builder / refine / custom) on ARM64
+
+# Runs the app's Blender scripts (app/src/main/assets/blender) inside the published blender-runtime-v1
+# userland on an ARM64 runner and validates every GLB.
+on:
+  push:
+    paths: ["app/src/main/assets/blender/**", ".github/workflows/blender-scripts.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  scripts:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack published runtime
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
+          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
+          sudo mkdir -p rootfs/opt/app && sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
+          sudo mount -t proc proc rootfs/proc
+      - name: Run scripts
+        run: |
+          set -o pipefail
+          B() { sudo chroot rootfs /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
+          run() { name=$1; shift; start=$(date +%s)
+            if B "$@" > "log_$name.txt" 2>&1; then echo "$name OK $(( $(date +%s) - start ))s $(tail -n 1 log_$name.txt)"; else echo "$name FAILED"; tail -n 30 "log_$name.txt"; fi; }
+          {
+          run builder_default character_builder.py -- --out /tmp/o/b1
+          run builder_variant character_builder.py -- --out /tmp/o/b2 --name "Spike Cat" --hair spiky --top hoodie --bottom pants \
+            --shoes boots --eyes anime --ears animal --tail cat --accessory glasses --head 1.4 --leg-length 0.8 --smooth 2
+          run builder_variant2 character_builder.py -- --out /tmp/o/b3 --name "Big Lizard" --hair long --top tank --bottom skirt \
+            --shoes none --eyes round --mouth open --ears pointy --tail lizard --accessory cape --belly 1.6 --body-width 1.4 --height 1.8
+          run builder_crown character_builder.py -- --out /tmp/o/b4 --hair bun --top jacket --accessory crown --mouth flat --no-rig --smooth 0
+          run custom_robot run_custom.py -- --script /opt/app/examples/robot.py --out /tmp/o/c1 --name Robot
+          run refine_lizard refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r1 --height 1.6
+          run refine_rig refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r2 --decimate 0.3 --rig
+          } 2>&1 | tee results.txt
+      - name: Validate GLBs
+        run: |
+          pip install -q trimesh
+          sudo chmod -R a+r rootfs/tmp/o
+          python - <<'PY' | tee -a results.txt
+          import glob, trimesh
+          files = sorted(glob.glob("rootfs/tmp/o/*/*.glb"))
+          assert len(files) == 7, files
+          for f in files:
+              s = trimesh.load(f)
+              n = sum(len(g.faces) for g in s.geometry.values())
+              print(f.split("/o/")[1], "meshes", len(s.geometry), "faces", n, "extents", s.extents.round(3))
+              assert n > 300
+          PY
+          mkdir glbs && cp rootfs/tmp/o/*/*.glb glbs/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: script-glbs, path: glbs/ }
+      - name: Push results to ci-logs branch
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          cat "$GITHUB_WORKSPACE/results.txt" > log.txt 2>/dev/null || echo "no results" > log.txt
+          git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "scripts log $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

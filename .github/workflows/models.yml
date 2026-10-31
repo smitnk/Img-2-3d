@@ -1,0 +1,82 @@
+name: Export TripoSR to ONNX and verify
+
+# Converts the original stabilityai/TripoSR weights with the original VAST-AI-Research/TripoSR code,
+# checks the ONNX graphs against PyTorch, runs the app's Java pipeline end-to-end against the
+# PyTorch reference mesh, and publishes the model files to the models-v1 release the app downloads.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to the models-v1 release
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" && df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - name: Fetch original TripoSR source
+        run: git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR /tmp/TripoSR
+      - name: Install TripoSR dependencies (CPU)
+        run: |
+          pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install "numpy<2" omegaconf==2.3.0 einops==0.7.0 transformers==4.35.0 trimesh==4.0.5 \
+            huggingface-hub "rembg==2.0.59" onnx==1.17.0 onnxruntime==1.20.0 Pillow scikit-build cmake ninja
+          pip install --no-build-isolation git+https://github.com/tatsy/torchmcubes.git
+      - name: Download rembg u2net
+        run: |
+          mkdir -p ~/.u2net
+          curl -L -o ~/.u2net/u2net.onnx https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx
+      - name: Export + verify ONNX against PyTorch
+        run: python tools/export/export_onnx.py --triposr /tmp/TripoSR --out models --u2net ~/.u2net/u2net.onnx --sample tools/export/chair.png
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - name: Build Java pipeline runner
+        run: gradle :core:test :cli:installDist
+      - name: "E2E 1: app pipeline on reference tensor vs original TripoSR mesh (strict)"
+        run: |
+          cli/build/install/cli/bin/cli models models/reference/image_512.f32 out_ref.glb 128 models/reference/mesh_128.obj 0.004 | tee e2e_strict.txt
+      - name: "E2E 2: full app pipeline from PNG (Java preprocessing + u2net) vs reference"
+        run: |
+          /usr/bin/time -v cli/build/install/cli/bin/cli models tools/export/chair.png out_png.glb 128 models/reference/mesh_128.obj 0.03 2> time.txt | tee e2e_png.txt
+          grep -E "Maximum resident|Elapsed" time.txt | tee -a e2e_png.txt
+          cli/build/install/cli/bin/cli models tools/export/chair.png out_png_256.glb 256 | tee -a e2e_png.txt
+      - name: Validate GLB files
+        run: |
+          python - <<'PY'
+          import trimesh
+          for f in ["out_ref.glb", "out_png.glb", "out_png_256.glb"]:
+              m = trimesh.load(f, force="mesh")
+              print(f, "verts", len(m.vertices), "faces", len(m.faces), "watertight", m.is_watertight, "extents", m.extents.round(3))
+              assert len(m.faces) > 5000
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verification
+          path: |
+            models/model_info.json
+            models/reference/preprocessed.png
+            models/reference/mesh_128.obj
+            out_ref.glb
+            out_png.glb
+            out_png_256.glb
+            e2e_*.txt
+      - name: Publish models-v1 release
+        if: inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view models-v1 >/dev/null 2>&1 || gh release create models-v1 --title "TripoSR ONNX models v1" \
+            --notes "Original stabilityai/TripoSR weights exported to ONNX (tools/export/export_onnx.py) + rembg u2net. Verification numbers in model_info.json."
+          gh release upload models-v1 --clobber models/model_info.json models/triposr_encoder.onnx \
+            models/triposr_encoder.onnx.data models/triposr_field.onnx models/u2net.onnx

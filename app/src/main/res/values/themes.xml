@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Img23D" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0F172A</item>
+        <item name="android:statusBarColor">#0F172A</item>
+        <item name="android:navigationBarColor">#0F172A</item>
+    </style>
+</resources>

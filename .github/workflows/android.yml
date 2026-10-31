@@ -1,0 +1,28 @@
+name: Android build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - name: Core unit tests (marching cubes, GLB, preprocessing)
+        run: gradle :core:test --stacktrace
+      - name: Build APKs
+        run: gradle :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest :cli:installDist --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: img-2-3d-apk
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk

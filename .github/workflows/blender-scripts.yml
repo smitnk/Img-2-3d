@@ -29,9 +29,9 @@ jobs:
             if B "$@" > "log_$name.txt" 2>&1; then echo "$name OK $(( $(date +%s) - start ))s $(tail -n 1 log_$name.txt)"; else echo "$name FAILED"; tail -n 30 "log_$name.txt"; fi; }
           {
           run builder_default character_builder.py -- --out /tmp/o/b1
-          run builder_variant character_builder.py -- --out /tmp/o/b2 --name "Spike Cat" --hair spiky --top hoodie --bottom pants \
+          run builder_variant character_builder.py -- --out /tmp/o/b2 --name SpikeCat --hair spiky --top hoodie --bottom pants \
             --shoes boots --eyes anime --ears animal --tail cat --accessory glasses --head 1.4 --leg-length 0.8 --smooth 2
-          run builder_variant2 character_builder.py -- --out /tmp/o/b3 --name "Big Lizard" --hair long --top tank --bottom skirt \
+          run builder_variant2 character_builder.py -- --out /tmp/o/b3 --name BigLizard --hair long --top tank --bottom skirt \
             --shoes none --eyes round --mouth open --ears pointy --tail lizard --accessory cape --belly 1.6 --body-width 1.4 --height 1.8
           run builder_crown character_builder.py -- --out /tmp/o/b4 --hair bun --top jacket --accessory crown --mouth flat --no-rig --smooth 0
           run custom_robot run_custom.py -- --script /opt/app/examples/robot.py --out /tmp/o/c1 --name Robot

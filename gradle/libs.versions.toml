@@ -12,6 +12,7 @@ espresso = "3.6.1"
 uiautomator = "2.3.0"
 
 [libraries]
+commons-compress = { module = "org.apache.commons:commons-compress", version = "1.27.1" }
 onnxruntime-jvm = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
 onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -32,5 +33,6 @@ androidx-test-ext = { module = "androidx.test.ext:junit", version = "1.2.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

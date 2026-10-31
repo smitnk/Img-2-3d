@@ -1,0 +1,8 @@
+<resources>
+    <color name="ic_bg">#140F24</color>
+    <style name="Theme.Forge" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#140F24</item>
+        <item name="android:statusBarColor">#140F24</item>
+        <item name="android:navigationBarColor">#140F24</item>
+    </style>
+</resources>

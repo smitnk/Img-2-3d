@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":viewer"))
     implementation(libs.onnxruntime.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

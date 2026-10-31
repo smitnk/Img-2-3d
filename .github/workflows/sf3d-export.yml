@@ -51,7 +51,11 @@ jobs:
         run: |
           gh release view sf3d-v1 >/dev/null 2>&1 || gh release create sf3d-v1 --title "SF3D ONNX models v1" \
             --notes "Original stabilityai/stable-fast-3d exported to ONNX (tools/sf3d/export_sf3d.py). Stability AI Community License."
-          cd sf3d_models && gh release upload sf3d-v1 --clobber model_info.json sf3d_*.onnx* sf3d_tets.bin
+          cd sf3d_models
+          # GitHub release assets are capped at 2 GB: ship big files in 1.9 GB parts (the app concatenates them).
+          for f in sf3d_encoder.onnx.data sf3d_encoder_int8.onnx; do [ "$(stat -c%s $f)" -gt 1900000000 ] && split -b 1900000000 -d -a 1 "$f" "$f.part" && rm "$f"; done
+          ls -la
+          gh release upload sf3d-v1 --clobber model_info.json sf3d_encoder.onnx sf3d_encoder.onnx.data* sf3d_encoder_int8.onnx* sf3d_field.onnx sf3d_estimator.onnx sf3d_tets.bin
       - name: Push log to ci-logs branch
         if: always()
         run: |

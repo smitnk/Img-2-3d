@@ -142,6 +142,25 @@ def main():
     import gc; gc.collect()
     stage("pytorch freed")
 
+    # >2 GB models are exported as one file per tensor; merge into a single data file (loaded once, then freed).
+    m = onnx.load(enc_path, load_external_data=True)
+    stray = [f for f in os.listdir(a.out) if f not in ("sf3d_field.onnx", "sf3d_estimator.onnx", "reference", "sf3d_encoder.onnx")]
+    onnx.save_model(m, enc_path, save_as_external_data=True, all_tensors_to_one_file=True,
+                    location="sf3d_encoder.onnx.data", size_threshold=1024)
+    params = sum(int(np.prod(t.dims)) for t in m.graph.initializer)
+    del m; gc.collect()
+    for f in stray:
+        if f != "sf3d_encoder.onnx.data":
+            os.remove(os.path.join(a.out, f))
+    enc_bytes = os.path.getsize(os.path.join(a.out, "sf3d_encoder.onnx.data"))
+    stage(f"encoder merged: {params/1e6:.0f}M params, {enc_bytes/1e9:.2f} GB")
+
+    # Weight-only int8 candidate, so the app can pick it if fp32 does not fit in phone RAM. Accuracy measured below.
+    from onnxruntime.quantization import QuantType, quantize_dynamic
+    q_path = os.path.join(a.out, "sf3d_encoder_int8.onnx")
+    quantize_dynamic(enc_path, q_path, weight_type=QuantType.QInt8, use_external_data_format=False)
+    stage(f"int8 encoder {os.path.getsize(q_path)/1e9:.2f} GB")
+
     so = ort.SessionOptions()
     so.enable_cpu_mem_arena = False
     s_enc = ort.InferenceSession(enc_path, so, providers=["CPUExecutionProvider"])
@@ -152,6 +171,12 @@ def main():
     enc_rel = float(np.abs(scene_onnx - scene_np).max() / np.abs(scene_np).max())
     enc_inputs = [i.name for i in s_enc.get_inputs()]
     del s_enc, scene_onnx; gc.collect()
+    s_q = ort.InferenceSession(q_path, so, providers=["CPUExecutionProvider"])
+    scene_q = s_q.run(None, feed)[0]
+    int8_rel = float(np.abs(scene_q - scene_np).max() / np.abs(scene_np).max())
+    int8_mean = float(np.abs(scene_q - scene_np).mean() / np.abs(scene_np).mean())
+    del s_q, scene_q; gc.collect()
+    stage(f"int8 encoder rel err max {int8_rel:.3e} mean {int8_mean:.3e}")
     s_f = ort.InferenceSession(field_path, so, providers=["CPUExecutionProvider"])
     f_onnx = s_f.run(None, {"scene_code": scene_np[0], "positions": pts_np})
     field_rel = max(float(np.abs(o - r).max() / (np.abs(r).max() + 1e-6)) for o, r in zip(f_onnx, f_ref))
@@ -165,13 +190,13 @@ def main():
     rgb_np.tofile(os.path.join(a.out, "reference", "rgb.f32"))
     mask_np.tofile(os.path.join(a.out, "reference", "mask.f32"))
 
-    files = [f for f in sorted(os.listdir(a.out)) if f.startswith("sf3d_encoder")] + ["sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
+    files = ["sf3d_encoder.onnx", "sf3d_encoder.onnx.data", "sf3d_encoder_int8.onnx", "sf3d_field.onnx", "sf3d_tets.bin"] + (["sf3d_estimator.onnx"] if est_path else [])
     info = {
         "version": 1, "encoder_inputs": enc_inputs, "cond_image_size": S, "radius": radius, "isosurface_resolution": iso_res,
         "isosurface_threshold": iso_thr, "background_color": bg, "points_range": points_range, "bbox": bbox, "decoder_heads": heads, "estimator_outputs": est_names,
         "tets": {"vertices": list(tv.shape), "indices": list(ti.shape)}, "scene_shape": list(scene_np.shape[1:]),
         "files": {f: {"bytes": os.path.getsize(os.path.join(a.out, f)), "sha256": sha256(os.path.join(a.out, f))} for f in files},
-        "verification": {"encoder_rel_err": enc_rel, "field_rel_err": field_rel,
+        "encoder_params": params, "verification": {"encoder_rel_err": enc_rel, "int8_rel_err_max": int8_rel, "int8_rel_err_mean": int8_mean, "field_rel_err": field_rel,
                          "reference_vertices": ref_counts[0], "reference_faces": ref_counts[1]},
     }
     json.dump(info, open(os.path.join(a.out, "model_info.json"), "w"), indent=2)

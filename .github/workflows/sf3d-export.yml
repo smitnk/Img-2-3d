@@ -1,0 +1,57 @@
+name: SF3D - export to ONNX and verify
+
+# Needs repository secret HF_TOKEN from a HuggingFace account that accepted the
+# stabilityai/stable-fast-3d license (gated weights).
+on:
+  workflow_dispatch:
+    inputs:
+      publish: { type: boolean, default: false }
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require HF token
+        run: '[ -n "$HF_TOKEN" ] || { echo "Add repository secret HF_TOKEN (HuggingFace token with access to stabilityai/stable-fast-3d)"; exit 1; }'
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - name: Original SF3D + dependencies (CPU)
+        run: |
+          git clone --depth 1 https://github.com/Stability-AI/stable-fast-3d /tmp/sf3d
+          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install "numpy<2" einops==0.7.0 jaxtyping==0.2.31 omegaconf==2.3.0 transformers==4.42.3 open_clip_torch==2.24.0 \
+            trimesh==4.4.1 huggingface-hub==0.23.4 rembg==2.0.57 onnxruntime==1.20.0 onnx==1.17.0 Pillow setuptools wheel
+          pip install --no-build-isolation /tmp/sf3d/texture_baker /tmp/sf3d/uv_unwrapper
+      - name: Export + verify
+        run: |
+          set -o pipefail
+          python tools/sf3d/export_sf3d.py --sf3d /tmp/sf3d --out sf3d_models --sample tools/export/chair.png 2>&1 | grep -v Downloading | tee export.log
+          ls -la sf3d_models sf3d_models/reference | tee -a export.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sf3d-reference
+          path: |
+            sf3d_models/model_info.json
+            sf3d_models/reference/
+      - name: Publish sf3d-v1
+        if: inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view sf3d-v1 >/dev/null 2>&1 || gh release create sf3d-v1 --title "SF3D ONNX models v1" \
+            --notes "Original stabilityai/stable-fast-3d exported to ONNX (tools/sf3d/export_sf3d.py). Stability AI Community License."
+          cd sf3d_models && gh release upload sf3d-v1 --clobber model_info.json sf3d_*.onnx sf3d_encoder.onnx.data sf3d_tets.bin
+      - name: Push log to ci-logs branch
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          tail -n 120 "$GITHUB_WORKSPACE/export.log" > log.txt 2>/dev/null || echo "no log" > log.txt
+          git add log.txt && git -c user.name=ci -c user.email=ci@local commit -qm "sf3d log $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

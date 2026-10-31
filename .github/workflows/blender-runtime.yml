@@ -47,23 +47,42 @@ jobs:
           cid=$(docker create blender-runtime)
           mkdir rootfs && docker export "$cid" | sudo tar -x -C rootfs
           sudo du -sh rootfs | tee -a run.log
-      - name: Run every generator through proot (same mechanism as the phone)
+      - name: Run every generator natively (container)
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq proot
           set -o pipefail
           for t in chibi_humanoid clay_chibi snow_buddy round_buddy gorilla lizard_warrior lizard_refined; do
-            start=$(date +%s.%N)
-            /usr/bin/time -f "$t maxRSS_KB=%M" proot -R rootfs -w /opt/forge /opt/blender/blender -b --factory-startup \
-              --python-exit-code 1 --python scripts/generate_model.py -- --model-type $t --out /tmp/out/$t 2>&1 | tail -n 4 | tee -a run.log
-            echo "$t seconds=$(echo "$(date +%s.%N) - $start" | bc)" | tee -a run.log
-            ls -la rootfs/tmp/out/$t/*.glb | tee -a run.log
+            start=$(date +%s)
+            docker run --rm -v "$PWD/out:/out" -w /opt/forge blender-runtime /opt/blender/blender -b --factory-startup \
+              --python-exit-code 1 --python scripts/generate_model.py -- --model-type $t --out /out/$t > gen_$t.log 2>&1 \
+              && echo "$t OK native seconds=$(( $(date +%s) - start ))" | tee -a run.log \
+              || { echo "$t FAILED native" | tee -a run.log; tail -n 25 gen_$t.log | tee -a run.log; }
           done
+      - name: Build Termux proot fork for glibc (same source as the phone's binary)
+        run: |
+          sudo apt-get install -y -qq libtalloc-dev uthash-dev libarchive-dev
+          git clone --depth 1 https://github.com/termux/proot /tmp/proot
+          make -C /tmp/proot/src -j4 proot loader 2>&1 | tail -n 3
+          sudo cp /tmp/proot/src/proot /usr/local/bin/proot-termux
+      - name: Run every generator through proot (same mechanism as the phone)
+        run: |
+          export PROOT_LOADER=/tmp/proot/src/loader/loader
+          proot-termux -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys /bin/ls /opt 2>&1 | tee -a run.log
+          proot-termux -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys /opt/blender/blender -b --factory-startup --version 2>&1 | head -n 2 | tee -a run.log
+          for t in chibi_humanoid clay_chibi snow_buddy round_buddy gorilla lizard_warrior lizard_refined; do
+            start=$(date +%s)
+            /usr/bin/time -f "$t maxRSS_KB=%M" proot-termux --kill-on-exit -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys -w /opt/forge \
+              /opt/blender/blender -b --factory-startup --python-exit-code 1 --python scripts/generate_model.py -- --model-type $t --out /tmp/out/$t \
+              > proot_$t.log 2>&1 && echo "$t OK proot seconds=$(( $(date +%s) - start ))" | tee -a run.log \
+              || { echo "$t FAILED proot"; tail -n 25 proot_$t.log; } | tee -a run.log
+            tail -n 1 proot_$t.log | tee -a run.log
+          done
+          ls -la rootfs/tmp/out/*/*.glb | tee -a run.log
       - name: Validate GLBs
         run: |
           pip install -q trimesh
           python - <<'PY' | tee -a run.log
           import glob, trimesh
-          for f in sorted(glob.glob("rootfs/tmp/out/*/*.glb")):
+          for f in sorted(glob.glob("rootfs/tmp/out/*/*.glb")) or sorted(glob.glob("out/*/*.glb")):
               s = trimesh.load(f)
               n = sum(len(g.faces) for g in s.geometry.values())
               print(f.split("/")[-1], "meshes", len(s.geometry), "faces", n, "extents", s.extents.round(3))

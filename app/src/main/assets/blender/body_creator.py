@@ -299,7 +299,8 @@ def main():
             "height_m": round(float(v[:, 2].max()), 3), "extras": sorted(o.name for o in extras),
             "spec_extras": sorted([f"{k}_{spec[k]}" for k in ("hair", "eyebrows", "eyelashes") if spec.get(k)]
                                   + [f"clothes_{c}" for c in clothes]),
-            "layered": True,  # hair/brows/garments are separate shells by design (see postprocess.py) "rig": rig_info, "files": {"glb": glb}, "spec": spec}
+            "layered": True,  # hair/brows/garments are separate shells by design (see postprocess.py)
+            "rig": rig_info, "files": {"glb": glb}, "spec": spec}
     json.dump(info, open(os.path.join(a.out, "generation.json"), "w"), indent=2)
     print("BODY", json.dumps({k: info[k] for k in ("triangles", "height_m", "rig")}))
 

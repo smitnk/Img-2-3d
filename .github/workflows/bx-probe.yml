@@ -1,0 +1,31 @@
+name: Probe scenario-labs Blender skills on runtime
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  probe:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Runtime + skills
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
+          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
+          git clone -q --depth 1 https://github.com/scenario-labs/skills /tmp/scen
+          sudo cp -r /tmp/scen rootfs/opt/scen
+          sudo cp tools/bx-probe/probe.py rootfs/opt/probe.py
+          sudo mount -t proc proc rootfs/proc
+          # a real character from our builder as the test asset
+          sudo mkdir -p rootfs/opt/app && sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
+          sudo chroot rootfs /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python character_builder.py -- --out /tmp/b >/dev/null 2>&1; cp /tmp/b/*.glb /opt/test.glb"
+      - name: Probe
+        run: |
+          sudo chroot rootfs env EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe HOME=/root XDG_CACHE_HOME=/tmp/.cache \
+            /opt/blender/blender -b --factory-startup --python /opt/probe.py > probe.log 2>&1 || true
+          grep BXPROBE probe.log | tee log.txt
+          ls rootfs/tmp/rev 2>/dev/null | tee -a log.txt
+      - name: Push
+        if: always()
+        run: |
+          mkdir /tmp/l && cp log.txt /tmp/l/ 2>/dev/null; cd /tmp/l && git init -q -b ci-logs && touch log.txt && git add -A && git -c user.name=ci -c user.email=ci@l commit -qm "bx probe"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

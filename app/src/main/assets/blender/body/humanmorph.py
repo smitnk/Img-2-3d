@@ -96,7 +96,7 @@ class Pack:
 
     def fit_proxy(self, v, refs, w, off, scale):
         """MakeHuman proxy fitting (shared/proxy.py): barycentric refs + offset scaled by the body's own size."""
-        s = np.array([abs(v[int(a), k] - v[int(b), k]) / d for k, (a, b, d) in enumerate(scale)])
+        s = np.array([1.0 if np.isnan(d) else abs(v[int(a), k] - v[int(b), k]) / d for k, (a, b, d) in enumerate(scale)])
         return (v[refs] * w[..., None]).sum(1) + off * s
 
 

@@ -1,3 +1,4 @@
 {"name": "Woman", "macros": {"gender": 0, "age": 0.4, "weight": 0.45, "asian": 0.8, "african": 0.1, "caucasian": 0.1},
  "sliders": {"nose/nose-scale-horiz-decr|incr": -0.3, "mouth/mouth-upperlip-volume-decr|incr": 0.4, "eyes/l-eye-scale-decr|incr": 0.3, "eyes/r-eye-scale-decr|incr": 0.3},
- "skin": "#E2B89C", "rig": true}
+ "skin": "#E2B89C", "skin_mode": "realistic", "eyes": "green", "hair": "long01", "hair_color": "#1B1410", "eyebrows": "eyebrow010",
+ "eyelashes": "eyelashes02", "clothes": ["female_casualsuit01", "shoes02"], "rig": true}

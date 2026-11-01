@@ -97,10 +97,11 @@ def build_skeleton(skel, hm, ground):
     return rig
 
 
-def material(name, color, roughness=0.5, sss=0.0, image=None):
+def material(name, color, roughness=0.5, sss=0.0, image=None, alpha=False, tint=None):
     m = bpy.data.materials.new(name)
     m.use_nodes = True
-    b = m.node_tree.nodes["Principled BSDF"]
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
     b.inputs["Base Color"].default_value = color
     b.inputs["Roughness"].default_value = roughness
     if sss and "Subsurface Weight" in b.inputs:
@@ -108,11 +109,40 @@ def material(name, color, roughness=0.5, sss=0.0, image=None):
         b.inputs["Subsurface Radius"].default_value = (1.0, 0.35, 0.2)
         b.inputs["Subsurface Scale"].default_value = 0.01
     if image:
-        tex = m.node_tree.nodes.new("ShaderNodeTexImage")
-        tex.image = bpy.data.images.load(image)
-        tex.image.pack()
-        m.node_tree.links.new(tex.outputs["Color"], b.inputs["Base Color"])
+        tex = nt.nodes.new("ShaderNodeTexImage")
+        img = bpy.data.images.load(image)
+        if tint:  # hair/brow colour baked into the pixels (glTF has no multiply node); tint is linear, the PNG sRGB
+            px = np.array(img.pixels[:], np.float32).reshape(-1, 4)
+            px[:, :3] *= np.array(tint[:3]) ** (1 / 2.2) * 1.6
+            img = bpy.data.images.new(name + "_tinted", img.size[0], img.size[1], alpha=True)
+            img.pixels.foreach_set(np.clip(px, 0, 1).ravel())
+        img.pack()
+        tex.image = img
+        nt.links.new(tex.outputs["Color"], b.inputs["Base Color"])
+        if alpha:
+            nt.links.new(tex.outputs["Alpha"], b.inputs["Alpha"])
+            if hasattr(m, "blend_method"):
+                m.blend_method = "HASHED"
     return m
+
+
+def proxy_object(pack, assets, kind, name, hm, ground, dense_w, bones, out_dir, tint=None):
+    """A MakeHuman proxy (hair, brows, lashes, garment) fitted to this body, textured, and weighted like the body under it."""
+    key = f"{kind}.{name}."
+    refs, w = assets[key + "refs"], assets[key + "w"]
+    pv = to_blender(pack.fit_proxy(hm, refs, w, assets[key + "off"], assets[key + "scale"]))
+    pv[:, 2] -= ground
+    o = mesh_object(f"{kind}_{name}", pv, assets[key + "faces"], assets[key + "uvs"], assets[key + "uvf"])
+    pw = (dense_w[refs] * w[..., None]).sum(1)  # barycentric blend of the base vertices' bone weights
+    for j in np.nonzero(pw.max(0) > 1e-3)[0]:
+        vg = o.vertex_groups.new(name=bones[j])
+        for i in np.nonzero(pw[:, j] > 1e-3)[0].tolist():
+            vg.add([i], float(pw[i, j]), "REPLACE")
+    meta = next((a for a in json.load(open(os.path.join(out_dir, "assets.json")))[kind] if a["name"] == name), {})
+    tex = os.path.join(out_dir, meta["tex"]) if meta.get("tex") else None
+    o.data.materials.append(material(f"{kind}_{name}", tuple(meta.get("color", [0.8] * 3)) + (1.0,), 0.6, image=tex,
+                                     alpha=meta.get("alpha", False), tint=tint))
+    return o
 
 
 def main():
@@ -137,8 +167,31 @@ def main():
     wj = json.load(open(os.path.join(a.pack, "weights.json")))
     groups = {bone: (np.array([p[0] for p in vw], np.int64), np.array([p[1] for p in vw], np.float64)) for bone, vw in wj.items()}
 
-    skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.55, sss=0.15)
-    body = mesh_object(spec.get("name", "Body"), v, z["f_body"], z["uvs"], z["uvf_body"], groups)
+    have_assets = os.path.isfile(os.path.join(a.pack, "assets.npz"))
+    assets = np.load(os.path.join(a.pack, "assets.npz")) if have_assets else None
+    catalog = json.load(open(os.path.join(a.pack, "assets.json"))) if have_assets else {}
+    clothes = [c for c in spec.get("clothes", []) if have_assets and f"clothes.{c}.refs" in assets]
+    hidden = set()
+    for c in clothes:  # garments hide the skin under them (no poke-through)
+        hidden.update(assets[f"clothes.{c}.delete"].tolist())
+    fb, uvb = z["f_body"], z["uvf_body"]
+    if hidden:
+        keep = ~np.isin(fb, np.fromiter(hidden, np.int64)).any(1)
+        fb, uvb = fb[keep], uvb[keep]
+
+    def tex_of(kind, name):
+        meta = next((x for x in catalog.get(kind, []) if x["name"] == name), None)
+        return os.path.join(a.pack, meta["tex"]) if meta and meta.get("tex") else None
+
+    skin_tex = None
+    if spec.get("skin_mode") == "realistic":  # MakeHuman skin matched to age / heritage / gender
+        mac = humanmorph.macro_values(spec.get("macros"))
+        age = "young" if mac["young"] >= max(mac["old"], 0.4) else "old" if mac["old"] > 0.5 else "middleage"
+        eth = max(("african", "asian", "caucasian"), key=lambda e: mac[e])
+        sex = "male" if mac["male"] >= 0.5 else "female"
+        skin_tex = tex_of("skins", f"{age}_{eth}_{sex}")
+    skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.55, sss=0.15, image=skin_tex)
+    body = mesh_object(spec.get("name", "Body"), v, fb, z["uvs"], uvb, groups)
     body.data.materials.append(skin)
     subdiv = int(spec.get("subdiv", 1))
     if subdiv > 0:  # the evaluated subdivision interpolates the vertex groups along with the shape
@@ -181,7 +234,7 @@ def main():
             outer = max(shells, key=lambda m: np.linalg.norm(ev[m] - c, axis=1).mean())
             ev[outer] = c + (ev[outer] - c) * 1.004
     eyes = mesh_object("Eyes", ev, z["eye_faces"], z["eye_uvs"], z["eye_uvf"])
-    eye_png = os.path.join(a.pack, "eye.png")
+    eye_png = tex_of("eyes", spec.get("eyes", "")) or os.path.join(a.pack, "eye.png")
     eyes.data.materials.append(material("Eyes", (1, 1, 1, 1), 0.1, image=eye_png if os.path.isfile(eye_png) else None))
     # rigid per side to the eye bones (x > 0 is the character's left)
     left = [i for i, p in enumerate(eyes.data.vertices) if p.co.x > 0]
@@ -196,12 +249,26 @@ def main():
     bpy.context.view_layer.objects.active = body
     bpy.ops.object.join()
 
+    bones = list(skel["bones"])
+    dense_w = np.zeros((len(hm), len(bones)), np.float32)
+    for j, bn in enumerate(bones):
+        if bn in groups:
+            dense_w[groups[bn][0], j] = groups[bn][1]
+    extras = []
+    if have_assets:
+        hair_rgb = hex_rgb(spec.get("hair_color"), "#3B2A20")
+        for kind, name, tint in (("hair", spec.get("hair"), hair_rgb), ("eyebrows", spec.get("eyebrows"), hair_rgb),
+                                 ("eyelashes", spec.get("eyelashes"), hex_rgb("#1A1410", ""))) + tuple(("clothes", c, None) for c in clothes):
+            if name and f"{kind}.{name}.refs" in assets:
+                extras.append(proxy_object(pack, assets, kind, name, hm, ground, dense_w, bones, a.pack, tint))
+
     rig_info = None
     if spec.get("rig", True):
         rig = build_skeleton(skel, hm, ground)
-        body.parent = rig
-        mod = body.modifiers.new("Armature", "ARMATURE")
-        mod.object = rig
+        for o in [body] + extras:
+            o.parent = rig
+            mod = o.modifiers.new("Armature", "ARMATURE")
+            mod.object = rig
         empty = [vg.name for vg in body.vertex_groups if vg.name not in rig.data.bones]
         rig_info = {"bones": len(rig.data.bones), "skinning": "MakeHuman weights (CC0)", "unmatched_groups": empty[:5]}
         # Deformation self-check: raise the left upper arm 60 deg; the left hand must move, the right must not.
@@ -223,10 +290,12 @@ def main():
 
     slug = "".join(c if c.isalnum() else "_" for c in spec.get("name", "body")).strip("_").lower() or "body"
     glb = vcbake.export_glb(os.path.join(a.out, f"{slug}.glb"))
-    tris = sum(len(p.vertices) - 2 for p in body.data.polygons)
+    tris = sum(len(p.vertices) - 2 for o in [body] + extras for p in o.data.polygons)
     info = {"generator": "body_creator", "name": spec.get("name", "Body"), "triangles": tris,
             "vertices": len(body.data.vertices),
-            "height_m": round(float(v[:, 2].max()), 3), "rig": rig_info, "files": {"glb": glb}, "spec": spec}
+            "height_m": round(float(v[:, 2].max()), 3), "extras": sorted(o.name for o in extras),
+            "spec_extras": sorted(f"{k}_{spec[k]}" for k in ("hair", "eyebrows", "eyelashes") if spec.get(k))
+            + sorted(f"clothes_{c}" for c in spec.get("clothes", [])), "rig": rig_info, "files": {"glb": glb}, "spec": spec}
     json.dump(info, open(os.path.join(a.out, "generation.json"), "w"), indent=2)
     print("BODY", json.dumps({k: info[k] for k in ("triangles", "height_m", "rig")}))
 

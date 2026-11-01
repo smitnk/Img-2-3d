@@ -22,11 +22,21 @@ jobs:
           git config core.sparseCheckout true
           printf "makehuman/data/3dobjs/\nmakehuman/data/targets/\nmakehuman/data/modifiers/\nmakehuman/data/eyes/\nmakehuman/data/rigs/\nLICENSE.ASSETS.md\n" > .git/info/sparse-checkout
           git fetch -q --depth 1 origin "$MH_COMMIT" && git checkout -q FETCH_HEAD
-      - run: pip install -q numpy
+      - name: MakeHuman system assets (CC0; slow server, cached)
+        uses: actions/cache@v4
+        with: { path: mh_assets.zip, key: mh-system-assets-cc0-v1 }
+      - name: Download system assets if not cached
+        run: |
+          [ -s mh_assets.zip ] || for u in https://files2.makehumancommunity.org https://files.makehumancommunity.org; do
+            curl -fsSL --retry 3 --connect-timeout 30 -o mh_assets.zip "$u/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip" && break
+          done
+          unzip -q mh_assets.zip -d mh_assets && ls mh_assets
+      - run: pip install -q numpy pillow
       - name: Build pack + morph self-check
         run: |
           python tools/bodypack/build_pack.py mh/makehuman/data bodypack
           cp mh/LICENSE.ASSETS.md bodypack/
+          python tools/bodypack/build_assets.py "$(dirname "$(find mh_assets -type d -name hair | head -1)")" bodypack
           python app/src/main/assets/blender/body/humanmorph.py bodypack
           ls -la bodypack
       - uses: actions/upload-artifact@v4
@@ -87,7 +97,7 @@ jobs:
               g = json.load(open(d + "generation.json")); q = json.load(open(d + "quality.json"))
               print(os.path.basename(d[:-1]), "tris", g["triangles"], "height", g["height_m"], "rig", g["rig"],
                     "quality", q["quality"] and q["quality"]["pass"], (q["quality"] or {}).get("errors"))
-              assert g["triangles"] > 20000 and 0.8 < g["height_m"] < 2.6 and g["rig"]["bones"] > 100
+              assert g["triangles"] > 20000 and 0.8 < g["height_m"] < 2.6 and g["rig"]["bones"] > 100 and g.get("extras") == g["spec_extras"], g.get("extras")
           PY
       - name: Push results + thumbnails to ci-logs
         if: always()

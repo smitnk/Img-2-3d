@@ -1,2 +1,3 @@
 {"name": "Uncle", "macros": {"gender": 1, "age": 0.85, "weight": 1.0, "muscle": 0.3, "height": 0.4},
- "sliders": {"head/head-fat-decr|incr": 0.6, "nose/nose-volume-decr|incr": 0.5}, "skin": "#8D5A3B", "rig": true}
+ "sliders": {"head/head-fat-decr|incr": 0.6, "nose/nose-volume-decr|incr": 0.5}, "skin": "#8D5A3B", "hair": "short04", "hair_color": "#9A9A9A",
+ "eyebrows": "eyebrow005", "clothes": ["male_worksuit01", "shoes03"], "rig": true}

@@ -1,3 +1,4 @@
 {"name": "Hero", "macros": {"gender": 1, "age": 0.45, "muscle": 0.9, "weight": 0.6, "height": 0.7},
  "sliders": {"torso/torso-vshape-decr|incr": 0.6, "chin/chin-width-decr|incr": 0.5, "chin/chin-prominent-decr|incr": 0.4},
- "skin": "#B07A5A", "rig": true}
+ "skin": "#B07A5A", "skin_mode": "realistic", "hair": "short02", "hair_color": "#2A1C14", "eyebrows": "eyebrow001",
+ "eyelashes": "eyelashes01", "clothes": ["male_casualsuit01", "shoes01"], "rig": true}

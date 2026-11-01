@@ -1,1 +1,2 @@
-{"name": "Kid", "macros": {"gender": 0.8, "age": 0.15}, "sliders": {"head/head-scale-vert-decr|incr": 0.3}, "skin": "#D9A27F", "rig": true}
+{"name": "Kid", "macros": {"gender": 0.8, "age": 0.15}, "sliders": {"head/head-scale-vert-decr|incr": 0.3}, "skin": "#D9A27F",
+ "hair": "bob01", "hair_color": "#6B3E1F", "eyebrows": "eyebrow002", "clothes": ["male_casualsuit03", "shoes04"], "rig": true}

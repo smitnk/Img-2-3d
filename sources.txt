@@ -1,0 +1,30 @@
+OK kenney_mini.zip 2403165 https://opengameart.org/sites/default/files/kenney_mini-characters.zip
+720 License.txt
+curl: (22) The requested URL returned error: 403
+FAIL kenney_mini_b.zip https://kenney.nl/media/pages/assets/mini-characters-1/kenney_mini-characters.zip
+curl: (22) The requested URL returned error: 404
+FAIL quaternius_uacp.zip https://opengameart.org/sites/default/files/Ultimate%20Animated%20Character%20Pack%20-%20Nov%202019.zip
+OK robot.glb 463988 https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb
+https://opengameart.org/sites/default/files/css/css_6NcQOcblGY28_iJd_khUiH7LvkXsK2NzkKjV006jQ5I.css
+https://opengameart.org/sites/default/files/css/css_ff3tJc71Z402cxcrQprs7GRkOQJuOqgs2LWeSWIHHR0.css
+https://opengameart.org/sites/default/files/css/css_tEtvFGhnOc-KHD4tmmzYBpkDNcsr2D2Ep4vHodgpeO0.css
+https://opengameart.org/sites/default/files/css/css_xE-rWrJf-fncB6ztZfd2huxqgxu4WO-qwma6Xer30m4.css
+https://opengameart.org/sites/default/files/js/js_7T81Hwzt120KbSULTQK6L6IlK5qwZAOYq1WfGNMcreE.js
+https://opengameart.org/sites/default/files/js/js_7ogYAP4kmkUPDhqIzRFfdtY7h1in9LBAd1txo2bdFkw.js
+https://opengameart.org/sites/default/files/js/js_OleKOf9_B3i8KMuL1Hw42y0CdgVBVJBkK2f0bnCIGKY.js
+https://opengameart.org/sites/default/files/js/js_WNcjX9C7AzUw-N1abXrdZLpLq71PtBe1dISODcGzqx8.js
+https://opengameart.org/sites/default/files/js/js_YD9ro0PAqY25gGWrTki6TjRUG8TdokmmxjfqpNNfzVU.js
+https://opengameart.org/sites/default/files/js/js_gHk2gWJ_Qw_jU2qRiUmSl7d8oly1Cx7lQFrqcp3RXcI.js
+https://opengameart.org/sites/default/files/kenney_mini-characters.zip
+https://opengameart.org/sites/default/files/license_images/cc0.png' alt='' title=''><div class='license-name'>CC0</div></a></div></div></div></div><div class=
+https://opengameart.org/sites/default/files/preview_1254.png
+https://opengameart.org/sites/default/files/styles/icon_48x48/public/pictures/picture-369-1722414218.png?itok=e1wo-i-X
+https://opengameart.org/sites/default/files/styles/icon_48x48/public/pictures/picture-90326-1738517948.png?itok=CiJ_BMJq
+https://opengameart.org/sites/default/files/styles/icon_64x64/public/comment_type_images/oga-icon-comment.png?itok=Yw-R2vKM
+https://opengameart.org/sites/default/files/styles/medium/public/preview_1254.png'  alt='Preview'></a></div></div></div><div class=
+href="/content/animated-lowpoly-robot"
+href="/content/faq"
+href="/content/flare-npcs-animated-pack-1"
+href="/content/low-poly-dude-0"
+href="/content/lowpoly-animated-knight"
+href="/content/october-2026-art-challenge-phobias"

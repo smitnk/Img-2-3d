@@ -12,7 +12,18 @@ import kotlin.math.sqrt
  * strided buffers, 8/16/32-bit indices) into one render-ready triangle soup in scene space.
  * Textures are not sampled: a primitive without COLOR_0 gets its material's baseColorFactor.
  */
-class GltfMesh(glb: ByteArray) {
+class GltfMesh(val positions: FloatArray, val normals: FloatArray, val colors: FloatArray, val indices: IntArray) {
+    constructor(glb: ByteArray) : this(GltfParser(glb))
+    private constructor(p: GltfParser) : this(p.positions, p.normals, p.colors, p.indices)
+
+    companion object {
+        /** Smooth-shaded mesh from shared vertices + triangles (e.g. a live morph preview), one colour. */
+        fun fromIndexed(pos: FloatArray, tris: IntArray, rgb: FloatArray) =
+            GltfMesh(pos, faceNormals(pos, tris), FloatArray(pos.size) { rgb[it % 3] }, tris)
+    }
+}
+
+private class GltfParser(glb: ByteArray) {
     val positions: FloatArray
     val normals: FloatArray
     val colors: FloatArray
@@ -168,18 +179,6 @@ class GltfMesh(glb: ByteArray) {
         }
     }
 
-    private fun faceNormals(pos: FloatArray, tri: IntArray): FloatArray {
-        val out = FloatArray(pos.size)
-        for (f in 0 until tri.size / 3) {
-            val a = tri[f * 3] * 3; val b = tri[f * 3 + 1] * 3; val c = tri[f * 3 + 2] * 3
-            if (maxOf(a, b, c) + 2 >= pos.size) continue
-            val ux = pos[b] - pos[a]; val uy = pos[b + 1] - pos[a + 1]; val uz = pos[b + 2] - pos[a + 2]
-            val vx = pos[c] - pos[a]; val vy = pos[c + 1] - pos[a + 1]; val vz = pos[c + 2] - pos[a + 2]
-            val nx = uy * vz - uz * vy; val ny = uz * vx - ux * vz; val nz = ux * vy - uy * vx
-            for (v in intArrayOf(a, b, c)) { out[v] += nx; out[v + 1] += ny; out[v + 2] += nz }
-        }
-        return out
-    }
 
     private class FloatList { var d = FloatArray(1024); var size = 0
         fun add(v: Float) { if (size == d.size) d = d.copyOf(size * 2); d[size++] = v }
@@ -201,4 +200,18 @@ class GltfMesh(glb: ByteArray) {
             a[row] * b[col * 4] + a[4 + row] * b[col * 4 + 1] + a[8 + row] * b[col * 4 + 2] + a[12 + row] * b[col * 4 + 3]
         }
     }
+}
+
+/** Area-weighted vertex normals (the shader normalizes). */
+internal fun faceNormals(pos: FloatArray, tri: IntArray): FloatArray {
+    val out = FloatArray(pos.size)
+    for (f in 0 until tri.size / 3) {
+        val a = tri[f * 3] * 3; val b = tri[f * 3 + 1] * 3; val c = tri[f * 3 + 2] * 3
+        if (maxOf(a, b, c) + 2 >= pos.size) continue
+        val ux = pos[b] - pos[a]; val uy = pos[b + 1] - pos[a + 1]; val uz = pos[b + 2] - pos[a + 2]
+        val vx = pos[c] - pos[a]; val vy = pos[c + 1] - pos[a + 1]; val vz = pos[c + 2] - pos[a + 2]
+        val nx = uy * vz - uz * vy; val ny = uz * vx - ux * vz; val nz = ux * vy - uy * vx
+        for (v in intArrayOf(a, b, c)) { out[v] += nx; out[v + 1] += ny; out[v + 2] += nz }
+    }
+    return out
 }

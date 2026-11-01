@@ -36,9 +36,9 @@ class ModelView(context: Context) : GLSurfaceView(context) {
     }
 
     /** Parse with [GltfMesh] off the main thread, then hand the result here. */
-    fun load(mesh: GltfMesh) {
+    fun load(mesh: GltfMesh, keepCamera: Boolean = false) {
         renderer.mesh = mesh
-        resetCamera()
+        if (keepCamera) requestRender() else resetCamera()
     }
 
     /** Slow turntable spin; pauses while the user is touching the model. */
@@ -99,6 +99,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
     private var uploaded: GltfMesh? = null
     private var program = 0
     private var vao = 0
+    private val buffers = ArrayList<Int>() // VBOs/IBO of the uploaded mesh, freed on the next upload (live previews reload often)
     private var indexCount = 0
     private val proj = FloatArray(16)
     private val view = FloatArray(16)
@@ -111,11 +112,14 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         program = link(VS, FS)
         vao = 0
+        buffers.clear() // the old context took its buffers with it
         uploaded = null
     }
 
     private fun upload(r: GltfMesh) {
         if (vao != 0) GLES30.glDeleteVertexArrays(1, intArrayOf(vao), 0)
+        if (buffers.isNotEmpty()) GLES30.glDeleteBuffers(buffers.size, buffers.toIntArray(), 0)
+        buffers.clear()
         val p = r.positions
         val lo = FloatArray(3) { Float.MAX_VALUE }
         val hi = FloatArray(3) { -Float.MAX_VALUE }
@@ -132,6 +136,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
         attrib(0, p); attrib(1, r.normals); attrib(2, colors)
         val ibo = IntArray(1)
         GLES30.glGenBuffers(1, ibo, 0)
+        buffers += ibo[0]
         GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, ibo[0])
         val ib = ByteBuffer.allocateDirect(r.indices.size * 4).order(ByteOrder.nativeOrder()).asIntBuffer().put(r.indices).position(0)
         GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, r.indices.size * 4, ib, GLES30.GL_STATIC_DRAW)
@@ -142,6 +147,7 @@ private class MeshRenderer : GLSurfaceView.Renderer {
     private fun attrib(loc: Int, data: FloatArray) {
         val b = IntArray(1)
         GLES30.glGenBuffers(1, b, 0)
+        buffers += b[0]
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b[0])
         val fb = ByteBuffer.allocateDirect(data.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer().put(data).position(0)
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, data.size * 4, fb, GLES30.GL_STATIC_DRAW)

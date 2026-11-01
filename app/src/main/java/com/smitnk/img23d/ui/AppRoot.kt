@@ -80,6 +80,7 @@ fun AppRoot(state: UiState, settings: Settings, vm: AppViewModel, cb: AppCallbac
                     Dest.Settings -> SettingsScreen(state, settings, vm, cb)
                     is Dest.Photo -> PhotoScreen(dest.mode, state, settings, vm, cb)
                     Dest.Builder -> BuilderScreen(state, vm)
+                    Dest.Body -> BodyScreen(state, vm)
                     Dest.Script -> ScriptScreen(state, vm, cb)
                     Dest.Text -> TextScreen(state, settings, vm)
                     Dest.Presets -> PresetsScreen(vm)
@@ -116,6 +117,7 @@ fun AppRoot(state: UiState, settings: Settings, vm: AppViewModel, cb: AppCallbac
 private fun titleFor(d: Dest) = when (d) {
     is Dest.Photo -> if (d.mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D"
     Dest.Builder -> "Character Builder"
+    Dest.Body -> "Body Creator"
     Dest.Script -> "Python script"
     Dest.Text -> "Text to 3D"
     Dest.Presets -> "Model Forge presets"

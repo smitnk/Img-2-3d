@@ -56,6 +56,7 @@ fun Source.art(): List<Color> = when (this) {
     Source.SCRIPT -> listOf(Color(0xFFB794F4), Color(0xFF4C51BF))
     Source.TEXT -> listOf(Color(0xFFF6E05E), Color(0xFFDD6B20))
     Source.PRESET -> listOf(Color(0xFFE2BDCD), Color(0xFF8A1F5A))
+    Source.BODY -> listOf(Color(0xFFF2C9A0), Color(0xFFB4533C))
 }
 
 /** Entrance animation: fade + rise, staggered by [index]; instant under reduced motion. */

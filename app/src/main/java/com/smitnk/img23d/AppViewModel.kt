@@ -14,6 +14,12 @@ import com.smitnk.img23d.blender.BlenderResult
 import com.smitnk.img23d.blender.BlenderRunner
 import com.smitnk.img23d.blender.BlenderRuntime
 import com.smitnk.img23d.blender.BuilderSpec
+import com.smitnk.img23d.body.BodyMorph
+import com.smitnk.img23d.body.BodyPack
+import com.smitnk.img23d.body.BodySpec
+import com.smitnk.img23d.body.PackStatus
+import com.smitnk.img23d.viewer.GltfMesh
+import kotlinx.coroutines.ensureActive
 import com.smitnk.img23d.blender.ExportPreset
 import com.smitnk.img23d.blender.MemoryProbe
 import com.smitnk.img23d.blender.Preset
@@ -54,6 +60,7 @@ sealed interface Dest {
     data object Script : Dest
     data object Text : Dest
     data object Presets : Dest
+    data object Body : Dest
     data class PresetConfig(val preset: Preset) : Dest
     data object Running : Dest
     data class Result(val id: String) : Dest
@@ -108,6 +115,10 @@ data class UiState(
     val builderPreview: File? = null,
     val builderPreviewBusy: Boolean = false,
     val builderPreviewVersion: Int = 0,
+    val body: BodySpec = BodySpec(),
+    val bodyPack: PackStatus = PackStatus.NotInstalled,
+    /** Live morph of [body] (no Blender), rebuilt on every edit. */
+    val bodyPreview: GltfMesh? = null,
 ) {
     val dest: Dest get() = stack.last()
     val visibleModels get() = models.filter { (filter == null || it.source == filter) && (query.isBlank() || it.name.contains(query, true)) }
@@ -250,6 +261,54 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private var previewJob: Job? = null
+
+    // ---------- Body Creator ----------
+    val bodyPack = BodyPack(app)
+    private var morph: BodyMorph? = null
+    private var morphJob: Job? = null
+
+    init { // after bodyPack is initialized (Kotlin runs initializers in declaration order)
+        if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
+    }
+
+    fun installBodyPack() = viewModelScope.launch {
+        runCatching { bodyPack.install { st -> _state.update { it.copy(bodyPack = st) } } }
+            .onFailure { e -> _state.update { it.copy(bodyPack = PackStatus.Failed(e.message ?: e.toString())) } }
+        if (bodyPack.isReady()) refreshBodyPreview()
+    }
+
+    fun editBody(f: (BodySpec) -> BodySpec) {
+        _state.update { it.copy(body = f(it.body)) }
+        refreshBodyPreview()
+    }
+
+    /** Morphs on a background thread; a newer edit cancels the older morph, so dragging stays responsive. */
+    fun refreshBodyPreview() {
+        if (!bodyPack.isReady()) return
+        morphJob?.cancel()
+        morphJob = viewModelScope.launch(Dispatchers.Default) {
+            val m = morph ?: BodyMorph(bodyPack.dir).also { morph = it }
+            val spec = _state.value.body
+            val v = m.morph(spec.macros, spec.sliders)
+            ensureActive()
+            val c = parseHex(spec.skin)
+            _state.update { it.copy(bodyPreview = GltfMesh.fromIndexed(v, m.triangles, c)) }
+        }
+    }
+
+    fun bodySliders(): Map<String, Pair<String?, String>> = morph?.let { BodyMorph.sliderTargets(it.modifiers) }.orEmpty()
+
+    fun runBody() = blenderJob("Body Creator") { report ->
+        val spec = _state.value.body
+        File(runner.jobIn.apply { mkdirs() }, "body_spec.json").writeText(spec.toJson())
+        val b = blender("body_creator.py", listOf("--pack", "/opt/bodypack", "--spec", "/opt/job/body_spec.json"), report)
+        saveBlender(b, spec.name, Source.BODY, detail = "Body Creator · ${b.info.optDouble("height_m", 0.0).let { "%.2f m".format(it) }}")
+    }
+
+    private fun parseHex(h: String): FloatArray = runCatching {
+        val c = android.graphics.Color.parseColor(h)
+        floatArrayOf(((c shr 16) and 255) / 255f, ((c shr 8) and 255) / 255f, (c and 255) / 255f)
+    }.getOrDefault(floatArrayOf(0.8f, 0.65f, 0.55f))
 
     /** Quick unrigged build after the user stops editing, so the Builder shows the real character, not just options. */
     fun schedulePreview(delayMs: Long = 1200) {

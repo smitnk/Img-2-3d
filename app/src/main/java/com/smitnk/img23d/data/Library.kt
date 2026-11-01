@@ -8,7 +8,7 @@ import java.io.File
 /** Where a model came from. PHOTO is System B (TripoSR); everything else ran through Blender (System A). */
 enum class Source(val label: String) {
     PHOTO("Photo → 3D"), CHARACTER("Photo → Character"), REFINED("Refined"), BUILDER("Builder"),
-    SCRIPT("Python script"), TEXT("Text to 3D"), PRESET("Preset"),
+    SCRIPT("Python script"), TEXT("Text to 3D"), PRESET("Preset"), BODY("Body Creator"),
 }
 
 data class Model(

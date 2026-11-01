@@ -72,6 +72,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             "-b", "/dev", "-b", "/proc", "-b", "/sys",
             "-b", "${scripts.path}:/opt/app",
             "-b", "${jobIn.path}:/opt/job",
+            "-b", "${File(context.filesDir, "bodypack").apply { mkdirs() }.path}:/opt/bodypack", // Body Creator assets
             "-w", "/opt/app",
             "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
             "--python-exit-code", "1", "--python", script, "--",

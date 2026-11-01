@@ -91,7 +91,7 @@ import com.smitnk.img23d.data.Source
 
 /** Scrollable form with a floating primary action that never covers the last field. */
 @Composable
-private fun FormWithAction(
+internal fun FormWithAction(
     actionText: String, actionIcon: androidx.compose.ui.graphics.vector.ImageVector, enabled: Boolean, onAction: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -110,7 +110,7 @@ private fun FormWithAction(
 }
 
 @Composable
-private fun EngineWarning(text: String, onFix: () -> Unit) {
+internal fun EngineWarning(text: String, onFix: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer), shape = MaterialTheme.shapes.large, onClick = onFix) {
         Text(text, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodyMedium)
     }

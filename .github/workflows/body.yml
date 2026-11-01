@@ -31,6 +31,19 @@ jobs:
           ls -la bodypack
       - uses: actions/upload-artifact@v4
         with: { name: bodypack, path: bodypack/ }
+      - name: Publish pack (release body-assets-v1, the app's download source)
+        if: github.ref == 'refs/heads/main'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd bodypack
+          python3 -c "
+          import hashlib, json, os
+          files = {f: {'bytes': os.path.getsize(f), 'sha256': hashlib.sha256(open(f, 'rb').read()).hexdigest()}
+                   for f in sorted(os.listdir('.')) if f != 'body_info.json'}
+          json.dump({'version': 1, 'files': files}, open('body_info.json', 'w'), indent=1)"
+          gh release view body-assets-v1 -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create body-assets-v1 -R "$GITHUB_REPOSITORY" \
+            --title "Body Creator assets v1 (MakeHuman, CC0)" --notes "Base mesh, morph targets, skeleton and weights from MakeHuman (CC0 1.0)."
+          gh release upload body-assets-v1 -R "$GITHUB_REPOSITORY" --clobber ./*
   build:
     needs: pack
     runs-on: ubuntu-24.04-arm

@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Code
@@ -77,6 +78,10 @@ fun HomeScreen(state: UiState, vm: AppViewModel, cb: AppCallbacks) {
         EngineStrip(state, Modifier.staggerIn(1)) { vm.tab(Dest.Settings) }
 
         SectionHeader("Create")
+        BentoTile(
+            "Body Creator", "Detailed face, body & hands · 238 sliders · live preview", Icons.Rounded.Accessibility, Source.BODY.art(),
+            Modifier.fillMaxWidth().height(120.dp).staggerIn(1), tag = "NEW",
+        ) { vm.go(Dest.Body) }
         // Asymmetric bento: one tall feature tile beside two stacked tiles, then a wide row.
         Row(Modifier.fillMaxWidth().height(260.dp).staggerIn(2), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             BentoTile(

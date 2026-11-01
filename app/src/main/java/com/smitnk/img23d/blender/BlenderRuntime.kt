@@ -117,45 +117,8 @@ class BlenderRuntime(context: Context) {
         progress(total, total)
     }
 
-    private suspend fun fetch(name: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
-        val part = File(target.path + ".part")
-        val start = if (expected != null) part.length() else 0L
-        val conn = (URL(BuildConfig.RUNTIME_BASE_URL + name).openConnection() as HttpURLConnection).apply {
-            instanceFollowRedirects = true
-            connectTimeout = 20_000
-            readTimeout = 60_000
-            if (start > 0) setRequestProperty("Range", "bytes=$start-")
-        }
-        try {
-            val code = conn.responseCode
-            if (code !in 200..299) throw IOException("HTTP $code downloading $name")
-            val resumed = code == 206
-            val total = expected ?: conn.contentLengthLong
-            RandomAccessFile(part, "rw").use { raf ->
-                if (!resumed) raf.setLength(0)
-                raf.seek(if (resumed) start else 0)
-                var done = if (resumed) start else 0L
-                val buf = ByteArray(1 shl 16)
-                var last = 0L
-                conn.inputStream.use { input ->
-                    while (true) {
-                        coroutineContext.ensureActive()
-                        val n = input.read(buf)
-                        if (n < 0) break
-                        raf.write(buf, 0, n)
-                        done += n
-                        if (done - last > (2 shl 20)) { progress(done, total); last = done }
-                    }
-                }
-                progress(done, total)
-            }
-            if (expected != null && part.length() != expected) throw IOException("Incomplete download of $name")
-            target.delete()
-            if (!part.renameTo(target)) throw IOException("Cannot move $name into place")
-        } finally {
-            conn.disconnect()
-        }
-    }
+    private suspend fun fetch(name: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) =
+        download(BuildConfig.RUNTIME_BASE_URL + name, target, expected, progress)
 
     private class CountingStream(input: InputStream) : FilterInputStream(input) {
         var count = 0L
@@ -176,5 +139,47 @@ class BlenderRuntime(context: Context) {
             }
             return md.digest().joinToString("") { "%02x".format(it) }
         }
+    }
+}
+
+/** Resumable HTTP download into [target] (via target.part); [expected] bytes when known. */
+internal suspend fun download(url: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
+    val name = target.name
+    val part = File(target.path + ".part")
+    val start = if (expected != null) part.length() else 0L
+    val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+        instanceFollowRedirects = true
+        connectTimeout = 20_000
+        readTimeout = 60_000
+        if (start > 0) setRequestProperty("Range", "bytes=$start-")
+    }
+    try {
+        val code = conn.responseCode
+        if (code !in 200..299) throw IOException("HTTP $code downloading $name")
+        val resumed = code == 206
+        val total = expected ?: conn.contentLengthLong
+        RandomAccessFile(part, "rw").use { raf ->
+            if (!resumed) raf.setLength(0)
+            raf.seek(if (resumed) start else 0)
+            var done = if (resumed) start else 0L
+            val buf = ByteArray(1 shl 16)
+            var last = 0L
+            conn.inputStream.use { input ->
+                while (true) {
+                    coroutineContext.ensureActive()
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    raf.write(buf, 0, n)
+                    done += n
+                    if (done - last > (2 shl 20)) { progress(done, total); last = done }
+                }
+            }
+            progress(done, total)
+        }
+        if (expected != null && part.length() != expected) throw IOException("Incomplete download of $name")
+        target.delete()
+        if (!part.renameTo(target)) throw IOException("Cannot move $name into place")
+    } finally {
+        conn.disconnect()
     }
 }

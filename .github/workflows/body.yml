@@ -20,7 +20,7 @@ jobs:
         run: |
           git init -q mh && cd mh && git remote add origin https://github.com/makehumancommunity/makehuman
           git config core.sparseCheckout true
-          printf "makehuman/data/3dobjs/\nmakehuman/data/targets/\nmakehuman/data/modifiers/\nmakehuman/data/eyes/\nLICENSE.ASSETS.md\n" > .git/info/sparse-checkout
+          printf "makehuman/data/3dobjs/\nmakehuman/data/targets/\nmakehuman/data/modifiers/\nmakehuman/data/eyes/\nmakehuman/data/rigs/\nLICENSE.ASSETS.md\n" > .git/info/sparse-checkout
           git fetch -q --depth 1 origin "$MH_COMMIT" && git checkout -q FETCH_HEAD
       - run: pip install -q numpy
       - name: Build pack + morph self-check
@@ -74,7 +74,7 @@ jobs:
               g = json.load(open(d + "generation.json")); q = json.load(open(d + "quality.json"))
               print(os.path.basename(d[:-1]), "tris", g["triangles"], "height", g["height_m"], "rig", g["rig"],
                     "quality", q["quality"] and q["quality"]["pass"], (q["quality"] or {}).get("errors"))
-              assert g["triangles"] > 20000 and 0.8 < g["height_m"] < 2.4
+              assert g["triangles"] > 20000 and 0.8 < g["height_m"] < 2.6 and g["rig"]["bones"] > 100
           PY
       - name: Push results + thumbnails to ci-logs
         if: always()

@@ -90,6 +90,15 @@ def render(mesh, yaw_deg, size=300):
     return Image.fromarray(img.clip(0, 255).astype(np.uint8))
 
 
+def replaced_codes(batch, codes):
+    """Stand-in for SF3D.get_scene_codes, keeping its side effect: it adds the view axis to the batch tensors,
+    which the material estimator later relies on."""
+    if batch["rgb_cond"].ndim == 4:
+        for k in ("rgb_cond", "mask_cond", "c2w_cond", "intrinsic_cond", "intrinsic_normed_cond"):
+            batch[k] = batch[k].unsqueeze(1)
+    return torch.from_numpy(codes), None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sf3d", required=True)
@@ -120,6 +129,7 @@ def main():
     for v, f in VARIANTS:
         so = ort.SessionOptions()
         so.enable_cpu_mem_arena = False
+        so.intra_op_num_threads = os.cpu_count()
         s = ort.InferenceSession(os.path.join(a.models, f), so, providers=["CPUExecutionProvider"])
         t = time.time()
         codes[v] = [s.run(None, {"rgb": r})[0] for r in rgbs]
@@ -134,9 +144,11 @@ def main():
     for i, (name, img) in enumerate(zip(names, imgs)):
         meshes = {}
         torch.manual_seed(0)
+        t0 = time.time()
         meshes["original"], _ = model.run_image(img, bake_resolution=1024, remesh="none")
+        print(f"{name} original SF3D (PyTorch, full pipeline) {time.time() - t0:.1f}s", flush=True)
         for v, _ in VARIANTS:
-            model.get_scene_codes = lambda batch, c=codes[v][i]: (torch.from_numpy(c), None)
+            model.get_scene_codes = lambda batch, c=codes[v][i]: replaced_codes(batch, c)
             torch.manual_seed(0)
             meshes[v], _ = model.run_image(img, bake_resolution=1024, remesh="none")
             del model.get_scene_codes  # back to the class method
@@ -160,7 +172,7 @@ def main():
         for c, im in enumerate(row):
             sheet.paste(im, (c * w, y + 16))
     sheet.save(os.path.join(a.out, "sheet.png"))
-    summary = {"encoder_seconds_per_image_ci_cpu": enc_seconds, "per_image": results}
+    summary = {"encoder_seconds_per_image_ci_cpu": enc_seconds, "ci_cpu_count": os.cpu_count(), "per_image": results}
     for v, _ in VARIANTS:
         for k in ("chamfer_pct_of_diag", "albedo_mean_abs_diff_0_255"):
             summary.setdefault("mean", {}).setdefault(v, {})[k] = float(np.mean([results[n][v][k] for n in names]))

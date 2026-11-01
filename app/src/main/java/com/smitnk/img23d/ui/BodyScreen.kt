@@ -81,7 +81,7 @@ private fun sliderLabel(id: String, symmetric: Boolean): String {
     return if (range.isEmpty()) words else "$words · $range"
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun BodyScreen(state: UiState, vm: AppViewModel) {
     val spec = state.body

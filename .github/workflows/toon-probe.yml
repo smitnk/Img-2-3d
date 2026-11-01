@@ -1,0 +1,21 @@
+name: probe free toon character sources
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir -p /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-probe
+          try() { n=$1; u=$2; if curl -fsSL --max-time 120 -o "/tmp/$n" "$u"; then echo "OK $n $(stat -c %s /tmp/$n) $u"; (unzip -l "/tmp/$n" 2>/dev/null | awk '{print $1, $4}' | grep -iE "\.(glb|gltf|fbx|obj|blend|txt|md)$" | head -60); else echo "FAIL $n $u"; fi; }
+          {
+          try kenney_mini.zip https://opengameart.org/sites/default/files/kenney_mini-characters.zip
+          try kenney_mini_b.zip https://kenney.nl/media/pages/assets/mini-characters-1/kenney_mini-characters.zip
+          try quaternius_uacp.zip https://opengameart.org/sites/default/files/Ultimate%20Animated%20Character%20Pack%20-%20Nov%202019.zip
+          try robot.glb https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb
+          curl -fsSL https://opengameart.org/content/mini-character-1 | grep -oE 'https://opengameart.org/sites/default/files/[^"]+' | sort -u
+          curl -fsSL https://opengameart.org/content/ultimate-animated-character-pack 2>/dev/null | grep -oE 'https://opengameart.org/sites/default/files/[^"]+\.(zip|7z)' | sort -u
+          curl -fsSL "https://opengameart.org/art-search-advanced?keys=quaternius+character&field_art_type_tid%5B%5D=10" | grep -oE 'href="/content/[^"]+"' | sort -u | head -40
+          } > sources.txt 2>&1
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm probe
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-probe

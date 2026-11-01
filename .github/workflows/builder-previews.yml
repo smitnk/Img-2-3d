@@ -1,0 +1,58 @@
+name: Builder option previews
+
+# Renders one picture per Character Builder option (only that option changed, default everything else) for the
+# Builder's picture cards. Results go to the ci-logs branch; copy them into app/src/main/assets/builder_previews.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack runtime
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
+          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
+          sudo mkdir -p rootfs/opt/app && sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
+          sudo mount -t proc proc rootfs/proc
+      - name: Render options
+        run: |
+          B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
+            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*" > /tmp/last.log 2>&1 || { tail -n 30 /tmp/last.log; return 1; }; }
+          # arg:region:view:options (must match Builder.choices in Recipes.kt)
+          spec="eyes:head:threequarter:dot round anime
+          mouth:head:threequarter:smile flat open
+          ears:head:threequarter:round pointy animal none
+          hair:head:threequarter:none short spiky long bun mohawk
+          top:full:threequarter:none tshirt hoodie tank jacket
+          bottom:full:threequarter:shorts pants skirt
+          shoes:feet:threequarter:sneakers boots none
+          tail:full:back:none cat lizard
+          accessory:full:threequarter:none glasses hat cape crown"
+          mkdir -p previews
+          echo "$spec" | while IFS=: read -r arg region view opts; do arg=$(echo $arg); for o in $opts; do
+            d=/tmp/p/${arg}_$o
+            # tops/bottoms default to "none"/shorts so each card shows only its own piece
+            B character_builder.py -- --out $d --name P --$arg $o --no-rig --smooth 1 || { echo "$arg $o FAILED"; continue; }
+            g=$(ls rootfs$d/*.glb | head -1 | sed 's#^rootfs##')
+            B postprocess.py -- --in $g --out $d --res 320 --view $view --region $region --thumb-only && sudo cp rootfs$d/thumb.png previews/${arg}_$o.png && echo "$arg $o ok"
+          done; done | tee results.txt
+          pip install -q pillow
+          python3 -c "
+          import glob, os
+          from PIL import Image
+          for f in glob.glob('previews/*.png'):
+              Image.open(f).convert('RGBA').resize((192, 192), Image.LANCZOS).save(f[:-4] + '.webp', 'WEBP', quality=82)
+          print(len(glob.glob('previews/*.webp')), 'webp')" | tee -a results.txt
+      - name: Push previews to ci-logs
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-previews
+          cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo none > log.txt
+          mkdir -p builder_previews && sudo cp "$GITHUB_WORKSPACE"/previews/*.webp builder_previews/ 2>/dev/null || true
+          sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "builder previews $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

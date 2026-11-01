@@ -1,6 +1,19 @@
 package com.smitnk.img23d.ui
 
 import androidx.compose.foundation.Image
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.smitnk.img23d.viewer.ModelView
+import com.smitnk.img23d.viewer.GltfMesh
+import androidx.compose.material.icons.rounded.ViewInAr
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -185,10 +198,11 @@ fun BuilderScreen(state: UiState, vm: AppViewModel) {
                 Icon(Icons.Rounded.RestartAlt, "Reset sliders")
             }
         }
+        BuilderPreview(state, Modifier.fillMaxWidth().weight(0.42f).padding(horizontal = 12.dp))
         PrimaryScrollableTabRow(selectedTabIndex = tab, edgePadding = 16.dp, containerColor = MaterialTheme.colorScheme.surface) {
             tabs.forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
         }
-        Box(Modifier.weight(1f)) {
+        Box(Modifier.weight(0.58f)) {
             FormWithAction("Build character", Icons.Rounded.AutoAwesome, state.runtime == RuntimeStatus.Ready, vm::runBuilder) {
                 if (state.runtime != RuntimeStatus.Ready) EngineWarning("Blender engine is not installed. Tap to set it up.") { vm.tab(Dest.Settings) }
                 when (tabs[tab]) {
@@ -199,13 +213,13 @@ fun BuilderScreen(state: UiState, vm: AppViewModel) {
                             }
                         }
                         if (tabs[tab] == "Face") Builder.choices.filter { it.arg in setOf("eyes", "mouth", "ears") }.forEach { c ->
-                            ChoiceChips(c.label, c.options, spec.picks[c.arg] ?: c.options.first()) { v -> vm.editBuilder { it.copy(picks = it.picks + (c.arg to v)) } }
+                            VisualChoices(c.arg, c.label, c.options, spec.picks[c.arg] ?: c.options.first()) { v -> vm.editBuilder { it.copy(picks = it.picks + (c.arg to v)) } }
                         }
                         if (tabs[tab] == "Body") ChoiceChips("Smoothness", listOf("0", "1", "2"), spec.smooth.toString()) { v -> vm.editBuilder { it.copy(smooth = v.toInt()) } }
                     }
                     "Style" -> Panel {
                         Builder.choices.filter { it.arg !in setOf("eyes", "mouth", "ears") }.forEach { c ->
-                            ChoiceChips(c.label, c.options, spec.picks[c.arg] ?: c.options.first()) { v -> vm.editBuilder { it.copy(picks = it.picks + (c.arg to v)) } }
+                            VisualChoices(c.arg, c.label, c.options, spec.picks[c.arg] ?: c.options.first()) { v -> vm.editBuilder { it.copy(picks = it.picks + (c.arg to v)) } }
                         }
                     }
                     else -> Panel {
@@ -343,6 +357,64 @@ fun PresetConfigScreen(p: Preset, state: UiState, vm: AppViewModel) {
             AssistChip(onClick = {}, label = { Text("T-pose") })
             AssistChip(onClick = {}, label = { Text("Rig self-test") })
             if (p.referenceDriven) AssistChip(onClick = {}, label = { Text("Reference-driven") })
+        }
+    }
+}
+
+/** Live 3D preview of the builder: a quick unrigged Blender build after each pause in editing. */
+@Composable
+private fun BuilderPreview(state: UiState, modifier: Modifier) {
+    val cs = MaterialTheme.colorScheme
+    val file = state.builderPreview
+    val mesh by produceState<GltfMesh?>(null, state.builderPreviewVersion) {
+        value = file?.let { f -> withContext(Dispatchers.Default) { runCatching { GltfMesh(f.readBytes()) }.getOrNull() } }
+    }
+    Box(modifier.clip(MaterialTheme.shapes.extraLarge)
+        .background(Brush.verticalGradient(listOf(cs.surfaceContainerHigh, cs.surfaceContainerLowest)))) {
+        val m = mesh
+        if (m != null) AndroidView(factory = { ModelView(it).apply { setAutoRotate(true) } }, update = { it.load(m) }, modifier = Modifier.fillMaxSize())
+        else Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Rounded.ViewInAr, null, tint = cs.primary, modifier = Modifier.size(40.dp))
+            Text(if (state.runtime == RuntimeStatus.Ready) "Your character appears here as you edit" else "Install the Blender engine to see a live preview",
+                style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+        }
+        if (state.builderPreviewBusy) Row(Modifier.align(Alignment.TopStart).padding(10.dp).clip(MaterialTheme.shapes.small)
+            .background(cs.surface.copy(alpha = 0.85f)).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+            Text("Updating preview…", style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+/** Picture cards for a style choice (pre-rendered per option, assets/builder_previews); text chips if no pictures. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VisualChoices(arg: String, label: String, options: List<String>, selected: String, onPick: (String) -> Unit) {
+    val ctx = LocalContext.current
+    val pics = remember(arg) {
+        options.associateWith { o ->
+            runCatching { ctx.assets.open("builder_previews/${arg}_$o.webp").use { BitmapFactory.decodeStream(it)?.asImageBitmap() } }.getOrNull()
+        }
+    }
+    if (pics.values.all { it == null }) { ChoiceChips(label, options, selected, onPick); return }
+    val cs = MaterialTheme.colorScheme
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            options.forEach { o ->
+                val on = o == selected
+                Card(onClick = { onPick(o) }, shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(if (on) 2.dp else 1.dp, if (on) cs.primary else cs.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = if (on) cs.primaryContainer else cs.surfaceContainerLow),
+                    modifier = Modifier.width(96.dp).semantics { contentDescription = "$label: $o" + if (on) ", selected" else "" }) {
+                    val pic = pics[o]
+                    if (pic != null) Image(pic, null, Modifier.fillMaxWidth().aspectRatio(1f).padding(4.dp))
+                    else Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) { Text("—", color = cs.onSurfaceVariant) }
+                    Text(o.replaceFirstChar { it.uppercase() }, Modifier.fillMaxWidth().padding(bottom = 6.dp), style = MaterialTheme.typography.labelMedium,
+                        textAlign = TextAlign.Center, maxLines = 1)
+                }
+            }
         }
     }
 }

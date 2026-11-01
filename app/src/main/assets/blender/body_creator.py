@@ -91,9 +91,10 @@ def main():
     skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.55, sss=0.15)
     body = mesh_object(spec.get("name", "Body"), v, z["f_body"], z["uvs"], z["uvf_body"])
     body.data.materials.append(skin)
-    if int(spec.get("subdiv", 1)) > 0:
+    subdiv = int(spec.get("subdiv", 1))
+    if subdiv > 0:
         m = body.modifiers.new("subdiv", "SUBSURF")
-        m.levels = m.render_levels = int(spec["subdiv"])
+        m.levels = m.render_levels = subdiv
         dg = bpy.context.evaluated_depsgraph_get()
         me = bpy.data.meshes.new_from_object(body.evaluated_get(dg))
         old = body.data

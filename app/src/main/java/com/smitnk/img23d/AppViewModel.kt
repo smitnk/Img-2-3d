@@ -104,6 +104,10 @@ data class UiState(
     /** Preset export in progress (its label), and a finished one waiting for a save location (file, model name). */
     val exporting: String? = null,
     val exportReady: Pair<File, String>? = null,
+    /** Builder live preview: the last quick build (no rig, no postprocess) and whether one is running. */
+    val builderPreview: File? = null,
+    val builderPreviewBusy: Boolean = false,
+    val builderPreviewVersion: Int = 0,
 ) {
     val dest: Dest get() = stack.last()
     val visibleModels get() = models.filter { (filter == null || it.source == filter) && (query.isBlank() || it.name.contains(query, true)) }
@@ -202,6 +206,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun exportPreset(m: Model, preset: ExportPreset) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
         if (job?.isActive == true) return
+        stopPreview()
         _state.update { it.copy(exporting = preset.label) }
         job = viewModelScope.launch {
             runCatching {
@@ -239,7 +244,36 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             .onFailure { e -> fail("Could not open image", e.message ?: e.toString()) }
     }
 
-    fun editBuilder(f: (BuilderSpec) -> BuilderSpec) = _state.update { it.copy(builder = f(it.builder)) }
+    fun editBuilder(f: (BuilderSpec) -> BuilderSpec) {
+        _state.update { it.copy(builder = f(it.builder)) }
+        schedulePreview()
+    }
+
+    private var previewJob: Job? = null
+
+    /** Quick unrigged build after the user stops editing, so the Builder shows the real character, not just options. */
+    fun schedulePreview(delayMs: Long = 1200) {
+        if (!runtime.isReady() || job?.isActive == true) return
+        stopPreview()
+        previewJob = viewModelScope.launch {
+            delay(delayMs)
+            _state.update { it.copy(builderPreviewBusy = true) }
+            try {
+                val spec = _state.value.builder
+                val b = runner.run("character_builder.py", spec.copy(smooth = minOf(spec.smooth, 1)).args(rig = false, blend = false),
+                    s.threadCount(), postprocess = false) {}
+                val f = File(getApplication<Application>().cacheDir, "builder-preview.glb")
+                b.glb.copyTo(f, overwrite = true)
+                _state.update { it.copy(builderPreview = f, builderPreviewVersion = it.builderPreviewVersion + 1) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // a failed preview is not an error worth a dialog; the real build reports it
+            } finally {
+                _state.update { it.copy(builderPreviewBusy = false) }
+            }
+        }
+    }
 
     fun importScript(uri: Uri) = viewModelScope.launch {
         runCatching {
@@ -322,7 +356,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun runBuilder() = blenderJob("Character Builder") { report ->
+    fun runBuilder() = buildCharacter()
+
+    /** The runner does one Blender process at a time: kill a running preview now (cancel alone waits for its next log line). */
+    private fun stopPreview() {
+        if (previewJob?.isActive == true) {
+            previewJob?.cancel()
+            if (_state.value.builderPreviewBusy) runner.cancel()
+        }
+    }
+
+    private fun buildCharacter() = blenderJob("Character Builder") { report ->
         val spec = _state.value.builder
         val b = blender("character_builder.py", spec.args(s.rig, s.saveBlend), report)
         saveBlender(b, spec.name, Source.BUILDER, detail = "Builder · ${spec.picks.values.joinToString(" · ")}")
@@ -385,6 +429,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun launchJob(title: String, engine: String, steps: Int, block: suspend (Report) -> Model) {
         if (job?.isActive == true) return // one job at a time, both engines
+        stopPreview()
         _state.update { it.copy(run = RunState(title = title, engine = engine, steps = steps), failure = null) }
         go(Dest.Running)
         job = viewModelScope.launch {

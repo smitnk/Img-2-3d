@@ -79,7 +79,7 @@ jobs:
       - name: Push results + thumbnails to ci-logs
         if: always()
         run: |
-          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-body
           cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo "no results" > log.txt
           for d in "$GITHUB_WORKSPACE"/rootfs/tmp/o/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "thumb_$(basename "$d").png"; done
           sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "body log $GITHUB_RUN_ID"

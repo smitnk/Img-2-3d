@@ -117,7 +117,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             BlenderResult(glb, hostOut.listFiles { f -> f.extension == "blend" }?.firstOrNull(), info, (System.nanoTime() - t0) / 1e9, log.toList())
         } finally {
             if (p.isAlive) p.destroyForcibly()
-            process = null
+            if (process === p) process = null // a newer run may already own the field
         }
     }
 }

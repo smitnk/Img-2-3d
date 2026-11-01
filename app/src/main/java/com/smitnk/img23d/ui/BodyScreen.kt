@@ -1,6 +1,12 @@
 package com.smitnk.img23d.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,7 +69,7 @@ import com.smitnk.img23d.body.PackStatus
 import com.smitnk.img23d.viewer.ModelView
 import kotlin.random.Random
 
-private val TABS = listOf("Body", "Face", "Torso", "Limbs", "Skin")
+private val TABS = listOf("Body", "Face", "Torso", "Limbs", "Hair", "Clothes", "Skin")
 private val TAB_GROUPS = mapOf(
     "Face" to listOf("head", "forehead", "eyebrows", "eyes", "nose", "mouth", "ears", "chin", "cheek", "neck"),
     "Torso" to listOf("torso", "breast", "stomach", "hip", "buttocks", "pelvis"),
@@ -89,6 +95,7 @@ fun BodyScreen(state: UiState, vm: AppViewModel) {
     LaunchedEffect(state.bodyPack) { if (state.bodyPack == PackStatus.Ready && state.bodyPreview == null) vm.refreshBodyPreview() }
 
     if (state.bodyPack != PackStatus.Ready) { PackSetup(state.bodyPack, vm); return }
+    val catalog = remember(state.bodyPack) { vm.bodyPack.catalog() }
 
     Column(Modifier.fillMaxSize()) {
         val cs = MaterialTheme.colorScheme
@@ -133,8 +140,41 @@ fun BodyScreen(state: UiState, vm: AppViewModel) {
                             }
                         }
                     }
+                    "Hair" -> {
+                        Panel {
+                            AssetCards("Hair", catalog["hair"].orEmpty(), setOfNotNull(spec.hair), allowNone = true) { n -> vm.editBody { it.copy(hair = n) } }
+                            ColorRow("Hair colour", BodySpec.HAIR_COLORS, spec.hairColor) { c -> vm.editBody { it.copy(hairColor = c) } }
+                        }
+                        Panel {
+                            AssetCards("Eyebrows", catalog["eyebrows"].orEmpty(), setOfNotNull(spec.eyebrows), allowNone = true) { n -> vm.editBody { it.copy(eyebrows = n) } }
+                            AssetCards("Eyelashes", catalog["eyelashes"].orEmpty(), setOfNotNull(spec.eyelashes), allowNone = true) { n -> vm.editBody { it.copy(eyelashes = n) } }
+                        }
+                        Text("Hair, brows and lashes appear on the built model (the live preview shows the body).",
+                            style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                    }
+                    "Clothes" -> {
+                        val all = catalog["clothes"].orEmpty()
+                        val (shoes, outfits) = all.partition { it.name.startsWith("shoes") }
+                        val (hats, suits) = outfits.partition { it.name.startsWith("fedora") }
+                        // one outfit, one pair of shoes, one hat at a time: picking replaces the item of the same kind
+                        fun pick(group: List<com.smitnk.img23d.body.BodyAsset>, n: String?) =
+                            vm.editBody { it.copy(clothes = it.clothes.filter { c -> group.none { g -> g.name == c } } + listOfNotNull(n)) }
+                        Panel { AssetCards("Outfit", suits, spec.clothes.toSet(), allowNone = true) { pick(suits, it) } }
+                        Panel { AssetCards("Shoes", shoes, spec.clothes.toSet(), allowNone = true) { pick(shoes, it) } }
+                        Panel { AssetCards("Hat", hats, spec.clothes.toSet(), allowNone = true) { pick(hats, it) } }
+                        Text("Clothes fit any body shape and move with the rig; skin under them is removed so nothing pokes through.",
+                            style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                    }
                     "Skin" -> {
                         Panel {
+                            ChoiceChips("Skin", listOf("Colour", "Realistic"), if (spec.skinMode == "realistic") "Realistic" else "Colour") { v ->
+                                vm.editBody { it.copy(skinMode = if (v == "Realistic") "realistic" else "color") }
+                            }
+                            if (spec.skinMode == "realistic") Text("Photo-textured skin picked from age, heritage and gender.",
+                                style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                        }
+                        Panel { AssetCards("Eye colour", catalog["eyes"].orEmpty(), setOf(spec.eyes), allowNone = false) { n -> if (n != null) vm.editBody { it.copy(eyes = n) } } }
+                        if (spec.skinMode != "realistic") Panel {
                             Text("Skin tone", style = MaterialTheme.typography.titleSmall)
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 BodySpec.SKINS.forEach { hex ->
@@ -206,7 +246,8 @@ private fun PackSetup(st: PackStatus, vm: AppViewModel) {
         GradientBadge(com.smitnk.img23d.data.Source.BODY.art(), Icons.Rounded.Accessibility, size = 72)
         Text("Body Creator", style = MaterialTheme.typography.headlineSmall)
         Text("A professionally modelled human base (MakeHuman, CC0) with 238 face and body sliders, a 163-bone rig with fingers, " +
-            "and a live preview. One-time download of about 34 MB.", style = MaterialTheme.typography.bodyMedium,
+            "hair, clothes, realistic skins and a live preview. One-time download of about 60 MB." +
+            if (vm.bodyPack.needsUpdate()) "\n\nAn update is available: it adds hair, clothes and realistic skins." else "", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         when (st) {
             is PackStatus.Downloading -> {
@@ -223,9 +264,58 @@ private fun PackSetup(st: PackStatus, vm: AppViewModel) {
     }
 }
 
+/** Picture cards from the pack's thumbnails; tapping the selected card again (or "None") clears it when allowed. */
+@Composable
+private fun AssetCards(label: String, items: List<com.smitnk.img23d.body.BodyAsset>, selected: Set<String>, allowNone: Boolean, onPick: (String?) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val pics = remember(items) {
+        items.associate { a -> a.name to a.thumb?.let { f -> runCatching { android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }.getOrNull() } }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.titleSmall)
+        if (items.isEmpty()) { Text("Update the body assets to get these.", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant); return@Column }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (allowNone) Card(onClick = { onPick(null) }, shape = MaterialTheme.shapes.medium,
+                border = BorderStroke(if (items.none { it.name in selected }) 2.dp else 1.dp, if (items.none { it.name in selected }) cs.primary else cs.outlineVariant),
+                modifier = Modifier.width(92.dp).semantics { contentDescription = "$label: none" }) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) { Text("None", style = MaterialTheme.typography.labelLarge) }
+            }
+            items.forEach { a ->
+                val on = a.name in selected
+                Card(onClick = { onPick(if (on && allowNone) null else a.name) }, shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(if (on) 2.dp else 1.dp, if (on) cs.primary else cs.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = if (on) cs.primaryContainer else cs.surfaceContainerLow),
+                    modifier = Modifier.width(92.dp).semantics { contentDescription = "$label: ${a.label}" + if (on) ", selected" else "" }) {
+                    val pic = pics[a.name]
+                    if (pic != null) Image(pic, null, Modifier.fillMaxWidth().aspectRatio(1f).padding(4.dp))
+                    else Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Accessibility, null) }
+                    Text(a.label.replaceFirstChar { it.uppercase() }, Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelSmall, maxLines = 1, textAlign = TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ColorRow(label: String, colors: List<String>, value: String, onPick: (String) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Text(label, style = MaterialTheme.typography.titleSmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        colors.forEach { hex ->
+            val on = hex.equals(value, true)
+            Box(Modifier.size(40.dp).clip(CircleShape).background(parseHex(hex))
+                .border(if (on) 3.dp else 1.dp, if (on) cs.primary else cs.outlineVariant, CircleShape)
+                .clickable { onPick(hex) }.semantics { contentDescription = "$label $hex" + if (on) ", selected" else "" })
+        }
+    }
+}
+
 private fun randomize(s: BodySpec, rnd: Random = Random): BodySpec = s.copy(
     macros = BodySpec.MACROS.associate { (k, _) -> k to (0.2f + rnd.nextFloat() * 0.6f) } +
         BodySpec.ETHNIC.associate { (k, _) -> k to rnd.nextFloat() },
     sliders = emptyMap(),
     skin = BodySpec.SKINS.random(rnd),
+    hairColor = BodySpec.HAIR_COLORS.random(rnd),
 )

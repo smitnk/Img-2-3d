@@ -26,7 +26,13 @@ class BodyPack(context: Context) {
     private val info = File(dir, "body_info.json")
     private val ready = File(dir, ".ready")
 
-    fun isReady() = ready.isFile && File(dir, "body.npz").isFile
+    fun isReady() = ready.isFile && File(dir, "body.npz").isFile &&
+        runCatching { JSONObject(ready.readText()).optInt("version") >= REQUIRED_VERSION }.getOrDefault(false)
+
+    /** An older pack is installed (v1 had no hair/clothes/skins). */
+    fun needsUpdate() = ready.isFile && !isReady()
+
+    companion object { const val REQUIRED_VERSION = 2 }
 
     suspend fun install(onStatus: (PackStatus) -> Unit) = withContext(Dispatchers.IO) {
         ready.delete()
@@ -52,4 +58,22 @@ class BodyPack(context: Context) {
     }
 
     fun uninstall() = dir.deleteRecursively().also { dir.mkdirs() }
+}
+
+/** One wearable or look from the pack's assets.json (MakeHuman system assets). */
+data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)
+
+/** Catalog of the installed pack, by kind: hair, eyebrows, eyelashes, clothes, skins, eyes. Empty for an old pack. */
+fun BodyPack.catalog(): Map<String, List<BodyAsset>> {
+    val f = File(dir, "assets.json")
+    if (!f.isFile) return emptyMap()
+    val j = JSONObject(f.readText())
+    return j.keys().asSequence().associateWith { kind ->
+        val a = j.getJSONArray(kind)
+        (0 until a.length()).map { i ->
+            val o = a.getJSONObject(i)
+            BodyAsset(kind, o.getString("name"), o.optString("label", o.getString("name")),
+                o.optString("thumb", "").takeIf { it.isNotBlank() && it != "null" }?.let { File(dir, it) }?.takeIf { it.isFile })
+        }
+    }
 }

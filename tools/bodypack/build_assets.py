@@ -136,7 +136,7 @@ def toon_eyes(out):
     # iris pixels: clearly darker than the sclera; two blobs (one per eye island), split by the image diagonal
     dark = a.mean(2) < 0.55 * np.median(a.mean(2))
     ys, xs = np.nonzero(dark)
-    upper = xs + ys < w  # the texture holds two eyes on the main diagonal
+    upper = xs > ys  # two eyes along the anti-diagonal: one above-right of the main diagonal, one below-left
     blobs = [(xs[m], ys[m]) for m in (upper, ~upper) if m.sum() > 50]
     entries = []
     for name, rgb in TOON.items():

@@ -73,9 +73,22 @@ def make(arrays, index, skel, weights):
     hands = np.clip(sub("wrist.L") + sub("wrist.R"), 0, 1)
     feet = np.clip(sub("foot.L") + sub("foot.R"), 0, 1)
     torso = np.clip(_mask(n, weights, {b for b in bones if b.startswith(("spine", "breast", "pelvis", "clavicle", "shoulder"))}), 0, 1)
+    # Helper geometry (tights, skirt, hair and eye helpers) has no bone weights, but garments and hair are fitted to it:
+    # give every helper vertex the masks of its nearest body vertex, so clothes follow the style.
+    f = arrays["f_body"]
+    on_body = np.zeros(n, bool)
+    on_body[f.ravel()] = True
+    body_i, help_i = np.nonzero(on_body)[0], np.nonzero(~on_body)[0]
+    near = np.empty(len(help_i), np.int64)
+    for c in range(0, len(help_i), 512):
+        q = v[help_i[c:c + 512]]
+        near[c:c + 512] = body_i[np.argmin(((q[:, None, :] - v[None, body_i, :]) ** 2).sum(2), axis=1)]
+    for m in (head, neck, arms, legs, hands, feet, torso):
+        m[help_i] = m[near]
     tor = torso * (1 - head) * (1 - arms) * (1 - legs) * (1 - neck)
     nose = _footprint(n, arrays, index, ("nose-",)) * head
     mouth = _footprint(n, arrays, index, ("mouth-",)) * head
+    nose[help_i], mouth[help_i] = nose[near], mouth[near]
     head_base = joint("head____head")
     # Grow the head from the chin line, so a bigger head rises above the shoulders instead of swallowing the neck.
     head_pivot = np.array([head_base[0], v[head > 0.9, 1].min(), head_base[2]])
@@ -98,10 +111,6 @@ def make(arrays, index, skel, weights):
         r = v - a
         perp = r - (r @ ax)[:, None] * ax
         return mask[:, None] * perp * (f - 1)
-
-    f = arrays["f_body"]
-    on_body = np.zeros(n, bool)
-    on_body[f.ravel()] = True
 
     def styled(p):
         k = {x: p.get(x, 1.0) for x in P}

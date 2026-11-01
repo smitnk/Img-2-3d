@@ -61,7 +61,7 @@ data class BodySpec(
             "Teen" to BodySpec(name = "Teen", macros = mapOf("age" to 0.35f, "weight" to 0.45f)),
             "Man" to BodySpec(name = "Man", macros = mapOf("gender" to 1f, "age" to 0.5f)),
             "Woman" to BodySpec(name = "Woman", macros = mapOf("gender" to 0f, "age" to 0.5f), hair = "long01", eyebrows = "eyebrow010",
-                eyelashes = "eyelashes02", clothes = listOf("female_casualsuit01", "shoes02")),
+                eyelashes = "eyelashes02", clothes = listOf("female_casualsuit01", "shoes04")),
             "Athlete" to BodySpec(name = "Athlete", macros = mapOf("gender" to 1f, "muscle" to 0.85f, "weight" to 0.45f, "height" to 0.65f)),
             "Hero" to BodySpec(name = "Hero", macros = mapOf("gender" to 1f, "muscle" to 1f, "weight" to 0.7f, "height" to 0.8f, "proportions" to 1f),
                 sliders = mapOf("torso/torso-vshape-decr|incr" to 0.7f, "chin/chin-width-decr|incr" to 0.4f)),

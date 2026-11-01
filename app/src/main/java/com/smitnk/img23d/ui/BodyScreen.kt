@@ -65,6 +65,7 @@ import com.smitnk.img23d.Dest
 import com.smitnk.img23d.UiState
 import com.smitnk.img23d.blender.RuntimeStatus
 import com.smitnk.img23d.body.BodySpec
+import com.smitnk.img23d.body.catalog
 import com.smitnk.img23d.body.PackStatus
 import com.smitnk.img23d.viewer.ModelView
 import kotlin.random.Random

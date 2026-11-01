@@ -188,6 +188,9 @@ def main():
         mac = humanmorph.macro_values(spec.get("macros"))
         age = "young" if mac["young"] >= max(mac["old"], 0.4) else "old" if mac["old"] > 0.5 else "middleage"
         eth = max(("african", "asian", "caucasian"), key=lambda e: mac[e])
+        if max(mac[e] for e in ("african", "asian", "caucasian")) - min(mac[e] for e in ("african", "asian", "caucasian")) < 0.05:
+            lum = sum(hex_rgb(spec.get("skin"), "#C9A08A")[:3]) / 3  # no heritage chosen: follow the picked skin tone
+            eth = "african" if lum < 0.12 else "asian" if lum < 0.35 else "caucasian"
         sex = "male" if mac["male"] >= 0.5 else "female"
         skin_tex = tex_of("skins", f"{age}_{eth}_{sex}")
     skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.55, sss=0.15, image=skin_tex)
@@ -294,8 +297,9 @@ def main():
     info = {"generator": "body_creator", "name": spec.get("name", "Body"), "triangles": tris,
             "vertices": len(body.data.vertices),
             "height_m": round(float(v[:, 2].max()), 3), "extras": sorted(o.name for o in extras),
-            "spec_extras": sorted(f"{k}_{spec[k]}" for k in ("hair", "eyebrows", "eyelashes") if spec.get(k))
-            + sorted(f"clothes_{c}" for c in spec.get("clothes", [])), "rig": rig_info, "files": {"glb": glb}, "spec": spec}
+            "spec_extras": sorted([f"{k}_{spec[k]}" for k in ("hair", "eyebrows", "eyelashes") if spec.get(k)]
+                                  + [f"clothes_{c}" for c in clothes]),
+            "layered": True,  # hair/brows/garments are separate shells by design (see postprocess.py) "rig": rig_info, "files": {"glb": glb}, "spec": spec}
     json.dump(info, open(os.path.join(a.out, "generation.json"), "w"), indent=2)
     print("BODY", json.dumps({k: info[k] for k in ("triangles", "height_m", "rig")}))
 

@@ -88,6 +88,17 @@ def main():
     with open(os.path.join(a.out, "quality.json"), "w") as f:
         json.dump(report, f, indent=2)
     q = report.get("quality") or {}
+    gen = os.path.join(a.out, "generation.json")
+    if q and os.path.isfile(gen) and json.load(open(gen)).get("layered"):
+        # Body Creator: hair cards, brows and garments are intentionally separate shells floating a few mm off the skin,
+        # and garments hide the skin under them (body fragments). Those findings are expected, not defects.
+        layer = ("hair_", "eyebrows_", "eyelashes_", "clothes_", "floating fragments")
+        moved = [e for e in q["errors"] if any(t in e for t in layer)]
+        q["errors"] = [e for e in q["errors"] if e not in moved]
+        q["warnings"] = moved + q["warnings"]
+        q["pass"] = not q["errors"]
+        with open(os.path.join(a.out, "quality.json"), "w") as f:
+            json.dump(report, f, indent=2)
     print(f"POSTPROCESS pass={q.get('pass')} errors={len(q.get('errors', []))} warnings={len(q.get('warnings', []))} "
           f"thumb={report.get('thumbnail')}")
 

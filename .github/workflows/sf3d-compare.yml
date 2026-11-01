@@ -1,0 +1,52 @@
+name: SF3D - int8 vs fp32 vs original
+
+on: workflow_dispatch
+permissions:
+  contents: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 20G /swapfile2 && sudo chmod 600 /swapfile2 && sudo mkswap /swapfile2 && sudo swapon /swapfile2
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - name: Original SF3D + dependencies (CPU)
+        run: |
+          git clone --depth 1 https://github.com/Stability-AI/stable-fast-3d /tmp/sf3d
+          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install "numpy<2" einops==0.7.0 jaxtyping==0.2.31 omegaconf==2.3.0 transformers==4.42.3 open_clip_torch==2.24.0 \
+            trimesh==4.4.1 huggingface-hub==0.23.4 rembg==2.0.57 onnxruntime==1.20.0 Pillow scipy setuptools wheel \
+            gpytoolbox==0.2.0 pynanoinstantmeshes==0.0.3 safetensors tqdm
+          pip install --no-build-isolation /tmp/sf3d/texture_baker /tmp/sf3d/uv_unwrapper
+      - name: Published ONNX models
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir m && cd m
+          gh release download sf3d-v1 -p model_info.json -p sf3d_encoder.onnx -p 'sf3d_encoder.onnx.data.part*' -p sf3d_encoder_int8.onnx
+          cat sf3d_encoder.onnx.data.part* > sf3d_encoder.onnx.data && rm sf3d_encoder.onnx.data.part*
+          ls -la
+      - name: Compare
+        run: |
+          set -o pipefail
+          E=/tmp/sf3d/demo_files/examples
+          python tools/sf3d/compare_int8.py --sf3d /tmp/sf3d --models m --out cmp \
+            $E/character1.png $E/raccoon_wizard.png $E/chair1.png 2>&1 | grep -vE "Warning|warn\(|it/s\]|B/s\]" | tee compare.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: sf3d-compare, path: cmp/ }
+      - name: Push results to ci-logs branch
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          tail -n 80 "$GITHUB_WORKSPACE/compare.log" > log.txt 2>/dev/null || echo "no log" > log.txt
+          cp "$GITHUB_WORKSPACE"/cmp/sheet.png "$GITHUB_WORKSPACE"/cmp/compare.json . 2>/dev/null || true
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "sf3d compare $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

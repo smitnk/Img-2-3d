@@ -9,6 +9,7 @@ Writes:
 A target's weight = product of its macro variable values x its group factor (MakeHuman lib/targets.py rules).
 """
 import json
+
 import os
 import shutil
 import sys
@@ -107,15 +108,18 @@ def main(data, out):
             off.append(off[-1] + len(a))
             index.append({"key": key, "vars": vars_})
     arrs.update(t_idx=np.concatenate(idx_all), t_delta=np.concatenate(d_all), t_off=np.array(off, np.int64))
+    skel = json.load(open(os.path.join(data, "rigs", "default.mhskel")))
+    wts = json.load(open(os.path.join(data, "rigs", "default_weights.mhw")))["weights"]
+    modifiers = json.load(open(os.path.join(data, "modifiers", "modeling_modifiers.json")))
+    import style_targets
+    print("styles:", style_targets.add_to(arrs, index, modifiers, skel, wts))
     np.savez_compressed(os.path.join(out, "body.npz"), **arrs)
     json.dump(index, open(os.path.join(out, "targets.json"), "w"))
-    shutil.copy(os.path.join(data, "modifiers", "modeling_modifiers.json"), os.path.join(out, "modifiers.json"))
+    json.dump(modifiers, open(os.path.join(out, "modifiers.json"), "w"), indent=1)
     shutil.copy(os.path.join(data, "eyes", "materials", "brown_eye.png"), os.path.join(out, "eye.png"))
     # MakeHuman default skeleton (163 bones incl. fingers, toes, face; CC0): joints are vertex-index groups, so the
     # skeleton follows every morph; weights are per base-mesh vertex.
-    skel = json.load(open(os.path.join(data, "rigs", "default.mhskel")))
     json.dump({k: skel[k] for k in ("bones", "joints", "planes", "license")}, open(os.path.join(out, "skeleton.json"), "w"))
-    wts = json.load(open(os.path.join(data, "rigs", "default_weights.mhw")))["weights"]
     json.dump(wts, open(os.path.join(out, "weights.json"), "w"))
     assert all(j in skel["joints"] for b in skel["bones"].values() for j in (b["head"], b["tail"]))
     with open(os.path.join(out, "LICENSE-ASSETS.txt"), "w") as f:

@@ -70,8 +70,9 @@ import com.smitnk.img23d.body.PackStatus
 import com.smitnk.img23d.viewer.ModelView
 import kotlin.random.Random
 
-private val TABS = listOf("Body", "Face", "Torso", "Limbs", "Hair", "Clothes", "Skin")
+private val TABS = listOf("Style", "Body", "Face", "Torso", "Limbs", "Hair", "Clothes", "Skin")
 private val TAB_GROUPS = mapOf(
+    "Style" to listOf("style"),
     "Face" to listOf("head", "forehead", "eyebrows", "eyes", "nose", "mouth", "ears", "chin", "cheek", "neck"),
     "Torso" to listOf("torso", "breast", "stomach", "hip", "buttocks", "pelvis"),
     "Limbs" to listOf("armslegs"),
@@ -223,13 +224,16 @@ private fun SliderGroup(group: String, ids: List<String>, spec: BodySpec, vm: Ap
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(group.replaceFirstChar { it.uppercase() }.replace("Armslegs", "Arms, legs, hands & feet"), style = MaterialTheme.typography.titleMedium)
+                Text(group.replaceFirstChar { it.uppercase() }.replace("Armslegs", "Arms, legs, hands & feet").replace("Style", "Art style"), style = MaterialTheme.typography.titleMedium)
                 Text("${ids.size} sliders" + if (changed > 0) " · $changed changed" else "", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) "Collapse" else "Expand")
         }
-        if (open) Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        if (open || group == "style") Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+            if (group == "style") Text("Mix looks: cartoon and Pixar-like (big head and eyes), chibi, heroic, lanky, chubby. " +
+                "They combine with every other slider, and hair, eyes and clothes follow.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             ids.forEach { id ->
                 val twoSided = '|' in id
                 LabeledSlider(sliderLabel(id, spec.symmetric), spec.sliders[id] ?: 0f, if (twoSided) -1f..1f else 0f..1f) { v ->
@@ -248,7 +252,7 @@ private fun PackSetup(st: PackStatus, vm: AppViewModel) {
         Text("Body Creator", style = MaterialTheme.typography.headlineSmall)
         Text("A professionally modelled human base (MakeHuman, CC0) with 238 face and body sliders, a 163-bone rig with fingers, " +
             "hair, clothes, realistic skins and a live preview. One-time download of about 60 MB." +
-            if (vm.bodyPack.needsUpdate()) "\n\nAn update is available: it adds hair, clothes and realistic skins." else "", style = MaterialTheme.typography.bodyMedium,
+            if (vm.bodyPack.needsUpdate()) "\n\nAn update is available: it adds hair, clothes, realistic skins and art styles." else "", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         when (st) {
             is PackStatus.Downloading -> {

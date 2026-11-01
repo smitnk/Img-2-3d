@@ -50,7 +50,7 @@ jobs:
           import hashlib, json, os
           files = {f: {'bytes': os.path.getsize(f), 'sha256': hashlib.sha256(open(f, 'rb').read()).hexdigest()}
                    for f in sorted(os.listdir('.')) if f != 'body_info.json'}
-          json.dump({'version': 2, 'files': files}, open('body_info.json', 'w'), indent=1)"
+          json.dump({'version': 3, 'files': files}, open('body_info.json', 'w'), indent=1)"
           gh release view body-assets-v1 -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create body-assets-v1 -R "$GITHUB_REPOSITORY" \
             --title "Body Creator assets v1 (MakeHuman, CC0)" --notes "Base mesh, morph targets, skeleton and weights from MakeHuman (CC0 1.0)."
           gh release upload body-assets-v1 -R "$GITHUB_REPOSITORY" --clobber ./*
@@ -92,7 +92,7 @@ jobs:
           python3 - <<'PY' | tee -a results.txt
           import glob, json, os
           dirs = sorted(glob.glob("rootfs/tmp/o/*/"))
-          assert len(dirs) == 5, dirs
+          assert len(dirs) == 6, dirs
           for d in dirs:
               g = json.load(open(d + "generation.json")); q = json.load(open(d + "quality.json"))
               print(os.path.basename(d[:-1]), "tris", g["triangles"], "height", g["height_m"], "rig", g["rig"],

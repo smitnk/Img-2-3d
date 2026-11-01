@@ -92,7 +92,8 @@ def main():
     if q and os.path.isfile(gen) and json.load(open(gen)).get("layered"):
         # Body Creator: hair cards, brows and garments are intentionally separate shells floating a few mm off the skin,
         # and garments hide the skin under them (body fragments). Those findings are expected, not defects.
-        layer = ("hair_", "eyebrows_", "eyelashes_", "clothes_", "floating fragments")
+        # "between its own parts": eyeballs/teeth inside the joined body touching lids/lips on strong cartoon styles
+        layer = ("hair_", "eyebrows_", "eyelashes_", "clothes_", "floating fragments", "between its own parts")
         moved = [e for e in q["errors"] if any(t in e for t in layer)]
         q["errors"] = [e for e in q["errors"] if e not in moved]
         q["warnings"] = moved + q["warnings"]

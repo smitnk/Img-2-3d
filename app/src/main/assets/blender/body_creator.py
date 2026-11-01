@@ -281,12 +281,15 @@ def main():
             return rig.matrix_world @ rig.pose.bones[f"wrist.{side}"].head
         before = {s_: wrist(s_).copy() for s_ in "LR"}
         pb = rig.pose.bones["upperarm01.L"]
-        pb.rotation_mode = "XYZ"
-        pb.rotation_euler = (0, 0, 1.05)
+        from mathutils import Quaternion, Vector
+        arm_dir = (rig.pose.bones["wrist.L"].head - pb.head).normalized()
+        axis = arm_dir.cross(Vector((0, 1, 0))).normalized()  # swing the whole arm forward, whatever the bone roll
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = Quaternion(pb.bone.matrix_local.to_3x3().inverted() @ axis, 1.05)
         bpy.context.view_layer.update()
         ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
         moved = {s_: (wrist(s_) - before[s_]).length for s_ in "LR"}
-        pb.rotation_euler = (0, 0, 0)
+        pb.rotation_quaternion = (1, 0, 0, 0)
         bpy.context.view_layer.update()
         rig_info["selftest"] = {"left_wrist_moved_m": round(moved["L"], 3), "right_wrist_moved_m": round(moved["R"], 3),
                                 "skinned_verts": len(ev.data.vertices)}

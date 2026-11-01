@@ -15,7 +15,7 @@ def bake(obj, res=1024, dilate=6):
     from mathutils import Matrix
 
     me = obj.data
-    col = me.color_attributes.active_color or me.color_attributes[0]
+    name = (me.color_attributes.active_color or me.color_attributes[0]).name
     bpy.context.view_layer.objects.active = obj
     for o in bpy.context.view_layer.objects:
         o.select_set(o is obj)
@@ -26,6 +26,8 @@ def bake(obj, res=1024, dilate=6):
     bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=4.0 / res)
     bpy.ops.object.mode_set(mode="OBJECT")
 
+    me = obj.data  # edit mode rebuilt the mesh data: earlier attribute references are stale
+    col = me.color_attributes[name]
     me.calc_loop_triangles()
     tri_loops = np.empty(len(me.loop_triangles) * 3, np.int32)
     me.loop_triangles.foreach_get("loops", tri_loops)

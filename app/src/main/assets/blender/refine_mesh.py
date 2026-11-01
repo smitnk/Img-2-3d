@@ -74,7 +74,10 @@ def rigify(body):
         rep = R.bind(rig, body)
         if not rep.get("ok"):
             raise RuntimeError(f"weights not usable ({rep.get('route')})")
-        bpy.data.objects.remove(meta, do_unlink=True)
+        # Rigify leaves its metarig and helper objects (widget shapes, proxies) behind: keep only the deliverable.
+        for o in list(bpy.data.objects):
+            if o is not body and o is not rig:
+                bpy.data.objects.remove(o, do_unlink=True)
         deform = sum(1 for b in rig.data.bones if b.use_deform)
         print(f"rigify rig: {deform} deform bones, route {rep.get('route')}")
         return rig, {"bones": deform, "skinning": f"Rigify, bone heat ({rep.get('route')})", "route": rep.get("route")}

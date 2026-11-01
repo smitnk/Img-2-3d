@@ -213,7 +213,7 @@ def build(a):
     if a.accessory == "glasses":
         for s, x in (("L", 1), ("R", -1)):
             P(f"Lens.{s}", "cyl", (eye_s * 3.2, eye_s * 3.2, 0.006), (x * hw * 0.2, face_y - 0.02, head_c + head_d * 0.05),
-              "Pupil", "head", rot=(90, 0, 0), solidify=0.003)
+              "Pupil", "head", rot=(90, 0, 0))  # closed disc: solidify would add an inward shell
         P("Bridge", "cube", (hw * 0.12, 0.006, 0.006), (0, face_y - 0.02, head_c + head_d * 0.07), "Pupil", "head")
     elif a.accessory == "hat":
         P("HatBrim", "cyl", (hw * 1.5, hdp * 1.5, 0.015), (0, 0, head_c + head_d * 0.36), "Accent", "head")

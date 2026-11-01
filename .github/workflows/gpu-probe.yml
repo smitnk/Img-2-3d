@@ -19,19 +19,21 @@ jobs:
           COPY tools/blender-runtime/gpu_test.py /opt/gpu_test.py
           DF
           docker build -q -t rt -f Dockerfile.probe . 2>&1 | tail -n 20 | tee setup.log
-      - name: Variants
+      - name: Variants (proot, exactly like the app)
         run: |
+          docker create --name c rt >/dev/null && mkdir rootfs && docker export c | sudo tar -x -C rootfs
+          sudo apt-get install -y -qq libtalloc-dev uthash-dev libarchive-dev >/dev/null
+          git clone -q --depth 1 https://github.com/termux/proot /tmp/proot && make -s -C /tmp/proot/src -j4 HAS_LOADER_32BIT= >/dev/null 2>&1
+          export PROOT_LOADER=/tmp/proot/src/loader/loader LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_PLATFORM=surfaceless EGL_LOG_LEVEL=debug
+          P=/tmp/proot/src/proot
           try() { name=$1; shift
-            docker run --rm $(printf -- '-e %s ' LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_LOG_LEVEL=debug "$@") rt \
-              /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > "v_$name.log" 2>&1
+            $P --kill-on-exit -0 --link2symlink -r rootfs "$@" -b /proc -b /sys -w /opt /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > "v_$name.log" 2>&1
             echo "=== $name exit=$? $(grep -c 'GPUTEST render ok' v_$name.log) renders"
-            grep -E "GPUTEST|EGL|libEGL|Error|error|OpenGL" "v_$name.log" | grep -v "added config" | head -n 30; }
+            grep -E "GPUTEST|DRM|swrast|render node|EGL Error|Error|error" "v_$name.log" | grep -v "added config" | head -n 15; }
           {
-          echo "=== eglinfo surfaceless"; docker run --rm -e LIBGL_ALWAYS_SOFTWARE=1 rt eglinfo -p surfaceless 2>&1 | head -n 60
-          try surfaceless EGL_PLATFORM=surfaceless
-          try device EGL_PLATFORM=device
-          try default EGL_LOG_LEVEL=debug
-          try surfaceless_gl45 EGL_PLATFORM=surfaceless MESA_GL_VERSION_OVERRIDE=4.5 MESA_GLSL_VERSION_OVERRIDE=450
+          echo "=== host /dev/dri:"; ls -la /dev/dri 2>&1
+          try bind_all_dev -b /dev
+          try bind_selected -b /dev/null -b /dev/zero -b /dev/random -b /dev/urandom
           } 2>&1 | tee log.txt
       - name: Push
         if: always()

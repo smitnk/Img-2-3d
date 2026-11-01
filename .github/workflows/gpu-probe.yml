@@ -29,8 +29,10 @@ jobs:
           try() { name=$1; shift
             $P --kill-on-exit -0 --link2symlink -r rootfs "$@" -b /proc -b /sys -w /opt /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > "v_$name.log" 2>&1 && rc=0 || rc=$?
             echo "=== $name exit=$rc $(grep -c 'GPUTEST render ok' v_$name.log) renders"
-            grep -E "GPUTEST|DRM|swrast|render node|EGL Error|Error|error" "v_$name.log" | grep -v "added config" | head -n 15 || true; }
+            grep -vE "added config|^libEGL debug: +0x|^libEGL debug: ---" "v_$name.log" | head -n 40 || true; }
           {
+          echo "=== proot"; ls -la $P $PROOT_LOADER; $P --version 2>&1 | head -n 3; $P -r rootfs /bin/true; echo "true exit=$?"
+          $P -0 -r rootfs -b /proc /bin/ls /opt 2>&1 | head
           echo "=== host /dev/dri:"; ls -la /dev/dri 2>&1
           try bind_all_dev -b /dev
           try bind_selected -b /dev/null -b /dev/zero -b /dev/random -b /dev/urandom

@@ -64,6 +64,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             put("EGL_PLATFORM", "surfaceless")
             put("LIBGL_ALWAYS_SOFTWARE", "1")
             put("GALLIUM_DRIVER", "llvmpipe")
+            put("XDG_CACHE_HOME", "/tmp/.cache") // Mesa shader cache; always writable
         }
         val log = ArrayDeque<String>()
         val t0 = System.nanoTime()

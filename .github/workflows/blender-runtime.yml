@@ -69,7 +69,7 @@ jobs:
         run: |
           export PROOT_LOADER=/tmp/proot/src/loader/loader
           # Same GPU environment the app sets (BlenderRunner): Mesa software EGL, no /dev/dri.
-          export EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe HOME=/root
+          export EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe HOME=/root XDG_CACHE_HOME=/tmp/.cache
           sudo cp tools/blender-runtime/gpu_test.py rootfs/opt/gpu_test.py
           proot-termux --kill-on-exit -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys -w /opt \
             /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > gpu_test.log 2>&1 \

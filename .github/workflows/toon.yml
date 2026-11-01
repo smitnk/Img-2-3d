@@ -1,0 +1,63 @@
+name: Toon Creator (free CC0 / Model Forge bases on ARM64 Blender)
+
+# Reshapes rigged cartoon characters with toon_edit.py: Model Forge presets (made by the app itself) and free CC0
+# characters (Kenney Mini Characters, Quaternius Robot Expressive). Renders before/after thumbnails to ci-logs-toon.
+on:
+  push:
+    paths: ["app/src/main/assets/blender/toon_edit.py", "tools/toon/**", ".github/workflows/toon.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: toon, cancel-in-progress: true }
+
+jobs:
+  toon:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free CC0 characters
+        run: |
+          mkdir -p bases
+          curl -fsSL -o kenney.zip https://opengameart.org/sites/default/files/kenney_mini-characters.zip
+          unzip -q kenney.zip -d kenney && find kenney -iname "*.glb" | head -20 && cat kenney/License.txt | head -5
+          find kenney -iname "*.glb" | while read f; do cp "$f" "bases/kenney_$(basename "$f" | tr ' ' '_')"; done
+          curl -fsSL -o bases/quaternius_robot.glb https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb
+          ls -la bases
+      - name: Unpack runtime
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
+          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
+          sudo mkdir -p rootfs/opt/app rootfs/opt/job rootfs/opt/bases
+          sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
+          sudo cp tools/toon/*.json rootfs/opt/job/ && sudo cp bases/* rootfs/opt/bases/
+          sudo mount -t proc proc rootfs/proc
+      - name: Bases and edits
+        run: |
+          B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
+            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
+          run() { name=$1; shift; if B "$@" > "log_$name.txt" 2>&1; then echo "$name OK"; else echo "$name FAILED"; tail -n 25 "log_$name.txt"; fi; }
+          {
+          for t in chibi_humanoid round_buddy snow_buddy clay_chibi; do
+            run "forge_$t" /opt/forge/scripts/generate_model.py -- --model-type $t --out /tmp/forge/$t
+            g=$(ls rootfs/tmp/forge/$t/*.glb 2>/dev/null | head -1) && sudo cp "$g" rootfs/opt/bases/forge_$t.glb
+          done
+          ls rootfs/opt/bases
+          for base in rootfs/opt/bases/*.glb; do b=$(basename "$base" .glb)
+            run "orig_$b" postprocess.py -- --in /opt/bases/$b.glb --out /tmp/t/orig_$b --res 360 --thumb-only
+            for s in chibi tall buddy; do
+              run "${b}_$s" toon_edit.py -- --base /opt/bases/$b.glb --spec /opt/job/spec_$s.json --out /tmp/t/${b}_$s
+              grep -h "^TOON\|toon: bones" "log_${b}_$s.txt" || true
+              g=$(ls rootfs/tmp/t/${b}_$s/*.glb 2>/dev/null | head -1 | sed 's#^rootfs##')
+              [ -n "$g" ] && run "post_${b}_$s" postprocess.py -- --in "$g" --out /tmp/t/${b}_$s --res 360 && grep -h POSTPROCESS "log_post_${b}_$s.txt"
+            done
+          done
+          } 2>&1 | tee results.txt
+      - name: Push results to ci-logs-toon
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-toon
+          cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo none > log.txt
+          for d in "$GITHUB_WORKSPACE"/rootfs/tmp/t/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "$(basename "$d").png"; done
+          sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "toon $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-toon

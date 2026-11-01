@@ -65,6 +65,7 @@ import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -188,6 +189,7 @@ fun BuilderScreen(state: UiState, vm: AppViewModel) {
     val spec = state.builder
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Body", "Limbs", "Face", "Style", "Colours")
+    LaunchedEffect(Unit) { if (state.builderPreview == null) vm.schedulePreview(0) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(spec.name, { v -> vm.editBuilder { it.copy(name = v.take(40)) } }, label = { Text("Name") }, singleLine = true, modifier = Modifier.weight(1f))

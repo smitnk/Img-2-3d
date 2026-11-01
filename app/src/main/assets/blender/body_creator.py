@@ -71,6 +71,7 @@ def load_reference(path):
     else:
         bpy.ops.import_scene.gltf(filepath=path)
     new = [o for o in bpy.data.objects if o not in before]
+    names = [o.name for o in new]  # join() deletes objects: keep names, not references
     meshes = [o for o in new if o.type == "MESH"]
     if not meshes:
         raise SystemExit(f"reference {path} has no mesh")
@@ -83,8 +84,9 @@ def load_reference(path):
     bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     ref.modifiers.clear()
-    for o in new:
-        if o is not ref and o.name in bpy.data.objects:
+    for nm in names:
+        o = bpy.data.objects.get(nm)
+        if o is not None and o is not ref:
             bpy.data.objects.remove(o, do_unlink=True)
     ref.name = "Reference"
     ref.hide_set(True)  # never exported (export_glb uses visible objects)
@@ -139,12 +141,17 @@ def paint_from(body, ref):
     """Photo colours: copy the reference's vertex colours onto the body and bake them into its skin texture."""
     src = ref.data.color_attributes.active_color or ref.data.color_attributes[0]
     print(f"photo paint from {src.name} ({src.domain}, {src.data_type})")
-    body.data.color_attributes.new(src.name, "FLOAT_COLOR", "POINT")
+    body.data.color_attributes.new(src.name, src.data_type, src.domain)  # transfer needs the same type and domain
     dt = body.modifiers.new("colors", "DATA_TRANSFER")
     dt.object = ref
-    dt.use_vert_data = True
-    dt.data_types_verts = {"COLOR_VERTEX"}
-    dt.vert_mapping = "POLYINTERP_NEAREST"
+    if src.domain == "CORNER":
+        dt.use_loop_data = True
+        dt.data_types_loops = {"COLOR_CORNER"}
+        dt.loop_mapping = "POLYINTERP_NEAREST"
+    else:
+        dt.use_vert_data = True
+        dt.data_types_verts = {"COLOR_VERTEX"}
+        dt.vert_mapping = "POLYINTERP_NEAREST"
     dg = bpy.context.evaluated_depsgraph_get()
     me = bpy.data.meshes.new_from_object(body.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
     old = body.data

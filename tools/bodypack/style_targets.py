@@ -201,7 +201,12 @@ def make(arrays, index, skel, weights):
         if len(ei) and len(base):
             nn = base[np.argmin(((v[ei][:, None] - v[base][None]) ** 2).sum(2), axis=1)]
             d[ei] = d[nn]
-        d[help_i] = d[near]  # eyeballs, teeth, hair helper follow too
+        d[help_i] = d[near]  # teeth, hair helper follow the nearest skin
+        for s in "LR":  # eyeballs move rigidly with their socket (nearest-vertex would let lids and ball drift apart)
+            inner = (~on_body) & (np.linalg.norm(v - eye_c[s], axis=1) < 0.25)
+            ring = on_body & (np.linalg.norm(v - eye_c[s], axis=1) < 0.45)
+            if inner.any() and ring.any():
+                d[inner] = d[ring].mean(0)
         return d
 
     out = []
@@ -211,7 +216,6 @@ def make(arrays, index, skel, weights):
         out.append(("style", name, keep.astype(np.int32), d[keep].astype(np.float16)))
     for name in HEADS:
         d = smooth(shape(name), 20)
-        d[help_i] = d[near]
         keep = np.nonzero(np.linalg.norm(d, axis=1) > 1e-4)[0]
         out.append(("toonhead", name, keep.astype(np.int32), d[keep].astype(np.float16)))
     return out

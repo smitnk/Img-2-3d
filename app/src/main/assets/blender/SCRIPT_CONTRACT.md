@@ -22,4 +22,11 @@ Write ONE Python file for Blender 4.2 (bpy) that builds a 3D character. Rules:
      bone_name follow that bone rigidly. Use the bone names root, pelvis, spine, neck, head,
      upper_arm.L/R, forearm.L/R, hand.L/R, thigh.L/R, shin.L/R, foot.L/R.
 6. `FORGE_PARAMS` (a dict) is available as a global if the app passes parameters.
+7. Every result goes through a quality gate (game profile). Build so it passes:
+   - No floating parts: every accessory, eye, button or hair piece must touch or slightly sink into the body
+     (overlap ~1-2 mm). Gaps read as errors.
+   - No z-fighting: never place two faces in the same plane (e.g. a decal exactly on a surface); offset or sink them.
+   - Normals point outward; no zero-area faces, no stray loose vertices or edges; apply object scale only via
+     size_xyz/mesh data, never negative scales.
+   - Joints where limbs bend (shoulders, elbows, hips, knees) need enough geometry: segments >= 16 on limbs.
 Return only the Python code.

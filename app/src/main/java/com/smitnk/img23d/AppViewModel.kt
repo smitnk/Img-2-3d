@@ -14,6 +14,7 @@ import com.smitnk.img23d.blender.BlenderResult
 import com.smitnk.img23d.blender.BlenderRunner
 import com.smitnk.img23d.blender.BlenderRuntime
 import com.smitnk.img23d.blender.BuilderSpec
+import com.smitnk.img23d.blender.ExportPreset
 import com.smitnk.img23d.blender.MemoryProbe
 import com.smitnk.img23d.blender.Preset
 import com.smitnk.img23d.blender.RuntimeStatus
@@ -100,6 +101,9 @@ data class UiState(
     val query: String = "",
     val failure: Failure? = null,
     val storageMb: Long = 0,
+    /** Preset export in progress (its label), and a finished one waiting for a save location (file, model name). */
+    val exporting: String? = null,
+    val exportReady: Pair<File, String>? = null,
 ) {
     val dest: Dest get() = stack.last()
     val visibleModels get() = models.filter { (filter == null || it.source == filter) && (query.isBlank() || it.name.contains(query, true)) }
@@ -189,9 +193,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun delete(m: Model) = viewModelScope.launch(Dispatchers.IO) { library.delete(m); refreshLibrary() }
     fun clearLibrary() = viewModelScope.launch(Dispatchers.IO) { library.clear(); refreshLibrary() }
 
-    fun export(m: Model, out: OutputStream, blend: Boolean = false) = viewModelScope.launch(Dispatchers.IO) {
-        runCatching { out.use { o -> (if (blend) m.blend!! else m.glb).inputStream().use { it.copyTo(o) } } }
+    fun saveFile(file: File, out: OutputStream) = viewModelScope.launch(Dispatchers.IO) {
+        runCatching { out.use { o -> file.inputStream().use { it.copyTo(o) } } }
             .onFailure { e -> fail("Export failed", e.message ?: e.toString()) }
+    }
+
+    /** Converts a model for an engine (bx_export preset) in Blender, then hands the file to the save dialog. */
+    fun exportPreset(m: Model, preset: ExportPreset) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        if (job?.isActive == true) return
+        _state.update { it.copy(exporting = preset.label) }
+        job = viewModelScope.launch {
+            runCatching {
+                val f = runner.export(m.glb, preset.id, m.name, s.threadCount()) {}
+                // Keep a copy outside the job dir, which the next Blender run wipes.
+                f.copyTo(File(getApplication<Application>().cacheDir, "export/${f.name}"), overwrite = true)
+            }.onSuccess { f -> _state.update { it.copy(exporting = null, exportReady = f to m.name) } }
+                .onFailure { e ->
+                    _state.update { it.copy(exporting = null) }
+                    if (e !is CancellationException) fail("${preset.label} export failed", e.message ?: e.toString())
+                }
+        }
+    }
+
+    fun exportHandled() = _state.update { it.copy(exportReady = null) }
+
+    /** Text-to-3D model flagged by the quality gate: ask Claude to fix the causes, then run it again. */
+    fun fixQualityWithAi(m: Model) {
+        val script = m.script?.readText() ?: return
+        val issues = m.quality?.let { it.errors + it.warnings }.orEmpty()
+        if (issues.isEmpty() || s.apiKey.isBlank()) return
+        editText { it.copy(description = it.description.ifBlank { m.detail }, writing = true) }
+        go(Dest.Text)
+        viewModelScope.launch {
+            runCatching { writer.fixQuality(s.apiKey, s.apiModel, _state.value.text.description, script, issues) }
+                .onSuccess { nd -> editText { it.copy(writing = false, draft = nd) }; runText() }
+                .onFailure { e -> editText { it.copy(writing = false) }; fail("AI fix failed", e.message ?: e.toString()) }
+        }
     }
 
     // ---------- inputs ----------
@@ -391,6 +429,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             "--smooth", s.refineSmooth.toString(), "--decimate", s.refineDecimate.toString()))
         if (!s.vertexColors) add("--no-colors")
         if (s.refineRig) add("--rig")
+        if (s.vertexColors) addAll(listOf("--texture", "1024")) // UV texture for engines that ignore vertex colours
         if (s.saveBlend) add("--blend")
     }
 
@@ -403,7 +442,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             name = i.optString("name", name).ifBlank { name }, source = source, writeGlb = { b.glb.copyTo(it, overwrite = true) },
             vertices = i.optInt("vertices"), faces = i.optInt("triangles"), bones = i.optJSONObject("rig")?.optInt("bones") ?: 0,
             timings = extraTimings + ("blender" to (b.seconds * 1000).toLong()), peakMemMb = 0, detail = detail,
-            thumbnail = thumb, thumbnailFrom = thumbFile, blend = b.blend, script = script, extra = i,
+            // Blender's own 3/4 render beats a copied photo thumbnail; fall back when postprocess didn't run.
+            thumbnail = thumb.takeIf { b.thumb == null }, thumbnailFrom = b.thumb ?: thumbFile, blend = b.blend, script = script,
+            extra = i, quality = b.quality?.optJSONObject("quality"),
         )
     }
 

@@ -23,7 +23,7 @@ import com.smitnk.img23d.ui.StudioTheme
 
 class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
-    private var pendingExport: Pair<Model, Boolean>? = null
+    private var pendingExport: java.io.File? = null
     private var pendingPhotoMode = PhotoMode.MESH
 
     private val picker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     private val exporter = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val p = pendingExport
         pendingExport = null
-        if (uri != null && p != null) contentResolver.openOutputStream(uri)?.let { vm.export(p.first, it, p.second) }
+        if (uri != null && p != null) contentResolver.openOutputStream(uri)?.let { vm.saveFile(p, it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,10 +49,7 @@ class MainActivity : ComponentActivity() {
                 picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             },
             pickScript = { scriptPicker.launch(arrayOf("text/x-python", "text/plain", "application/x-python-code", "application/octet-stream")) },
-            export = { m, blend ->
-                pendingExport = m to blend
-                exporter.launch(m.name.replace(Regex("[^A-Za-z0-9_-]+"), "_") + if (blend) ".blend" else ".glb")
-            },
+            export = { m, blend -> saveAs(if (blend) m.blend!! else m.glb, m.name, if (blend) "blend" else "glb") },
             share = ::share,
             copy = { label, text ->
                 getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(label, text))
@@ -66,8 +63,17 @@ class MainActivity : ComponentActivity() {
                 if (state.dest == Dest.Running && settings.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
+            // A preset export finished converting: ask where to save it.
+            LaunchedEffect(state.exportReady) {
+                state.exportReady?.let { (file, name) -> vm.exportHandled(); saveAs(file, name, file.extension) }
+            }
             StudioTheme(settings.dynamicColor, settings.reduceMotion) { AppRoot(state, settings, vm, cb) }
         }
+    }
+
+    private fun saveAs(file: java.io.File, name: String, ext: String) {
+        pendingExport = file
+        exporter.launch(name.replace(Regex("[^A-Za-z0-9_-]+"), "_") + ".$ext")
     }
 
     override fun onResume() {

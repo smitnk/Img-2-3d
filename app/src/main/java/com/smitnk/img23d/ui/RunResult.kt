@@ -32,6 +32,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.collectAsState
+import com.smitnk.img23d.blender.ExportPreset
+import com.smitnk.img23d.data.Quality
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Pause
@@ -131,6 +138,8 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
     var renaming by remember { mutableStateOf(false) }
     var showScript by remember { mutableStateOf(false) }
     var spin by remember { mutableStateOf(settings.autoRotate) }
+    var exportMenu by remember { mutableStateOf(false) }
+    val exporting = vm.state.collectAsState().value.exporting
     // Parse off the main thread; a broken or unsupported file shows a message instead of crashing the app.
     val mesh by produceState<Result<GltfMesh>?>(null, m.id) { value = withContext(Dispatchers.Default) { runCatching { GltfMesh(m.glb.readBytes()) } } }
     val view = remember { mutableStateOf<ModelView?>(null) }
@@ -173,6 +182,21 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                 Button(onClick = { cb.share(m) }, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Rounded.Share, null); Spacer(Modifier.width(6.dp)); Text("Share") }
                 FilledTonalButton(onClick = { cb.export(m, false) }, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Rounded.SaveAlt, null); Spacer(Modifier.width(6.dp)); Text("Save GLB") }
             }
+            m.quality?.let { q ->
+                QualityCard(q, canFix = m.source == Source.TEXT && m.script != null && settings.apiKey.isNotBlank() && !q.pass) { vm.fixQualityWithAi(m) }
+            }
+            Box {
+                OutlinedButton(onClick = { exportMenu = true }, enabled = exporting == null, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    if (exporting != null) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)); Text("Exporting for $exporting…") }
+                    else { Icon(Icons.Rounded.SaveAlt, null); Spacer(Modifier.width(8.dp)); Text("Export for Unity, Unreal, Roblox, print…") }
+                }
+                DropdownMenu(exportMenu, { exportMenu = false }) {
+                    ExportPreset.entries.filter { m.bones > 0 || !it.id.endsWith("_skeletal") }.forEach { p ->
+                        DropdownMenuItem(text = { Column { Text(p.label); Text(p.note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+                            onClick = { exportMenu = false; vm.exportPreset(m, p) })
+                    }
+                }
+            }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER) OutlinedButton(onClick = { vm.refine(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Refine in Blender")
             }
@@ -211,5 +235,39 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
             confirmButton = { TextButton(onClick = { cb.copy("Script", code); showScript = false }) { Text("Copy") } },
             dismissButton = { TextButton(onClick = { showScript = false }) { Text("Close") } },
         )
+    }
+}
+
+/** bx_audit result: what an engine or printer would trip over (floating parts, z-fighting, flipped normals…). */
+@Composable
+private fun QualityCard(q: Quality, canFix: Boolean, onFix: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    var open by remember { mutableStateOf(false) }
+    val issues = q.errors + q.warnings
+    Card(onClick = { open = !open }, enabled = issues.isNotEmpty(), modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = if (q.pass) cs.secondaryContainer else cs.errorContainer,
+            disabledContainerColor = cs.secondaryContainer)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (q.pass) Icons.Rounded.Verified else Icons.Rounded.Warning, null,
+                    tint = if (q.pass) cs.onSecondaryContainer else cs.onErrorContainer)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(if (q.pass) "Game-ready check passed" else "${q.errors.size} issue${if (q.errors.size == 1) "" else "s"} to fix",
+                        style = MaterialTheme.typography.titleSmall)
+                    Text(buildString {
+                        if (q.warnings.isNotEmpty()) append("${q.warnings.size} warning${if (q.warnings.size == 1) "" else "s"} · ")
+                        append(if (issues.isEmpty()) "no floating parts, z-fighting or bad normals" else if (open) "tap to hide" else "tap for details")
+                    }, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            if (open) {
+                q.errors.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                q.warnings.forEach { Text("◦ $it", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant) }
+            }
+            if (canFix) FilledTonalButton(onClick = onFix, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Fix issues with AI")
+            }
+        }
     }
 }

@@ -10,7 +10,11 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
 
-class BlenderResult(val glb: File, val blend: File?, val info: JSONObject, val seconds: Double, val log: List<String>)
+class BlenderResult(
+    val glb: File, val blend: File?, val info: JSONObject, val seconds: Double, val log: List<String>,
+    /** postprocess.py output: {"quality": {pass, errors, warnings, ...}, "thumbnail": ...}; null if it didn't run. */
+    val quality: JSONObject? = null, val thumb: File? = null,
+)
 
 class BlenderException(message: String, val log: List<String>) : IOException(message)
 
@@ -28,12 +32,35 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
 
     fun cancel() { process?.destroyForcibly() }
 
-    suspend fun run(script: String, args: List<String>, threads: Int, onLine: (String) -> Unit): BlenderResult = withContext(Dispatchers.IO) {
+    /** Runs [script]; then, unless [postprocess] is false, postprocess.py (quality gate + thumbnail) on its GLB. */
+    suspend fun run(script: String, args: List<String>, threads: Int, postprocess: Boolean = true, onLine: (String) -> Unit): BlenderResult {
+        val r = exec(script, args, threads, "glb", onLine)
+        if (!postprocess) return r
+        onLine("Checking quality and rendering a thumbnail…")
+        // Best-effort: a model is never lost because its quality check failed.
+        return runCatching {
+            exec("postprocess.py", listOf("--in", "/tmp/forge-job/${r.glb.name}"), threads, "glb", onLine, clearOut = false)
+            val q = File(r.glb.parentFile, "quality.json")
+            BlenderResult(r.glb, r.blend, r.info, r.seconds, r.log,
+                q.takeIf { it.isFile }?.let { JSONObject(it.readText()) }, File(r.glb.parentFile, "thumb.png").takeIf { it.isFile })
+        }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; r }
+    }
+
+    /** Re-exports [glb] with a bx_export preset; returns the exported file (fbx/glb/stl). */
+    suspend fun export(glb: File, preset: String, name: String, threads: Int, onLine: (String) -> Unit): File {
+        glb.copyTo(File(jobIn.apply { mkdirs() }, "export_in.glb"), overwrite = true)
+        val ext = if (preset == "print") "stl" else if (preset.startsWith("unity") || preset.startsWith("unreal") || preset == "roblox") "fbx" else "glb"
+        return exec("export_preset.py", listOf("--in", "/opt/job/export_in.glb", "--preset", preset, "--name", name), threads, ext, onLine).glb
+    }
+
+    private suspend fun exec(
+        script: String, args: List<String>, threads: Int, outExt: String, onLine: (String) -> Unit, clearOut: Boolean = true,
+    ): BlenderResult = withContext(Dispatchers.IO) {
         check(runtime.isReady()) { "Blender engine is not installed" }
         val scripts = ScriptAssets.install(context)
         val guestOut = "/tmp/forge-job"
         val hostOut = File(runtime.rootfs, guestOut.removePrefix("/"))
-        hostOut.deleteRecursively()
+        if (clearOut) hostOut.deleteRecursively()
         hostOut.mkdirs()
         jobIn.mkdirs()
         val tmp = File(context.cacheDir, "proot-tmp").apply { deleteRecursively(); mkdirs() }
@@ -81,7 +108,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             p.waitFor(30, TimeUnit.SECONDS)
             coroutineContext.ensureActive()
             val code = if (p.isAlive) -1 else p.exitValue()
-            val glb = hostOut.listFiles { f -> f.extension == "glb" }?.firstOrNull()
+            val glb = hostOut.listFiles { f -> f.extension == outExt }?.firstOrNull()
             if (code != 0 || glb == null || glb.length() == 0L) {
                 throw BlenderException("Blender exited with code $code\n" + log.takeLast(25).joinToString("\n"), log.toList())
             }

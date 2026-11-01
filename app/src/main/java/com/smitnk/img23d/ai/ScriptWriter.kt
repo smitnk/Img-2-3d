@@ -38,6 +38,19 @@ class ScriptWriter(private val contract: String, private val example: String) {
             append("This script failed in Blender with the log above. Fix the cause and return the complete corrected script.")
         })
 
+    /** The script ran but the quality gate (bx_audit) flagged problems: fix the geometry, keep the design. */
+    suspend fun fixQuality(apiKey: String, model: String, description: String, script: String, issues: List<String>): Draft =
+        call(apiKey, model, buildString {
+            appendLine("<character>${description.trim()}</character>")
+            appendLine("<script>")
+            appendLine(script)
+            appendLine("</script>")
+            appendLine("<quality_gate>")
+            issues.take(30).forEach { appendLine("- $it") }
+            appendLine("</quality_gate>")
+            append("This script runs, but the quality gate reported the issues above. Fix their causes without changing the design, and return the complete corrected script.")
+        })
+
     private fun system() = """
 You write Blender 4.2 Python generator scripts for a mobile app that runs them headless on a phone and exports
 the result as a rigged GLB character. A failed script costs the user time, so correctness beats ambition.

@@ -85,3 +85,15 @@ data class BuilderSpec(
         colors = Builder.colors.associate { (k, _) -> k to "#%06X".format(rnd.nextInt(0x1000000)) },
     )
 }
+
+/** bx_export presets (scenario-labs, MIT) offered in the Result screen's export menu. */
+enum class ExportPreset(val id: String, val label: String, val note: String) {
+    UNITY("unity", "Unity", "FBX · static mesh"),
+    UNITY_RIG("unity_skeletal", "Unity (rigged)", "FBX · armature + skin"),
+    UNREAL("unreal", "Unreal", "FBX · static mesh"),
+    UNREAL_RIG("unreal_skeletal", "Unreal (rigged)", "FBX · armature + skin"),
+    ROBLOX("roblox", "Roblox", "FBX · Creator Hub settings"),
+    GODOT("godot", "Godot", "GLB"),
+    WEB("web", "Web / three.js", "GLB · WebP textures"),
+    PRINT("print", "3D print", "STL · millimetres"),
+}

@@ -24,12 +24,23 @@ data class Model(
     val timingsMs: Map<String, Long>,
     val peakMemMb: Int,
     val detail: String,
+    val quality: Quality? = null,
 ) {
     val glb get() = File(dir, "model.glb")
     val blend get() = File(dir, "model.blend").takeIf { it.isFile }
     val thumbnail get() = File(dir, "preprocessed.png").takeIf { it.isFile }
     val script get() = File(dir, "script.py").takeIf { it.isFile }
     val totalMs get() = timingsMs.values.sum()
+}
+
+/** bx_audit.deliverable result for a Blender model (game profile). */
+data class Quality(val pass: Boolean, val errors: List<String>, val warnings: List<String>) {
+    companion object {
+        fun from(j: JSONObject?): Quality? = j?.let {
+            fun list(k: String) = it.optJSONArray(k)?.let { a -> (0 until a.length()).map(a::getString) }.orEmpty()
+            Quality(it.optBoolean("pass"), list("errors"), list("warnings"))
+        }
+    }
 }
 
 /** One shared model library for both engines. Reads System B's v1 project metadata unchanged. */
@@ -56,6 +67,7 @@ class Library(context: Context) {
         blend: File? = null,
         script: String? = null,
         extra: JSONObject? = null,
+        quality: JSONObject? = null,
     ): Model {
         val now = System.currentTimeMillis()
         val dir = File(root, now.toString()).apply { mkdirs() }
@@ -71,6 +83,7 @@ class Library(context: Context) {
             .put("peakPssMb", peakMemMb).put("detail", detail)
             .put("timingsMs", JSONObject(timings as Map<*, *>))
         extra?.let { meta.put("extra", it) }
+        quality?.let { meta.put("quality", it) }
         File(dir, "meta.json").writeText(meta.toString(2))
         return load(dir)!!
     }
@@ -98,6 +111,7 @@ class Library(context: Context) {
             resolution = j.optInt("resolution"),
             timingsMs = t.keys().asSequence().associateWith { t.getLong(it) },
             peakMemMb = j.optInt("peakPssMb"), detail = j.optString("detail"),
+            quality = Quality.from(j.optJSONObject("quality")),
         )
     }.getOrNull()
 }

@@ -60,6 +60,10 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             put("TMPDIR", "/tmp")
             put("LANG", "C.UTF-8")
             put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+            // Software OpenGL (Mesa llvmpipe) for scripts that render or use the gpu module; no GPU driver is reachable.
+            put("EGL_PLATFORM", "surfaceless")
+            put("LIBGL_ALWAYS_SOFTWARE", "1")
+            put("GALLIUM_DRIVER", "llvmpipe")
         }
         val log = ArrayDeque<String>()
         val t0 = System.nanoTime()

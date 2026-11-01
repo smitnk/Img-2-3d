@@ -164,8 +164,8 @@ class BlenderRuntime(context: Context) {
     }
 
     companion object {
-        /** v2 ships proot's full shared-library closure (libtalloc, libandroid-shmem, ...). */
-        const val REQUIRED_VERSION = 2
+        /** v2: proot's full shared-library closure. v3: Mesa software EGL (scripts that render / use gpu). */
+        const val REQUIRED_VERSION = 3
 
         fun sha256(f: File): String {
             if (!f.isFile) return ""

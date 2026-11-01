@@ -137,7 +137,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 is RuntimeStatus.Extracting -> "Unpacking" to (if (r.total > 0) r.done.toFloat() / r.total else null)
                 else -> null
             },
-            error = (state.runtime as? RuntimeStatus.Failed)?.message ?: if (vm.runtime.needsUpdate()) "Engine update available (fixes proot libraries). Tap Install." else null,
+            error = (state.runtime as? RuntimeStatus.Failed)?.message ?: if (vm.runtime.needsUpdate()) "Engine update available (adds software GPU for scripts that render). Tap Install." else null,
             onInstall = vm::installRuntime, onRemove = vm::uninstallRuntime,
         )
 

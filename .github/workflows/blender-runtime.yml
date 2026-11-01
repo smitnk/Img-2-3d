@@ -68,6 +68,14 @@ jobs:
       - name: Run every generator through proot (same mechanism as the phone)
         run: |
           export PROOT_LOADER=/tmp/proot/src/loader/loader
+          # Same GPU environment the app sets (BlenderRunner): Mesa software EGL, no /dev/dri.
+          export EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
+          sudo cp tools/blender-runtime/gpu_test.py rootfs/opt/gpu_test.py
+          proot-termux --kill-on-exit -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys -w /opt \
+            /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > gpu_test.log 2>&1 \
+            && grep GPUTEST gpu_test.log | tee -a run.log || { echo "GPU test FAILED"; tail -n 40 gpu_test.log; } | tee -a run.log
+          grep -q "GPUTEST render ok BLENDER_EEVEE_NEXT" gpu_test.log
+          sudo rm -f rootfs/opt/gpu_test.py rootfs/tmp/gpu_*.png
           proot-termux -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys /bin/ls /opt 2>&1 | tee -a run.log
           proot-termux -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys /opt/blender/blender -b --factory-startup --version 2>&1 | head -n 2 | tee -a run.log
           for t in chibi_humanoid clay_chibi snow_buddy round_buddy gorilla lizard_warrior lizard_refined; do
@@ -141,7 +149,7 @@ jobs:
               with open(p, "rb") as f:
                   for b in iter(lambda: f.read(1 << 20), b""): h.update(b)
               return h.hexdigest()
-          info = {"version": 2, "blender": "4.2.3", "forge_commit": open("tools/blender-runtime/forge/FORGE_COMMIT").read().strip(),
+          info = {"version": 3, "blender": "4.2.3", "forge_commit": open("tools/blender-runtime/forge/FORGE_COMMIT").read().strip(),
                   "files": {k: {"bytes": os.path.getsize(v), "sha256": sha(v)} for k, v in files.items()}}
           json.dump(info, open("runtime_info.json", "w"), indent=2)
           print(json.dumps(info, indent=2))

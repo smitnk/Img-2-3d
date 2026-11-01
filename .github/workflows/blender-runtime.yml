@@ -69,11 +69,12 @@ jobs:
         run: |
           export PROOT_LOADER=/tmp/proot/src/loader/loader
           # Same GPU environment the app sets (BlenderRunner): Mesa software EGL, no /dev/dri.
-          export EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
+          export EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe HOME=/root
           sudo cp tools/blender-runtime/gpu_test.py rootfs/opt/gpu_test.py
           proot-termux --kill-on-exit -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys -w /opt \
             /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > gpu_test.log 2>&1 \
-            && grep GPUTEST gpu_test.log | tee -a run.log || { echo "GPU test FAILED"; tail -n 40 gpu_test.log; } | tee -a run.log
+            && rc=0 || rc=$?
+          { echo "GPU test exit=$rc"; grep -vE "^libEGL debug" gpu_test.log | tail -n 40; } | tee -a run.log
           grep -q "GPUTEST render ok BLENDER_EEVEE_NEXT" gpu_test.log
           sudo rm -f rootfs/opt/gpu_test.py rootfs/tmp/gpu_*.png
           proot-termux -0 --link2symlink -r rootfs -b /dev -b /proc -b /sys /bin/ls /opt 2>&1 | tee -a run.log

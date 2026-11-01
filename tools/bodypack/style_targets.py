@@ -207,6 +207,11 @@ def make(arrays, index, skel, weights):
             ring = on_body & (np.linalg.norm(v - eye_c[s], axis=1) < 0.45)
             if inner.any() and ring.any():
                 d[inner] = d[ring].mean(0)
+        # teeth and tongue: one rigid move with the mouth (per-vertex moves can turn them inside out)
+        inner = (~on_body) & (np.linalg.norm(v - mouth_c, axis=1) < 0.6) & (head > 0.5)
+        ring = on_body & (mouth > 0.3)
+        if inner.any() and ring.any():
+            d[inner] = d[ring].mean(0)
         return d
 
     out = []

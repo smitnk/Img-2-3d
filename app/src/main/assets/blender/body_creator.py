@@ -266,7 +266,9 @@ def main():
     ref = load_reference(spec["reference"]) if spec.get("reference") and os.path.isfile(spec["reference"]) else None
     if ref is not None and spec.get("fit"):
         import fit
-        spec = fit.fit(pack, to_blender, np.unique(z["f_body"]), ref_points(ref), spec, passes=3)
+        rp = ref_points(ref)
+        print("fit: reference bbox", np.round(rp.min(0), 3).tolist(), np.round(rp.max(0), 3).tolist())
+        spec = fit.fit(pack, to_blender, np.unique(z["f_body"]), rp, spec, passes=3)
         spec["fit"] = False  # fitted once; edits in the app start from here
         print("BODYFIT", json.dumps({"macros": spec["macros"], "sliders": spec["sliders"], "error": spec["fit_error"]}))
     hm = pack.morph(spec.get("macros"), spec.get("sliders"))

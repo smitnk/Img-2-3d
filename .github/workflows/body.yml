@@ -83,6 +83,7 @@ jobs:
             grep -h "^BODY\|rigify\|body rig failed" "log_body_$n.txt" || true
             g=$(ls rootfs/tmp/o/$n/*.glb 2>/dev/null | head -1 | sed 's#^rootfs##')
             [ -n "$g" ] && run "post_$n" postprocess.py -- --in "$g" --out /tmp/o/$n --res 640 && grep -h POSTPROCESS "log_post_$n.txt"
+            [ -n "$g" ] && sudo mkdir -p rootfs/tmp/faces/$n && run "face_$n" postprocess.py -- --in "$g" --out /tmp/faces/$n --res 400 --region head --thumb-only
           done
           } 2>&1 | tee results.txt
       - name: Validate
@@ -105,5 +106,6 @@ jobs:
           mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-body
           cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo "no results" > log.txt
           for d in "$GITHUB_WORKSPACE"/rootfs/tmp/o/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "thumb_$(basename "$d").png"; done
+          for d in "$GITHUB_WORKSPACE"/rootfs/tmp/faces/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "face_$(basename "$d").png"; done
           sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "body log $GITHUB_RUN_ID"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-body

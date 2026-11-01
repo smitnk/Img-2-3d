@@ -20,6 +20,10 @@ sys.path.insert(0, "/opt/forge/scripts")
 import generate_model as gm  # noqa: E402
 import export_model  # noqa: E402
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path[:0] = [HERE, os.path.join(HERE, "bx")]
+import vcbake  # noqa: E402
+
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
@@ -34,6 +38,7 @@ def parse_args():
     p.add_argument("--keep-colors", action="store_true", default=True)
     p.add_argument("--no-colors", dest="keep_colors", action="store_false")
     p.add_argument("--rig", action="store_true", help="fit the 17-bone humanoid rig (best for T/A-posed figures)")
+    p.add_argument("--texture", type=int, default=0, help="bake vertex colours into a UV texture of this size (0 = off)")
     p.add_argument("--blend", action="store_true")
     return p.parse_args(argv)
 
@@ -49,6 +54,40 @@ def bake(obj, *mods):
     obj.modifiers.clear()
     obj.data = me
     bpy.data.meshes.remove(old)
+
+
+def rigify(body):
+    """Rigify rig fitted from mesh landmarks + verified weights (bx_rig). (None, why) if the mesh is not a
+    T/A-posed humanoid or binding fails; the caller then falls back to the simple distance-weighted rig."""
+    import bx_rig as R
+    meta = rig = None
+    try:
+        R.model_check([body], fix=True)
+        meta = R.add_metarig("basic")
+        R.fit_metarig(meta, R.landmarks(body))
+        problems = R.check_metarig(meta, body)
+        if problems:
+            raise RuntimeError("; ".join(problems[:3]))
+        rig, err = R.generate(meta)
+        if rig is None:
+            raise RuntimeError(err)
+        rep = R.bind(rig, body)
+        if not rep.get("ok"):
+            raise RuntimeError(f"weights not usable ({rep.get('route')})")
+        bpy.data.objects.remove(meta, do_unlink=True)
+        deform = sum(1 for b in rig.data.bones if b.use_deform)
+        print(f"rigify rig: {deform} deform bones, route {rep.get('route')}")
+        return rig, {"bones": deform, "skinning": f"Rigify, bone heat ({rep.get('route')})", "route": rep.get("route")}
+    except Exception as e:
+        print("rigify fallback:", e)
+        for o in (rig, meta):
+            if o is not None and o.name in bpy.data.objects:
+                bpy.data.objects.remove(o, do_unlink=True)
+        body.parent = None
+        body.modifiers.clear()
+        body.vertex_groups.clear()
+        bpy.context.view_layer.objects.active = body
+        return None, {"rigify_error": str(e)[:200]}
 
 
 def main():
@@ -117,8 +156,17 @@ def main():
     for poly in out.data.polygons:
         poly.use_smooth = True
 
-    rig = None
+    texture = None
+    if a.texture and len(out.data.color_attributes):
+        try:
+            texture = vcbake.bake(out, a.texture)
+        except Exception as e:  # GPU/EGL unavailable etc: vertex colours still carry the look
+            print("texture bake skipped:", e)
+
+    rig, rig_info = None, None
     if a.rig:
+        rig, rig_info = rigify(out)
+    if a.rig and rig is None:
         H = a.height
         z = lambda f: f * H  # noqa: E731
         lo2 = Vector((min(v.co.x for v in out.data.vertices), 0, 0))
@@ -136,15 +184,16 @@ def main():
                       (f"foot.{sd}", (x * 0.09 * H, 0, z(0.05)), (x * 0.09 * H, -0.1 * H, z(0.01)), f"shin.{sd}")]
         out["bone"] = ""  # blended distance weights (Model Forge auto_weights)
         rig = gm.build_rig([out], bones)
+        rig_info = dict(rig_info or {}, bones=17, skinning="blended distance weights")
 
     slug = gm.slugify(a.name) or "refined"
-    files = {"glb": export_model.export_glb(os.path.join(a.out, f"{slug}.glb"))}
+    files = {"glb": vcbake.export_glb(os.path.join(a.out, f"{slug}.glb"), deform_only=bool(rig_info and rig_info.get("route")))}
     if a.blend:
         files["blend"] = export_model.save_blend(os.path.join(a.out, f"{slug}.blend"))
     info = {"generator": "refine_mesh", "blender": bpy.app.version_string, "name": a.name, "slug": slug,
             "faces_in": faces_in, "triangles": sum(len(p.vertices) - 2 for p in out.data.polygons),
             "vertices": len(out.data.vertices), "colors": bool(len(out.data.color_attributes)),
-            "rig": {"bones": 17, "skinning": "blended distance weights"} if rig else None, "files": files,
+            "texture": texture, "rig": rig_info if rig else None, "files": files,
             "params": {k: v for k, v in vars(a).items() if k not in ("out", "inp")}}
     with open(os.path.join(a.out, "generation.json"), "w") as f:
         json.dump(info, f, indent=2)

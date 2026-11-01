@@ -24,7 +24,9 @@ jobs:
       - name: Run scripts
         run: |
           set -o pipefail
-          B() { sudo chroot rootfs /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
+          # same software-GL env as the app (BlenderRunner) so thumbnails / GPU bakes are tested the way the phone runs them
+          B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
+            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
           run() { name=$1; shift; start=$(date +%s)
             if B "$@" > "log_$name.txt" 2>&1; then echo "$name OK $(( $(date +%s) - start ))s $(tail -n 1 log_$name.txt)"; else echo "$name FAILED"; tail -n 30 "log_$name.txt"; fi; }
           {
@@ -37,6 +39,13 @@ jobs:
           run custom_robot run_custom.py -- --script /opt/app/examples/robot.py --out /tmp/o/c1 --name Robot
           run refine_lizard refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r1 --height 1.6
           run refine_rig refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r2 --decimate 0.3 --rig
+          run refine_texture refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r3 --decimate 0.3 --texture 1024 --rig
+          run rigify_humanoid refine_mesh.py -- --in "$(ls rootfs/tmp/o/b4/*.glb | sed 's#^rootfs##')" --out /tmp/o/r4 --height 1.7 --rig
+          grep -h "rigify\|baked\|texture bake" log_refine_texture.txt log_rigify_humanoid.txt || true
+          for d in rootfs/tmp/o/*/; do g=$(ls "$d"*.glb | head -1 | sed 's#^rootfs##'); run "post_$(basename "$d")" postprocess.py -- --in "$g" --out "$(dirname "$g")"; done
+          grep -h POSTPROCESS log_post_*.txt || true
+          for pr in unity unreal_skeletal roblox godot web print; do run "export_$pr" export_preset.py -- --in "$(ls rootfs/tmp/o/r4/*.glb | sed 's#^rootfs##')" --preset $pr --out /tmp/o/x_$pr --name Hero; done
+          grep -h "^EXPORT" log_export_*.txt || true
           } 2>&1 | tee results.txt
       - name: Validate GLBs
         run: |
@@ -44,8 +53,17 @@ jobs:
           sudo chmod -R a+r rootfs/tmp/o
           python - <<'PY' | tee -a results.txt
           import glob, trimesh
-          files = sorted(glob.glob("rootfs/tmp/o/*/*.glb"))
-          assert len(files) == 7, files
+          import json, os
+          files = sorted(f for f in glob.glob("rootfs/tmp/o/*/*.glb") if "/x_" not in f)
+          assert len(files) == 9, files
+          for d in sorted(glob.glob("rootfs/tmp/o/*/")):
+              if "/x_" in d:
+                  e = json.load(open(d + "export.json")); print("export", e); assert e["bytes"] > 1000; continue
+              q = json.load(open(d + "quality.json")); print(d, json.dumps(q)[:400])
+              assert q["quality"] is not None and os.path.getsize(d + "thumb.png") > 2000, d
+          for d in ("r3", "r4"):
+              print(d, json.dumps({k: v for k, v in json.load(open(f"rootfs/tmp/o/{d}/generation.json")).items() if k in ("texture", "rig")}))
+          assert json.load(open("rootfs/tmp/o/r3/generation.json"))["texture"]["coverage"] > 0.2
           for f in files:
               s = trimesh.load(f)
               n = sum(len(g.faces) for g in s.geometry.values())
@@ -53,7 +71,8 @@ jobs:
               assert n > 300
           PY
           mkdir -p glbs
-          for f in rootfs/tmp/o/*/*.glb; do sudo cp "$f" "glbs/$(basename "$(dirname "$f")")_$(basename "$f")"; done
+          for f in rootfs/tmp/o/*/thumb.png; do sudo cp "$f" "glbs/thumb_$(basename "$(dirname "$f")").png"; done
+          for f in rootfs/tmp/o/[!x]*/*.glb; do sudo cp "$f" "glbs/$(basename "$(dirname "$f")")_$(basename "$f")"; done
           sudo chown -R "$(id -u)" glbs && ls -la glbs
       - uses: actions/upload-artifact@v4
         if: always()

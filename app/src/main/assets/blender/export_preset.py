@@ -13,6 +13,7 @@ import bpy
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [HERE, os.path.join(HERE, "bx")]
 import bx_export  # noqa: E402
+import vcbake  # noqa: E402
 
 PRESETS = ("unity", "unity_skeletal", "unreal", "unreal_skeletal", "roblox", "godot", "gltf", "web", "print")
 
@@ -26,8 +27,7 @@ def main():
     p.add_argument("--name", default="model")
     a = p.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=a.inp)
+    vcbake.import_glb(a.inp)
     ext = bx_export.PRESETS[a.preset][0]
     skeletal = a.preset.endswith("_skeletal") or a.preset == "roblox"
     objs = [o for o in bpy.context.scene.objects

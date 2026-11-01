@@ -14,6 +14,7 @@ import bpy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [HERE, os.path.join(HERE, "bx")]
+import vcbake  # noqa: E402
 
 
 def audit(meshes, profile):
@@ -61,8 +62,7 @@ def main():
     p.add_argument("--profile", default="game", choices=("game", "render", "print", "roblox"))
     p.add_argument("--res", type=int, default=512)
     a = p.parse_args(argv)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=a.inp)
+    vcbake.import_glb(a.inp)
     meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and len(o.data.polygons)]
     report = {}
     for key, fn in (("quality", lambda: audit(meshes, a.profile)),

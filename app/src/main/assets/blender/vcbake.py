@@ -7,13 +7,10 @@ import numpy as np
 
 
 def bake(obj, res=1024, dilate=6):
-    """Smart-UV-project obj and paint its active colour attribute into a res x res texture by drawing the mesh in
-    UV space on the (software) GPU. The material then samples the texture; the colour attribute stays for viewers
-    that read COLOR_0. Returns the texture's info dict."""
-    import gpu
-    from gpu_extras.batch import batch_for_shader
-    from mathutils import Matrix
-
+    """Smart-UV-project obj and paint its active colour attribute into a res x res texture. The gpu draw module is
+    off in background mode, so the mesh is laid flat in UV space and rendered with Workbench (flat, vertex colour,
+    orthographic): render pixels = texture pixels. The material then samples the texture; the colour attribute stays
+    for viewers that read COLOR_0. Returns the texture's info dict."""
     me = obj.data
     name = (me.color_attributes.active_color or me.color_attributes[0]).name
     bpy.context.view_layer.objects.active = obj
@@ -35,7 +32,7 @@ def bake(obj, res=1024, dilate=6):
     me.uv_layers.active.data.foreach_get("uv", uv)
     uv = uv.reshape(-1, 2)[tri_loops]
     rgba = np.empty(len(col.data) * 4, np.float32)
-    col.data.foreach_get("color_srgb", rgba)  # write display-space values; the PNG is sRGB
+    col.data.foreach_get("color", rgba)  # scene linear; Workbench + Standard view writes it back as sRGB
     rgba = rgba.reshape(-1, 4)
     if col.domain == "POINT":
         lv = np.empty(len(me.loops), np.int32)
@@ -45,19 +42,54 @@ def bake(obj, res=1024, dilate=6):
         rgba = rgba[tri_loops]
     rgba[:, 3] = 1.0
 
-    off = gpu.types.GPUOffScreen(res, res, format="RGBA32F")
-    with off.bind():
-        fb = gpu.state.active_framebuffer_get()
-        fb.clear(color=(0.0, 0.0, 0.0, 0.0))
-        shader = gpu.shader.from_builtin("SMOOTH_COLOR")
-        pos = np.column_stack([uv * 2.0 - 1.0, np.zeros(len(uv), np.float32)])
-        batch = batch_for_shader(shader, "TRIS", {"pos": pos, "color": rgba})
-        with gpu.matrix.push_pop():
-            gpu.matrix.load_matrix(Matrix.Identity(4))
-            gpu.matrix.load_projection_matrix(Matrix.Identity(4))
-            batch.draw(shader)
-        px = np.array(fb.read_color(0, 0, res, res, 4, 0, "FLOAT").to_list(), np.float32).reshape(res, res, 4)
-    off.free()
+    # Flat copy: one vertex per triangle corner at (u, v, 0), colours per corner.
+    n = len(tri_loops)
+    flat = bpy.data.meshes.new("BX_uvflat")
+    flat.vertices.add(n)
+    flat.vertices.foreach_set("co", np.column_stack([uv, np.zeros(n, np.float32)]).ravel())
+    flat.loops.add(n)
+    flat.loops.foreach_set("vertex_index", np.arange(n, dtype=np.int32))
+    flat.polygons.add(n // 3)
+    flat.polygons.foreach_set("loop_start", np.arange(0, n, 3, dtype=np.int32))
+    flat.update(calc_edges=True)
+    fc = flat.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
+    fc.data.foreach_set("color", rgba.ravel())
+    flat.color_attributes.active_color = fc
+
+    sc = bpy.data.scenes.new("BX_uvbake")
+    fo = bpy.data.objects.new("BX_uvflat", flat)
+    sc.collection.objects.link(fo)
+    cam = bpy.data.objects.new("BX_uvcam", bpy.data.cameras.new("BX_uvcam"))
+    cam.data.type, cam.data.ortho_scale = "ORTHO", 1.0
+    cam.location = (0.5, 0.5, 1.0)
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    r = sc.render
+    r.engine = "BLENDER_WORKBENCH"
+    r.resolution_x = r.resolution_y = res
+    r.resolution_percentage = 100
+    r.film_transparent = True
+    r.image_settings.file_format = "PNG"
+    r.image_settings.color_mode = "RGBA"
+    sc.display.render_aa = "OFF"  # no edge blending into the background; dilation pads the islands instead
+    sc.view_settings.view_transform = "Standard"
+    sh = sc.display.shading
+    sh.light, sh.color_type = "FLAT", "VERTEX"
+    sh.show_backface_culling = False
+    tmp = os.path.join(bpy.app.tempdir or "/tmp", "bx_uvbake.png")
+    r.filepath = tmp
+    try:
+        bpy.ops.render.render(write_still=True, scene=sc.name)
+        shot = bpy.data.images.load(tmp, check_existing=False)
+        px = np.array(shot.pixels[:], np.float32).reshape(res, res, 4)  # bottom-up rows = UV v up
+        bpy.data.images.remove(shot)
+    finally:
+        bpy.data.objects.remove(fo)
+        bpy.data.objects.remove(cam)
+        bpy.data.meshes.remove(flat)
+        bpy.data.scenes.remove(sc)
+        if os.path.exists(tmp):
+            os.remove(tmp)
 
     covered = float((px[..., 3] > 0.5).mean())
     # Grow islands outward so mip-mapping and bilinear filtering never pull in the empty background.
@@ -91,6 +123,15 @@ def bake(obj, res=1024, dilate=6):
     me.materials.append(mat)
     print(f"baked {res}px texture, islands cover {covered:.0%}")
     return {"size": res, "coverage": round(covered, 3)}
+
+
+def import_glb(path):
+    """Import a GLB into an empty scene, minus the bone-display shapes the glTF importer adds for skinned files."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=path)
+    shapes = {pb.custom_shape for o in bpy.data.objects if o.type == "ARMATURE" for pb in o.pose.bones if pb.custom_shape}
+    for o in shapes:
+        bpy.data.objects.remove(o, do_unlink=True)
 
 
 def export_glb(path, deform_only=False):

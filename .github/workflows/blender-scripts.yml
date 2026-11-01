@@ -49,6 +49,7 @@ jobs:
           } 2>&1 | tee results.txt
       - name: Validate GLBs
         run: |
+          set -o pipefail
           pip install -q trimesh
           sudo chmod -R a+r rootfs/tmp/o
           python - <<'PY' | tee -a results.txt

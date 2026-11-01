@@ -208,7 +208,10 @@ def build(a):
             P(f"Tail.{i}", "cyl", (0.025, 0.025, 0.09), (0, 0.1 * bw + i * 0.05, hip_z - 0.02 + i * 0.035 + (i * i) * 0.006),
               "Hair", "pelvis", rot=(-55 + i * 8, 0, 0))
     elif a.tail == "lizard":
-        P("Tail", "cone", (0.12 * bw, 0.12 * bw, 0.45), (0, 0.27 * bw, hip_z - 0.12), "Skin", "pelvis", rot=(-70, 0, 0), subsurf=sub)
+        # cone axis after rot (-70 deg about X) = (0, sin70, cos70); put the wide base inside the pelvis back
+        back = 0.07 * bw * belly ** 0.5
+        P("Tail", "cone", (0.12 * bw, 0.12 * bw, 0.45), (0, back - 0.015 + 0.225 * 0.94, hip_z + 0.225 * 0.34), "Skin", "pelvis",
+          rot=(-70, 0, 0), subsurf=sub)
 
     if a.accessory == "glasses":
         for s, x in (("L", 1), ("R", -1)):
@@ -222,7 +225,7 @@ def build(a):
         P("Crown", "cyl", (hw * 0.75, hdp * 0.75, head_d * 0.2), (0, 0, head_c + head_d * 0.5), "Accent", "head",
           cut=lambda v: v.z > 0.45, solidify=0.006)
     elif a.accessory == "cape":
-        P("Cape", "cube", (shoulder_x * 2.6, 0.012, torso_h + leg * 0.7), (0, 0.15 * bw * belly / 2 + 0.02, shoulder_z - (torso_h + leg * 0.7) / 2),
+        P("Cape", "cube", (shoulder_x * 2.6, 0.012, torso_h + leg * 0.7), (0, 0.15 * bw * belly / 2 - 0.002, shoulder_z - (torso_h + leg * 0.7) / 2),
           "Accent", "spine", bevel=0.004 * H)
 
     bones = [

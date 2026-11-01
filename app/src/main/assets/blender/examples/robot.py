@@ -8,6 +8,7 @@ glow = gm.material("Glow", "#38BDF8", 0.2)
 parts = [
     gm.part("Torso", "cube", (0.34, 0.22, 0.36), (0, 0, 0.62), steel, "spine", bevel=0.02),
     gm.part("Pelvis", "cube", (0.26, 0.18, 0.12), (0, 0, 0.40), dark, "pelvis", bevel=0.01),
+    gm.part("Neck", "cyl", (0.08, 0.08, 0.08), (0, 0, 0.82), dark, "neck"),
     gm.part("Head", "cube", (0.24, 0.22, 0.2), (0, 0, 0.94), steel, "head", bevel=0.03),
     gm.part("Visor", "cube", (0.18, 0.02, 0.05), (0, -0.115, 0.95), glow, "head", bevel=0.005),
     gm.part("Antenna", "cyl", (0.015, 0.015, 0.12), (0, 0, 1.1), dark, "head"),

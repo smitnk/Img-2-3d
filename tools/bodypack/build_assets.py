@@ -122,6 +122,45 @@ def material(folder, mhmat, kind, name, out):
     return color, alpha, tex
 
 
+TOON = {"brown": (92, 52, 24), "blue": (40, 110, 210), "green": (40, 150, 80), "amber": (210, 140, 30),
+        "violet": (130, 70, 200), "black": (25, 22, 28)}
+
+
+def toon_eyes(out):
+    """Cartoon eye textures: a big flat iris, big pupil and a white highlight, drawn where the MakeHuman eye texture
+    (eye.png, from build_pack) has its irises, so they map onto the same eyeball UVs."""
+    from PIL import ImageDraw
+    base = Image.open(os.path.join(out, "eye.png")).convert("RGB")
+    w, h = base.size
+    a = np.asarray(base, np.float32)
+    # iris pixels: clearly darker than the sclera; two blobs (one per eye island), split by the image diagonal
+    dark = a.mean(2) < 0.55 * np.median(a.mean(2))
+    ys, xs = np.nonzero(dark)
+    upper = xs + ys < w  # the texture holds two eyes on the main diagonal
+    blobs = [(xs[m], ys[m]) for m in (upper, ~upper) if m.sum() > 50]
+    entries = []
+    for name, rgb in TOON.items():
+        im = Image.new("RGB", (w, h), (246, 244, 240))
+        d = ImageDraw.Draw(im)
+        for bx, by in blobs:
+            cx, cy = np.median(bx), np.median(by)
+            r = 1.75 * np.sqrt(len(bx) / np.pi)  # 1.75x the real iris
+            dark_rgb = tuple(int(c * 0.55) for c in rgb)
+            d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=dark_rgb)
+            d.ellipse([cx - 0.82 * r, cy - 0.82 * r, cx + 0.82 * r, cy + 0.82 * r], fill=rgb)
+            d.ellipse([cx - 0.45 * r, cy - 0.45 * r, cx + 0.45 * r, cy + 0.45 * r], fill=(12, 10, 14))
+            hx, hy, hr = cx - 0.38 * r, cy - 0.38 * r, 0.22 * r
+            d.ellipse([hx - hr, hy - hr, hx + hr, hy + hr], fill=(255, 255, 255))
+        tex = f"tex_eyes_toon_{name}.png"
+        im.resize((512, 512), Image.LANCZOS).save(os.path.join(out, tex), optimize=True)
+        th = f"thumb_eyes_toon_{name}.png"
+        im.crop((0, 0, w // 2, h // 2)).resize((160, 160)).save(os.path.join(out, th))
+        entries.append(dict(name=f"toon_{name}", label=f"toon {name}", tex=tex, color=[1, 1, 1], alpha=False, thumb=th))
+    print("toon eyes from", len(blobs), "iris blobs")
+    assert len(blobs) == 2, "expected two irises in eye.png"
+    return entries
+
+
 def main(src, out):
     arrays, catalog = {}, {}
     for kind in KINDS:
@@ -158,6 +197,7 @@ def main(src, out):
             if tex:
                 catalog.setdefault(kind, []).append(dict(name=name, label=name.replace("_", " "), tex=tex, color=color, alpha=False,
                                                          thumb=thumb(os.path.join(folder, name + ".thumb"), os.path.join(out, f"thumb_{kind}_{name}.png"))))
+    catalog.setdefault("eyes", []).extend(toon_eyes(out))
     np.savez_compressed(os.path.join(out, "assets.npz"), **arrays)
     json.dump(catalog, open(os.path.join(out, "assets.json"), "w"), indent=1)
     print({k: len(v) for k, v in catalog.items()}, f"assets.npz {os.path.getsize(os.path.join(out, 'assets.npz')) / 1e6:.1f} MB")

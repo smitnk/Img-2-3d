@@ -169,8 +169,9 @@ fun BodyScreen(state: UiState, vm: AppViewModel) {
                     }
                     "Skin" -> {
                         Panel {
-                            ChoiceChips("Skin", listOf("Colour", "Realistic"), if (spec.skinMode == "realistic") "Realistic" else "Colour") { v ->
-                                vm.editBody { it.copy(skinMode = if (v == "Realistic") "realistic" else "color") }
+                            val modes = listOf("Colour" to "color", "Toon" to "toon", "Realistic" to "realistic")
+                            ChoiceChips("Skin", modes.map { it.first }, modes.firstOrNull { it.second == spec.skinMode }?.first ?: "Colour") { v ->
+                                vm.editBody { it.copy(skinMode = modes.first { m -> m.first == v }.second) }
                             }
                             if (spec.skinMode == "realistic") Text("Photo-textured skin picked from age, heritage and gender.",
                                 style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
@@ -231,7 +232,8 @@ private fun SliderGroup(group: String, ids: List<String>, spec: BodySpec, vm: Ap
             Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) "Collapse" else "Expand")
         }
         if (open || group == "style") Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-            if (group == "style") Text("Mix looks: cartoon and Pixar-like (big head and eyes), chibi, heroic, lanky, chubby. " +
+            if (group == "style") Text("Mix looks: cartoon, Pixar-like, chibi (~3 heads tall), SD super-deformed (~2 heads), heroic, lanky, " +
+                "chubby. For a full cartoon look also pick Toon skin and toon eyes (Skin tab). " +
                 "They combine with every other slider, and hair, eyes and clothes follow.", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             ids.forEach { id ->

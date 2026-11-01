@@ -193,7 +193,8 @@ def main():
             eth = "african" if lum < 0.12 else "asian" if lum < 0.35 else "caucasian"
         sex = "male" if mac["male"] >= 0.5 else "female"
         skin_tex = tex_of("skins", f"{age}_{eth}_{sex}")
-    skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.55, sss=0.15, image=skin_tex)
+    toon = spec.get("skin_mode") == "toon"  # flat, matte cartoon skin
+    skin = material("Skin", hex_rgb(spec.get("skin"), "#C9A08A"), 0.75 if toon else 0.55, sss=0.0 if toon else 0.15, image=skin_tex)
     body = mesh_object(spec.get("name", "Body"), v, fb, z["uvs"], uvb, groups)
     body.data.materials.append(skin)
     subdiv = int(spec.get("subdiv", 1))

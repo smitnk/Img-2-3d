@@ -57,6 +57,17 @@ data class BodySpec(
 
         /** Age 0..1 maps 1 -> 90 years in MakeHuman (0.1875 = 10 y, 0.5 = 25 y). */
         val PRESETS: List<Pair<String, BodySpec>> = listOf(
+            "Cartoon" to BodySpec(name = "Cartoon", macros = mapOf("gender" to 0.8f, "age" to 0.4f, "weight" to 0.55f),
+                sliders = mapOf("style/style-cartoon" to 1f), skinMode = "toon", eyes = "toon_brown", hair = "short01", hairColor = "#6B3E1F",
+                clothes = listOf("male_casualsuit02", "shoes01")),
+            "Pixar" to BodySpec(name = "Pixar", macros = mapOf("gender" to 0.3f, "age" to 0.3f), sliders = mapOf("style/style-pixar" to 1f),
+                skinMode = "toon", eyes = "toon_green", hair = "ponytail01", hairColor = "#A0612F", eyebrows = "eyebrow010",
+                clothes = listOf("female_sportsuit01", "shoes04")),
+            "Chibi" to BodySpec(name = "Chibi", macros = mapOf("gender" to 0.2f, "age" to 0.35f), sliders = mapOf("style/style-chibi" to 1f),
+                skinMode = "toon", eyes = "toon_violet", hair = "bob02", hairColor = "#D94F9B", eyebrows = "eyebrow010",
+                clothes = listOf("female_casualsuit02", "shoes04")),
+            "SD mini" to BodySpec(name = "SD mini", macros = mapOf("gender" to 0.9f, "age" to 0.4f), sliders = mapOf("style/style-sd" to 1f),
+                skinMode = "toon", eyes = "toon_blue", hair = "short02", hairColor = "#2A1C14", clothes = listOf("male_casualsuit01", "shoes01")),
             "Kid" to BodySpec(name = "Kid", macros = mapOf("age" to 0.15f, "gender" to 0.6f), hair = "bob01", clothes = listOf("male_casualsuit03", "shoes04")),
             "Teen" to BodySpec(name = "Teen", macros = mapOf("age" to 0.35f, "weight" to 0.45f)),
             "Man" to BodySpec(name = "Man", macros = mapOf("gender" to 1f, "age" to 0.5f)),

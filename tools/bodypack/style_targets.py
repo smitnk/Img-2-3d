@@ -99,6 +99,10 @@ def make(arrays, index, skel, weights):
         perp = r - (r @ ax)[:, None] * ax
         return mask[:, None] * perp * (f - 1)
 
+    f = arrays["f_body"]
+    on_body = np.zeros(n, bool)
+    on_body[f.ravel()] = True
+
     def styled(p):
         k = {x: p.get(x, 1.0) for x in P}
         d = np.zeros_like(v)
@@ -117,7 +121,9 @@ def make(arrays, index, skel, weights):
             r = np.linalg.norm(v - eye_c[s], axis=1)
             fall = np.exp(-(r / 0.26) ** 2) * head * side[s]  # sockets, lids and brows stretch with the eyeball
             # cartoon eyes are rounder, not just bigger: open them more vertically than horizontally
-            d += fall[:, None] * (v - eye_c[s]) * (np.array([1.0, k["eye_round"], 1.0]) * k["eyes"] - 1)
+            # (the eyeball itself stays a sphere, sized to the opened socket, so it never pokes through the lids)
+            sc = np.where(on_body[:, None], np.array([1.0, k["eye_round"], 1.0]), (1 + k["eye_round"]) / 2) * k["eyes"]
+            d += fall[:, None] * (v - eye_c[s]) * (sc - 1)
             arm, leg = arms * side[s], legs * side[s]
             d += arm[:, None] * (v - sh[s]) * (k["arms"] - 1)  # arm size about the shoulder
             d += radial(arm * (1 - hands), sh[s], wrist[s], k["limb_w"])
@@ -136,11 +142,9 @@ def make(arrays, index, skel, weights):
 
     # Blend the seams: different edits meet where masks overlap (shoulder, hip, neck) and would leave folds. Laplacian-
     # smoothing the displacement field over the body surface removes the folds; a linear (scale) field is unchanged by it.
-    f = arrays["f_body"]
     edges = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 3]], f[:, [3, 0]]])
     edges = edges[edges[:, 0] != edges[:, 1]]
     deg = np.bincount(edges.ravel(), minlength=n).astype(np.float64)
-    on_body = deg > 0
 
     def smooth(d, it=40):
         for _ in range(it):

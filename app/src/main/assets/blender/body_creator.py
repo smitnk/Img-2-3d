@@ -290,7 +290,8 @@ def main():
         bpy.context.view_layer.update()
         rig_info["selftest"] = {"left_wrist_moved_m": round(moved["L"], 3), "right_wrist_moved_m": round(moved["R"], 3),
                                 "skinned_verts": len(ev.data.vertices)}
-        assert moved["L"] > 0.1 and moved["R"] < 1e-4, rig_info["selftest"]
+        arm = (rig.pose.bones["wrist.L"].head - rig.pose.bones["upperarm01.L"].head).length  # chibi arms are short
+        assert moved["L"] > 0.4 * arm and moved["R"] < 1e-4, rig_info["selftest"]
 
     slug = "".join(c if c.isalnum() else "_" for c in spec.get("name", "body")).strip("_").lower() or "body"
     glb = vcbake.export_glb(os.path.join(a.out, f"{slug}.glb"))

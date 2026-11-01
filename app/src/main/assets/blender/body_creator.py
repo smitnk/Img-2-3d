@@ -110,14 +110,15 @@ def align_reference(ref, height):
 
 
 def wrap_to(body, ref, amount):
-    """Pull the torso, legs and head surface toward the reference (shrinkwrap), keeping face and hands as modelled."""
-    keep = ("head", "jaw", "eye", "special", "levator", "oris", "temporalis", "tongue", "finger", "wrist", "metacarpal", "toe")
+    """Pull the torso and legs toward the reference (shrinkwrap). Head, face, arms, hands and feet keep their modelled
+    shape: a photo mesh is mushy there, and arm poses rarely match."""
+    allow = ("spine", "pelvis", "breast", "upperleg", "lowerleg", "clavicle")
     vg = body.vertex_groups.new(name="_wrap")
     groups = {g.index: g.name for g in body.vertex_groups}
     for vtx in body.data.vertices:
         w = 0.0
         for ge in vtx.groups:
-            if not groups.get(ge.group, "").lower().startswith(keep):
+            if groups.get(ge.group, "").lower().startswith(allow):
                 w += ge.weight
         if w > 0:
             vg.add([vtx.index], min(1.0, w) * amount, "REPLACE")
@@ -137,6 +138,7 @@ def wrap_to(body, ref, amount):
 def paint_from(body, ref):
     """Photo colours: copy the reference's vertex colours onto the body and bake them into its skin texture."""
     src = ref.data.color_attributes.active_color or ref.data.color_attributes[0]
+    print(f"photo paint from {src.name} ({src.domain}, {src.data_type})")
     body.data.color_attributes.new(src.name, "FLOAT_COLOR", "POINT")
     dt = body.modifiers.new("colors", "DATA_TRANSFER")
     dt.object = ref
@@ -315,6 +317,7 @@ def main():
         wrap = float(spec.get("wrap", 0.0))
         if wrap > 0:
             wrap_to(body, ref, wrap)
+        print(f"reference: {len(ref.data.vertices)} verts, colours: {[c.name for c in ref.data.color_attributes]}, wrap {wrap}")
         if spec.get("ref_colors") and len(ref.data.color_attributes):
             paint_from(body, ref)
     mats = {"Mouth": material("Teeth", hex_rgb("#EEE6D8", ""), 0.3), "Tongue": material("Tongue", hex_rgb("#B5525A", ""), 0.4)}

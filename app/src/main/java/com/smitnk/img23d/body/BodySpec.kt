@@ -21,7 +21,7 @@ data class BodySpec(
     val reference: String? = null,
     val referenceName: String = "",
     val fit: Boolean = false,        // fit sliders to the reference on the next build
-    val wrap: Float = 0.5f,          // 0..1 pull torso/legs/head toward the reference surface
+    val wrap: Float = 0.3f,          // 0..1 pull torso/legs/head toward the reference surface
     val refColors: Boolean = false,  // paint the body with the reference's colours (TripoSR photo models)
 ) {
     fun macro(k: String) = macros[k] ?: BodyMorph.DEFAULT_MACROS.getValue(k)

@@ -81,7 +81,7 @@ jobs:
           {
           for f in tools/bodypack/specs/*.json; do n=$(basename "$f" .json)
             run "body_$n" body_creator.py -- --spec /opt/job/$n.json --out /tmp/o/$n
-            grep -h "^BODY\|rigify\|body rig failed" "log_body_$n.txt" || true
+            grep -h "^BODY\|rigify\|body rig failed\|fit:\|photo\|baked\|reference:" "log_body_$n.txt" || true
             g=$(ls rootfs/tmp/o/$n/*.glb 2>/dev/null | head -1 | sed 's#^rootfs##')
             [ -n "$g" ] && run "post_$n" postprocess.py -- --in "$g" --out /tmp/o/$n --res 640 && grep -h POSTPROCESS "log_post_$n.txt"
             [ -n "$g" ] && sudo mkdir -p rootfs/tmp/faces/$n && run "face_$n" postprocess.py -- --in "$g" --out /tmp/faces/$n --res 400 --region head --thumb-only
@@ -94,7 +94,7 @@ jobs:
           python3 - <<'PY' | tee -a results.txt
           import glob, json, os
           dirs = sorted(glob.glob("rootfs/tmp/o/*/"))
-          assert len(dirs) == 9, dirs
+          assert len(dirs) == 10, dirs
           for d in dirs:
               g = json.load(open(d + "generation.json")); q = json.load(open(d + "quality.json"))
               print(os.path.basename(d[:-1]), "tris", g["triangles"], "height", g["height_m"], "rig", g["rig"],

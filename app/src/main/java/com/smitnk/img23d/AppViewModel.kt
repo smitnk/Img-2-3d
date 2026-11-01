@@ -317,7 +317,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (!bodyPack.isReady()) { go(Dest.Body); return }
         val photo = m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED
         _state.update {
-            it.copy(body = it.body.copy(name = "${m.name} (Body)", reference = m.id, referenceName = m.name, fit = true, wrap = 0.5f,
+            it.copy(body = it.body.copy(name = "${m.name} (Body)", reference = m.id, referenceName = m.name, fit = true, wrap = 0.3f,
                 refColors = photo, clothes = if (photo) emptyList() else it.body.clothes, hair = if (photo) null else it.body.hair))
         }
         runBody()

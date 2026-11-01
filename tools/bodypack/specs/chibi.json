@@ -1,3 +1,3 @@
-{"name": "Chibi", "macros": {"gender": 0.2, "age": 0.35}, "sliders": {"style/style-chibi": 1.0},
+{"name": "Chibi", "macros": {"gender": 0.2, "age": 0.35}, "sliders": {"style/style-chibi": 1.0, "toonhead/toonhead-round": 1.0},
  "skin": "#F6D7C3", "skin_mode": "toon", "eyes": "toon_violet", "hair": "bob02", "hair_color": "#D94F9B", "eyebrows": "eyebrow010",
  "clothes": ["female_casualsuit02", "shoes04"], "rig": true}

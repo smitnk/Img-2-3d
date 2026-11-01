@@ -21,7 +21,7 @@ jobs:
           docker build -q -t rt -f Dockerfile.probe . 2>&1 | tail -n 20 | tee setup.log
       - name: Variants (proot, exactly like the app)
         run: |
-          docker create --name c rt >/dev/null && mkdir rootfs && docker export c | sudo tar -x -C rootfs
+          docker create --name c rt /bin/true >/dev/null && mkdir rootfs && docker export c | sudo tar -x -C rootfs
           sudo apt-get install -y -qq libtalloc-dev uthash-dev libarchive-dev >/dev/null
           git clone -q --depth 1 https://github.com/termux/proot /tmp/proot && make -s -C /tmp/proot/src -j4 HAS_LOADER_32BIT= >/dev/null 2>&1
           export PROOT_LOADER=/tmp/proot/src/loader/loader LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_PLATFORM=surfaceless EGL_LOG_LEVEL=debug

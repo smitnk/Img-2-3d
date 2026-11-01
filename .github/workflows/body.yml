@@ -83,4 +83,4 @@ jobs:
           cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo "no results" > log.txt
           for d in "$GITHUB_WORKSPACE"/rootfs/tmp/o/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "thumb_$(basename "$d").png"; done
           sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "body log $GITHUB_RUN_ID"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-body

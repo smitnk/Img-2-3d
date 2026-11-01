@@ -298,11 +298,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun bodySliders(): Map<String, Pair<String?, String>> = morph?.let { BodyMorph.sliderTargets(it.modifiers) }.orEmpty()
 
-    fun runBody() = blenderJob("Body Creator") { report ->
+    fun runBody() = blenderJob(if (_state.value.body.fit) "Fit character to model" else "Body Creator") { report ->
         val spec = _state.value.body
         File(runner.jobIn.apply { mkdirs() }, "body_spec.json").writeText(spec.toJson())
+        spec.reference?.let { id ->
+            val ref = library.get(id)?.glb ?: throw IllegalStateException("The reference model was deleted; remove it in Body Creator")
+            ref.copyTo(File(runner.jobIn, "ref.glb"), overwrite = true)
+        }
         val b = blender("body_creator.py", listOf("--pack", "/opt/bodypack", "--spec", "/opt/job/body_spec.json"), report)
-        saveBlender(b, spec.name, Source.BODY, detail = "Body Creator · ${b.info.optDouble("height_m", 0.0).let { "%.2f m".format(it) }}")
+        // Keep editing from what was built (after a fit: the fitted sliders).
+        b.info.optJSONObject("spec")?.let { j -> _state.update { it.copy(body = BodySpec.fromJson(j)) }; refreshBodyPreview() }
+        saveBlender(b, spec.name, Source.BODY, detail = "Body Creator · ${b.info.optDouble("height_m", 0.0).let { "%.2f m".format(it) }}" +
+            if (spec.reference != null) " · fitted to ${spec.referenceName}" else "")
+    }
+
+    /** Body Creator fitted to any library model (TripoSR photo mesh, refined, imported...): sliders, then wrap + colours. */
+    fun fitBodyTo(m: Model) {
+        if (!bodyPack.isReady()) { go(Dest.Body); return }
+        val photo = m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED
+        _state.update {
+            it.copy(body = it.body.copy(name = "${m.name} (Body)", reference = m.id, referenceName = m.name, fit = true, wrap = 0.5f,
+                refColors = photo, clothes = if (photo) emptyList() else it.body.clothes, hair = if (photo) null else it.body.hair))
+        }
+        runBody()
+    }
+
+    /** Re-open a Body Creator model in the editor with the exact settings it was built from. */
+    fun openBodyEditor(m: Model) {
+        val spec = runCatching { JSONObject(File(m.dir, "meta.json").readText()).getJSONObject("extra").getJSONObject("spec") }.getOrNull() ?: return
+        _state.update { it.copy(body = BodySpec.fromJson(spec)) }
+        refreshBodyPreview()
+        go(Dest.Body)
     }
 
     private fun parseHex(h: String): FloatArray = runCatching {

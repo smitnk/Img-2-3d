@@ -84,6 +84,11 @@ class Pack:
             g = 1.0 if t["key"] in MACRO_GROUPS else sf.get(t["key"], 0.0)
             if g:
                 w[i] = g * np.prod([mv[v] for v in t["vars"]]) if t["vars"] else g
+        # toon head shapes follow the head size the art styles give (a chibi head is ~2x: its shape change is too)
+        hs = 1.0 + sum(w[i] * (t["head"] - 1) for i, t in enumerate(self.index) if "head" in t)
+        for i, t in enumerate(self.index):
+            if t.get("head_scaled"):
+                w[i] *= hs
         return w
 
     def morph(self, macros=None, sliders=None, extra=None):

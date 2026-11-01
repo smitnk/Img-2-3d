@@ -17,6 +17,12 @@ data class BodySpec(
     val eyebrows: String? = "eyebrow001",
     val eyelashes: String? = "eyelashes01",
     val clothes: List<String> = listOf("male_casualsuit01", "shoes01"),
+    /** Reference model (library id) the body was fitted to; its GLB is copied to /opt/job/ref.glb for each build. */
+    val reference: String? = null,
+    val referenceName: String = "",
+    val fit: Boolean = false,        // fit sliders to the reference on the next build
+    val wrap: Float = 0.5f,          // 0..1 pull torso/legs/head toward the reference surface
+    val refColors: Boolean = false,  // paint the body with the reference's colours (TripoSR photo models)
 ) {
     fun macro(k: String) = macros[k] ?: BodyMorph.DEFAULT_MACROS.getValue(k)
 
@@ -31,9 +37,31 @@ data class BodySpec(
         .put("sliders", JSONObject(sliders.filterValues { it != 0f } as Map<*, *>)).put("skin", skin).put("subdiv", subdiv).put("rig", true)
         .put("skin_mode", skinMode).put("eyes", eyes).put("hair", hair ?: "").put("hair_color", hairColor)
         .put("eyebrows", eyebrows ?: "").put("eyelashes", eyelashes ?: "").put("clothes", org.json.JSONArray(clothes))
+        .apply {
+            if (reference != null) put("reference", REF_PATH).put("reference_id", reference).put("reference_name", referenceName)
+                .put("fit", fit).put("wrap", wrap.toDouble()).put("ref_colors", refColors)
+        }
         .toString(2)
 
     companion object {
+        const val REF_PATH = "/opt/job/ref.glb"
+
+        /** The spec a Blender build actually used (generation.json "spec", incl. fitted values) back into the editor. */
+        fun fromJson(j: JSONObject): BodySpec {
+            fun floats(o: JSONObject?) = o?.keys()?.asSequence()?.associateWith { o.getDouble(it).toFloat() }.orEmpty()
+            fun str(k: String) = j.optString(k, "").takeIf { it.isNotBlank() }
+            val d = BodySpec()
+            return BodySpec(
+                name = j.optString("name", d.name), macros = floats(j.optJSONObject("macros")), sliders = floats(j.optJSONObject("sliders")),
+                skin = j.optString("skin", d.skin), subdiv = j.optInt("subdiv", d.subdiv), skinMode = j.optString("skin_mode", d.skinMode),
+                eyes = j.optString("eyes", d.eyes), hair = str("hair"), hairColor = j.optString("hair_color", d.hairColor),
+                eyebrows = str("eyebrows"), eyelashes = str("eyelashes"),
+                clothes = j.optJSONArray("clothes")?.let { a -> (0 until a.length()).map(a::getString) }.orEmpty(),
+                reference = str("reference_id"), referenceName = j.optString("reference_name", ""), fit = j.optBoolean("fit", false),
+                wrap = j.optDouble("wrap", 0.5).toFloat(), refColors = j.optBoolean("ref_colors", false),
+            )
+        }
+
         /** "eyes/l-eye-scale-decr|incr" <-> "eyes/r-eye-scale-decr|incr" */
         fun mirror(id: String): String? {
             val (g, t) = id.split("/", limit = 2).let { it[0] to it.getOrElse(1) { "" } }

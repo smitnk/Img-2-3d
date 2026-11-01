@@ -13,6 +13,7 @@ import numpy as np
 
 # Proportion multipliers (1 = unchanged). Head-height reference: realistic adult ~7.5 heads tall, cartoon ~5,
 # chibi ~3, super-deformed (SD) ~2 to 2.5.
+HEADS = ("round", "oval", "square", "buddy")
 P = ("head", "eyes", "eye_round", "nose", "mouth", "neck_len", "neck_w", "arms", "legs", "limb_w", "hands", "feet",
      "torso_w", "belly", "shoulders", "torso_len")
 STYLES = {
@@ -164,11 +165,55 @@ def make(arrays, index, skel, weights):
             d = np.where(on_body[:, None], 0.5 * d + 0.5 * avg, d)
         return d
 
+    # Toon head shapes: pull the cranium, cheeks and jaw onto a simple form (sphere, ellipsoid, rounded box) around the
+    # head centre. Face features keep most of their relief; ears ride on the moved surface instead of being flattened.
+    ears = _footprint(n, arrays, index, ("ears-",)) * head
+    eyes_fp = _footprint(n, arrays, index, ("eyes-",)) * head
+    face = np.clip(nose + mouth + eyes_fp, 0, 1)
+    face = smooth(face[:, None], 12)[:, 0]  # widen to the whole front of the face, soft edge
+    face = np.clip(face / max(face.max(), 1e-6) * 1.6, 0, 1)
+    skull = (head > 0.9) & on_body & (ears < 0.2)  # skin only: eyeballs, teeth and hair helpers sit inside
+    lo, hi = v[skull].min(0), v[skull].max(0)
+    hc = (lo + hi) / 2
+    hc[1] = hi[1] - 0.55 * (hi[1] - lo[1])  # sphere centre a little above the face middle
+    rel = v - hc
+    dist = np.linalg.norm(rel, axis=1) + 1e-9
+    u = rel / dist[:, None]
+    r0 = np.median(dist[skull & (v[:, 1] > hc[1])])  # cranium radius
+
+    def shape(kind):
+        if kind == "round":
+            r = np.full(n, r0)
+        elif kind == "buddy":  # a ball with a soft, flatter face
+            r = np.full(n, 1.06 * r0)
+        elif kind == "oval":
+            a = np.array([0.88, 1.16, 0.96]) * r0
+            r = 1 / np.sqrt(((u / a) ** 2).sum(1))
+        else:  # "square": superellipsoid, p = 4
+            a = np.array([1.0, 1.06, 1.0]) * r0
+            r = 1 / ((np.abs(u / a) ** 4).sum(1)) ** 0.25
+        keep_face = 0.45 if kind == "buddy" else 0.85
+        w = head * (1 - keep_face * face) * np.clip((v[:, 1] - head_pivot[1]) / 0.5, 0, 1)  # none below the chin line
+        d = (w * (r - dist))[:, None] * u
+        ear = ears > 0.3  # ears move with the nearest non-ear head surface
+        base = np.nonzero(~ear & (head > 0.5) & on_body)[0]
+        ei = np.nonzero(ear)[0]
+        if len(ei) and len(base):
+            nn = base[np.argmin(((v[ei][:, None] - v[base][None]) ** 2).sum(2), axis=1)]
+            d[ei] = d[nn]
+        d[help_i] = d[near]  # eyeballs, teeth, hair helper follow too
+        return d
+
     out = []
     for name, p in STYLES.items():
         d = smooth(styled(p))
         keep = np.nonzero(np.linalg.norm(d, axis=1) > 1e-4)[0]
-        out.append((name, keep.astype(np.int32), d[keep].astype(np.float16)))
+        out.append(("style", name, keep.astype(np.int32), d[keep].astype(np.float16)))
+    for name in HEADS:
+        d = smooth(shape(name), 20)
+        d[help_i] = d[near]
+        keep = np.nonzero(np.linalg.norm(d, axis=1) > 1e-4)[0]
+        out.append(("toonhead", name, keep.astype(np.int32), d[keep].astype(np.float16)))
     return out
 
 
@@ -176,9 +221,13 @@ def add_to(arrays, index, modifiers, skel, weights):
     """Append the style targets to the pack arrays (in place) and a "style" slider group to modifiers."""
     styles = make(arrays, index, skel, weights)
     idx, dl, off = [arrays["t_idx"]], [arrays["t_delta"]], list(arrays["t_off"])
-    for name, k, d in styles:
+    for group, name, k, d in styles:
         idx.append(k); dl.append(d); off.append(off[-1] + len(k))
-        index.append({"key": f"style-style-{name}", "vars": []})
+        # Head shapes are modelled on a normal-size head: the morph engines scale them by the styles' head size
+        # ("head" = that style's head multiplier, "head_scaled" = scale this target by it).
+        extra = {"head": STYLES[name].get("head", 1.0)} if group == "style" else {"head_scaled": True}
+        index.append({"key": f"{group}-{group}-{name}", "vars": [], **extra})
     arrays["t_idx"], arrays["t_delta"], arrays["t_off"] = np.concatenate(idx), np.concatenate(dl), np.array(off, np.int64)
+    modifiers.insert(0, {"group": "toonhead", "modifiers": [{"target": f"toonhead-{n}"} for n in HEADS]})
     modifiers.insert(0, {"group": "style", "modifiers": [{"target": f"style-{n}"} for n in STYLES]})
-    return [n for n, _, _ in styles]
+    return [f"{g}/{n}" for g, n, _, _ in styles]

@@ -60,6 +60,102 @@ def mesh_object(name, verts, faces, uvs=None, uvf=None, groups=None):
     return ob
 
 
+def load_reference(path):
+    """Import a GLB/FBX/OBJ reference into its own collection, joined into one mesh (hidden from export)."""
+    before = set(bpy.data.objects)
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".fbx":
+        bpy.ops.import_scene.fbx(filepath=path)
+    elif ext == ".obj":
+        bpy.ops.wm.obj_import(filepath=path)
+    else:
+        bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    if not meshes:
+        raise SystemExit(f"reference {path} has no mesh")
+    for o in bpy.context.view_layer.objects:
+        o.select_set(o in meshes)
+    bpy.context.view_layer.objects.active = meshes[0]
+    if len(meshes) > 1:
+        bpy.ops.object.join()
+    ref = bpy.context.view_layer.objects.active
+    bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    ref.modifiers.clear()
+    for o in new:
+        if o is not ref and o.name in bpy.data.objects:
+            bpy.data.objects.remove(o, do_unlink=True)
+    ref.name = "Reference"
+    ref.hide_set(True)  # never exported (export_glb uses visible objects)
+    return ref
+
+
+def ref_points(ref):
+    n = len(ref.data.vertices)
+    co = np.empty(n * 3, np.float32)
+    ref.data.vertices.foreach_get("co", co)
+    return co.reshape(-1, 3).astype(np.float64)
+
+
+def align_reference(ref, height):
+    """Scale the reference to the character's height, centre it on X/Y, feet on the ground."""
+    p = ref_points(ref)
+    lo, hi = p.min(0), p.max(0)
+    s = height / max(hi[2] - lo[2], 1e-9)
+    c = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
+    q = (p - c) * s
+    ref.data.vertices.foreach_set("co", q.astype(np.float32).ravel())
+    ref.data.update()
+
+
+def wrap_to(body, ref, amount):
+    """Pull the torso, legs and head surface toward the reference (shrinkwrap), keeping face and hands as modelled."""
+    keep = ("head", "jaw", "eye", "special", "levator", "oris", "temporalis", "tongue", "finger", "wrist", "metacarpal", "toe")
+    vg = body.vertex_groups.new(name="_wrap")
+    groups = {g.index: g.name for g in body.vertex_groups}
+    for vtx in body.data.vertices:
+        w = 0.0
+        for ge in vtx.groups:
+            if not groups.get(ge.group, "").lower().startswith(keep):
+                w += ge.weight
+        if w > 0:
+            vg.add([vtx.index], min(1.0, w) * amount, "REPLACE")
+    m = body.modifiers.new("wrap", "SHRINKWRAP")
+    m.target, m.wrap_method, m.vertex_group = ref, "NEAREST_SURFACEPOINT", "_wrap"
+    sm = body.modifiers.new("relax", "CORRECTIVE_SMOOTH")
+    sm.iterations, sm.factor = 6, 0.5
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(body.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+    old = body.data
+    body.modifiers.clear()
+    body.data = me
+    bpy.data.meshes.remove(old)
+    body.vertex_groups.remove(body.vertex_groups["_wrap"])
+
+
+def paint_from(body, ref):
+    """Photo colours: copy the reference's vertex colours onto the body and bake them into its skin texture."""
+    src = ref.data.color_attributes.active_color or ref.data.color_attributes[0]
+    body.data.color_attributes.new(src.name, "FLOAT_COLOR", "POINT")
+    dt = body.modifiers.new("colors", "DATA_TRANSFER")
+    dt.object = ref
+    dt.use_vert_data = True
+    dt.data_types_verts = {"COLOR_VERTEX"}
+    dt.vert_mapping = "POLYINTERP_NEAREST"
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(body.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+    old = body.data
+    body.modifiers.clear()
+    body.data = me
+    bpy.data.meshes.remove(old)
+    body.data.color_attributes.active_color = body.data.color_attributes[src.name]
+    try:
+        vcbake.bake(body, 2048)
+    except Exception as e:  # colours stay as vertex colours
+        print("photo paint bake skipped:", e)
+
+
 def build_skeleton(skel, hm, ground):
     """MakeHuman skeleton fitted to this body: each joint = mean of its vertex group on the morphed mesh;
     roll from the bone's plane so local X = plane normal (MakeHuman skeleton.get_roll_to)."""
@@ -158,6 +254,12 @@ def main():
 
     pack = humanmorph.Pack(a.pack)
     z = pack.npz
+    ref = load_reference(spec["reference"]) if spec.get("reference") and os.path.isfile(spec["reference"]) else None
+    if ref is not None and spec.get("fit"):
+        import fit
+        spec = fit.fit(pack, to_blender, np.unique(z["f_body"]), ref_points(ref), spec, passes=3)
+        spec["fit"] = False  # fitted once; edits in the app start from here
+        print("BODYFIT", json.dumps({"macros": spec["macros"], "sliders": spec["sliders"], "error": spec["fit_error"]}))
     hm = pack.morph(spec.get("macros"), spec.get("sliders"))
     v = to_blender(hm)
     ground = v[np.unique(z["f_body"]), 2].min()
@@ -208,6 +310,13 @@ def main():
         body.data = me
         bpy.data.meshes.remove(old)
 
+    if ref is not None:
+        align_reference(ref, float(v[np.unique(fb), 2].max()))
+        wrap = float(spec.get("wrap", 0.0))
+        if wrap > 0:
+            wrap_to(body, ref, wrap)
+        if spec.get("ref_colors") and len(ref.data.color_attributes):
+            paint_from(body, ref)
     mats = {"Mouth": material("Teeth", hex_rgb("#EEE6D8", ""), 0.3), "Tongue": material("Tongue", hex_rgb("#B5525A", ""), 0.4)}
     parts = []
     for part, nm in (("helper-upper-teeth", "TeethUpper"), ("helper-lower-teeth", "TeethLower"), ("helper-tongue", "Tongue")):

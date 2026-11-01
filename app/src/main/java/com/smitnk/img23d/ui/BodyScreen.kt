@@ -72,7 +72,7 @@ import kotlin.random.Random
 
 private val TABS = listOf("Style", "Body", "Face", "Torso", "Limbs", "Hair", "Clothes", "Skin")
 private val TAB_GROUPS = mapOf(
-    "Style" to listOf("style"),
+    "Style" to listOf("style", "toonhead"),
     "Face" to listOf("head", "forehead", "eyebrows", "eyes", "nose", "mouth", "ears", "chin", "cheek", "neck"),
     "Torso" to listOf("torso", "breast", "stomach", "hip", "buttocks", "pelvis"),
     "Limbs" to listOf("armslegs"),
@@ -121,6 +121,21 @@ fun BodyScreen(state: UiState, vm: AppViewModel) {
                 if (state.runtime != RuntimeStatus.Ready) EngineWarning("The Blender engine builds the final rigged model. Tap to install it.") { vm.tab(Dest.Settings) }
                 when (TABS[tab]) {
                     "Body" -> {
+                        if (spec.reference != null) Panel {
+                            Text("Fitted to ${spec.referenceName}", style = MaterialTheme.typography.titleSmall)
+                            Text(if (spec.fit) "Sliders are fitted to its shape on the next build." else "Sliders below were fitted to it; edit freely.",
+                                style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                            LabeledSlider("Follow its surface", spec.wrap, 0f..1f) { v -> vm.editBody { it.copy(wrap = v) } }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Use its colours (photo paint)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                                Switch(spec.refColors, { on -> vm.editBody { it.copy(refColors = on) } })
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { vm.editBody { it.copy(fit = true) } }, modifier = Modifier.weight(1f)) { Text("Fit again") }
+                                OutlinedButton(onClick = { vm.editBody { it.copy(reference = null, referenceName = "", fit = false, refColors = false) } },
+                                    modifier = Modifier.weight(1f)) { Text("Remove reference") }
+                            }
+                        }
                         Panel {
                             Text("Start from", style = MaterialTheme.typography.titleSmall)
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -225,13 +240,13 @@ private fun SliderGroup(group: String, ids: List<String>, spec: BodySpec, vm: Ap
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(group.replaceFirstChar { it.uppercase() }.replace("Armslegs", "Arms, legs, hands & feet").replace("Style", "Art style"), style = MaterialTheme.typography.titleMedium)
+                Text(group.replaceFirstChar { it.uppercase() }.replace("Armslegs", "Arms, legs, hands & feet").replace("Style", "Art style").replace("Toonhead", "Head shape (round, oval, square, buddy)"), style = MaterialTheme.typography.titleMedium)
                 Text("${ids.size} sliders" + if (changed > 0) " · $changed changed" else "", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) "Collapse" else "Expand")
         }
-        if (open || group == "style") Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        if (open || group == "style" || group == "toonhead") Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             if (group == "style") Text("Mix looks: cartoon, Pixar-like, chibi (~3 heads tall), SD super-deformed (~2 heads), heroic, lanky, " +
                 "chubby. For a full cartoon look also pick Toon skin and toon eyes (Skin tab). " +
                 "They combine with every other slider, and hair, eyes and clothes follow.", style = MaterialTheme.typography.bodySmall,

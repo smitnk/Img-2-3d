@@ -197,6 +197,11 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     }
                 }
             }
+            if (m.source == Source.BODY) FilledTonalButton(onClick = { vm.openBodyEditor(m) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Icon(Icons.Rounded.Edit, null); Spacer(Modifier.width(8.dp)); Text("Edit in Body Creator")
+            } else OutlinedButton(onClick = { vm.fitBodyTo(m) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Make editable character (Body Creator)")
+            }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER) OutlinedButton(onClick = { vm.refine(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Refine in Blender")
             }

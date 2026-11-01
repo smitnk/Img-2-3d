@@ -32,7 +32,7 @@ class BodyPack(context: Context) {
     /** An older pack is installed (v1 had no hair/clothes/skins). */
     fun needsUpdate() = ready.isFile && !isReady()
 
-    companion object { const val REQUIRED_VERSION = 4 } // v2: hair/clothes/skins, v3: style morphs, v4: chibi/SD + toon eyes
+    companion object { const val REQUIRED_VERSION = 5 } // v2: hair/clothes/skins, v3: style morphs, v4: chibi/SD + toon eyes, v5: toon head shapes
 
     suspend fun install(onStatus: (PackStatus) -> Unit) = withContext(Dispatchers.IO) {
         ready.delete()

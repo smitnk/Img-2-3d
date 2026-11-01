@@ -23,6 +23,8 @@ class BodyMorph(folder: File) {
     private val tOff: LongArray
     private val keys: Array<String>
     private val vars: Array<Array<String>>
+    private val headOf: DoubleArray      // style targets: their head multiplier (else 1)
+    private val headScaled: BooleanArray // toon head shapes: scaled by the styles' head size
     val modifiers: JSONArray
 
     init {
@@ -44,6 +46,8 @@ class BodyMorph(folder: File) {
         val index = JSONArray(File(folder, "targets.json").readText())
         keys = Array(index.length()) { index.getJSONObject(it).getString("key") }
         vars = Array(index.length()) { i -> index.getJSONObject(i).getJSONArray("vars").let { a -> Array(a.length()) { a.getString(it) } } }
+        headOf = DoubleArray(index.length()) { index.getJSONObject(it).optDouble("head", 1.0) }
+        headScaled = BooleanArray(index.length()) { index.getJSONObject(it).optBoolean("head_scaled", false) }
         modifiers = JSONArray(File(folder, "modifiers.json").readText())
         require(tOff.size == keys.size + 1) { "targets.json does not match body.npz" }
     }
@@ -53,10 +57,12 @@ class BodyMorph(folder: File) {
         val mv = macroValues(macros)
         val sf = sliderFactors(sliders, modifiers)
         val v = base.copyOf()
+        var hs = 1.0
+        for (t in keys.indices) if (headOf[t] != 1.0) hs += (sf[keys[t]] ?: 0.0) * (headOf[t] - 1) // same rule as humanmorph.py
         for (t in keys.indices) {
             val g = if (keys[t] in MACRO_GROUPS) 1.0 else sf[keys[t]] ?: 0.0
             if (g == 0.0) continue
-            var w = g
+            var w = if (headScaled[t]) g * hs else g
             for (x in vars[t]) w *= mv[x] ?: 0.0
             if (abs(w) < 1e-6) continue
             val wf = w.toFloat()

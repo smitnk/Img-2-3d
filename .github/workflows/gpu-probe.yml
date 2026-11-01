@@ -6,30 +6,36 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Runtime + Mesa
+      - name: Runtime + Mesa (docker, same userland as the app)
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
+          set -o pipefail
           gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
-          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
-          sudo cp /etc/resolv.conf rootfs/etc/resolv.conf
-          sudo mount -t proc proc rootfs/proc
-          sudo chroot rootfs sh -c "apt-get update -qq && apt-get install -y -qq --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri libgbm1 mesa-utils-bin >/dev/null"
-          sudo cp tools/blender-runtime/gpu_test.py rootfs/opt/gpu_test.py
+          docker import blender-runtime-arm64.tar.gz rt0
+          cat > Dockerfile.probe <<'DF'
+          FROM rt0
+          RUN mkdir -p /var/cache/apt/archives/partial /var/lib/apt/lists/partial \
+           && apt-get update -qq && apt-get install -y -qq --no-install-recommends libegl1 libegl-mesa0 libgl1-mesa-dri libgbm1 mesa-utils-bin
+          COPY tools/blender-runtime/gpu_test.py /opt/gpu_test.py
+          DF
+          docker build -q -t rt -f Dockerfile.probe . 2>&1 | tail -n 20 | tee setup.log
       - name: Variants
         run: |
           try() { name=$1; shift
-            sudo chroot rootfs env -i PATH=/usr/bin:/bin HOME=/root LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_LOG_LEVEL=debug "$@" \
+            docker run --rm $(printf -- '-e %s ' LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_LOG_LEVEL=debug "$@") rt \
               /opt/blender/blender -b --python-exit-code 1 --python /opt/gpu_test.py > "v_$name.log" 2>&1
-            echo "=== $name exit=$? $(grep -c 'GPUTEST render ok' v_$name.log) renders"; grep -E "GPUTEST|EGL|libEGL|Error|error" "v_$name.log" | grep -v "^libEGL debug: added" | head -n 25; }
+            echo "=== $name exit=$? $(grep -c 'GPUTEST render ok' v_$name.log) renders"
+            grep -E "GPUTEST|EGL|libEGL|Error|error|OpenGL" "v_$name.log" | grep -v "added config" | head -n 30; }
           {
-          echo "=== eglinfo surfaceless"; sudo chroot rootfs env LIBGL_ALWAYS_SOFTWARE=1 eglinfo -p surfaceless 2>&1 | head -n 40
+          echo "=== eglinfo surfaceless"; docker run --rm -e LIBGL_ALWAYS_SOFTWARE=1 rt eglinfo -p surfaceless 2>&1 | head -n 60
           try surfaceless EGL_PLATFORM=surfaceless
           try device EGL_PLATFORM=device
-          try default
+          try default EGL_LOG_LEVEL=debug
           try surfaceless_gl45 EGL_PLATFORM=surfaceless MESA_GL_VERSION_OVERRIDE=4.5 MESA_GLSL_VERSION_OVERRIDE=450
           } 2>&1 | tee log.txt
       - name: Push
         if: always()
         run: |
-          mkdir /tmp/l && cp log.txt /tmp/l/ 2>/dev/null; cd /tmp/l && git init -q -b ci-logs && touch log.txt && git add -A && git -c user.name=ci -c user.email=ci@l commit -qm probe
+          mkdir /tmp/l && cat setup.log log.txt > /tmp/l/log.txt 2>/dev/null || true
+          cd /tmp/l && git init -q -b ci-logs && touch log.txt && git add -A && git -c user.name=ci -c user.email=ci@l commit -qm "gpu probe"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

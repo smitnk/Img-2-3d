@@ -160,6 +160,26 @@ def main():
 
     ev = to_blender(pack.fit_proxy(hm, z["eye_refs"], z["eye_w"], z["eye_off"], z["eye_scale"]))
     ev[:, 2] -= ground
+    # The eye's cornea and sclera shells share their rim, which reads as z-fighting: push each eye's outermost
+    # shell out by 0.4 %.
+    ef = z["eye_faces"]
+    parent = np.arange(len(ev))
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for f in ef:
+        r = find(int(f[0]))
+        for k in f[1:]:
+            parent[find(int(k))] = r
+    roots = np.array([find(i) for i in range(len(ev))])
+    for side in (ev[:, 0] > 0, ev[:, 0] <= 0):
+        shells = [roots == r for r in np.unique(roots[side])]
+        if len(shells) > 1:
+            c = ev[side].mean(0)
+            outer = max(shells, key=lambda m: np.linalg.norm(ev[m] - c, axis=1).mean())
+            ev[outer] = c + (ev[outer] - c) * 1.004
     eyes = mesh_object("Eyes", ev, z["eye_faces"], z["eye_uvs"], z["eye_uvf"])
     eye_png = os.path.join(a.pack, "eye.png")
     eyes.data.materials.append(material("Eyes", (1, 1, 1, 1), 0.1, image=eye_png if os.path.isfile(eye_png) else None))

@@ -56,7 +56,7 @@ def bake(obj, *mods):
     bpy.data.meshes.remove(old)
 
 
-def rigify(body):
+def rigify(body, rigid=None):
     """Rigify rig fitted from mesh landmarks + verified weights (bx_rig). (None, why) if the mesh is not a
     T/A-posed humanoid or binding fails; the caller then falls back to the simple distance-weighted rig."""
     import bx_rig as R
@@ -71,12 +71,12 @@ def rigify(body):
         rig, err = R.generate(meta)
         if rig is None:
             raise RuntimeError(err)
-        rep = R.bind(rig, body)
+        rep = R.bind(rig, body, rigid=rigid)
         if not rep.get("ok"):
             raise RuntimeError(f"weights not usable ({rep.get('route')})")
         # Rigify leaves its metarig and helper objects (widget shapes, proxies) behind: keep only the deliverable.
         for o in list(bpy.data.objects):
-            if o is not body and o is not rig:
+            if o is not body and o is not rig and o not in (rigid or {}):
                 bpy.data.objects.remove(o, do_unlink=True)
         deform = sum(1 for b in rig.data.bones if b.use_deform)
         print(f"rigify rig: {deform} deform bones, route {rep.get('route')}")

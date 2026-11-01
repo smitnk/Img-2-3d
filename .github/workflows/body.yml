@@ -1,0 +1,86 @@
+name: Body Creator (MakeHuman pack + ARM64 Blender)
+
+# Builds the CC0 MakeHuman asset pack, then builds characters from slider specs on the published ARM64 Blender
+# runtime the way the phone runs it (software GL env), with Rigify + quality gate + thumbnails.
+on:
+  push:
+    paths: ["tools/bodypack/**", "app/src/main/assets/blender/body/**", "app/src/main/assets/blender/body_creator.py", ".github/workflows/body.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  MH_COMMIT: a8bc2d54ff0ac92e78ff71431b1023eda42bf482
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: MakeHuman data (CC0 assets only)
+        run: |
+          git init -q mh && cd mh && git remote add origin https://github.com/makehumancommunity/makehuman
+          git config core.sparseCheckout true
+          printf "makehuman/data/3dobjs/\nmakehuman/data/targets/\nmakehuman/data/modifiers/\nmakehuman/data/eyes/\nLICENSE.ASSETS.md\n" > .git/info/sparse-checkout
+          git fetch -q --depth 1 origin "$MH_COMMIT" && git checkout -q FETCH_HEAD
+      - run: pip install -q numpy
+      - name: Build pack + morph self-check
+        run: |
+          python tools/bodypack/build_pack.py mh/makehuman/data bodypack
+          cp mh/LICENSE.ASSETS.md bodypack/
+          python app/src/main/assets/blender/body/humanmorph.py bodypack
+          ls -la bodypack
+      - uses: actions/upload-artifact@v4
+        with: { name: bodypack, path: bodypack/ }
+  build:
+    needs: pack
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: bodypack, path: bodypack }
+      - name: Unpack runtime
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download blender-runtime-v1 -p blender-runtime-arm64.tar.gz
+          mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
+          sudo mkdir -p rootfs/opt/app rootfs/opt/bodypack rootfs/opt/job
+          sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
+          sudo cp -r bodypack/. rootfs/opt/bodypack/
+          sudo cp tools/bodypack/specs/*.json rootfs/opt/job/
+          sudo mount -t proc proc rootfs/proc
+      - name: Build characters
+        run: |
+          B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
+            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
+          run() { name=$1; shift; s=$(date +%s)
+            if B "$@" > "log_$name.txt" 2>&1; then echo "$name OK $(( $(date +%s) - s ))s"; else echo "$name FAILED"; tail -n 40 "log_$name.txt"; fi; }
+          {
+          for f in tools/bodypack/specs/*.json; do n=$(basename "$f" .json)
+            run "body_$n" body_creator.py -- --spec /opt/job/$n.json --out /tmp/o/$n
+            grep -h "^BODY\|rigify\|body rig failed" "log_body_$n.txt" || true
+            g=$(ls rootfs/tmp/o/$n/*.glb 2>/dev/null | head -1 | sed 's#^rootfs##')
+            [ -n "$g" ] && run "post_$n" postprocess.py -- --in "$g" --out /tmp/o/$n --res 640 && grep -h POSTPROCESS "log_post_$n.txt"
+          done
+          } 2>&1 | tee results.txt
+      - name: Validate
+        run: |
+          set -o pipefail
+          sudo chmod -R a+r rootfs/tmp/o
+          python3 - <<'PY' | tee -a results.txt
+          import glob, json, os
+          dirs = sorted(glob.glob("rootfs/tmp/o/*/"))
+          assert len(dirs) == 5, dirs
+          for d in dirs:
+              g = json.load(open(d + "generation.json")); q = json.load(open(d + "quality.json"))
+              print(os.path.basename(d[:-1]), "tris", g["triangles"], "height", g["height_m"], "rig", g["rig"],
+                    "quality", q["quality"] and q["quality"]["pass"], (q["quality"] or {}).get("errors"))
+              assert g["triangles"] > 20000 and 0.8 < g["height_m"] < 2.4
+          PY
+      - name: Push results + thumbnails to ci-logs
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs
+          cp "$GITHUB_WORKSPACE/results.txt" log.txt 2>/dev/null || echo "no results" > log.txt
+          for d in "$GITHUB_WORKSPACE"/rootfs/tmp/o/*/; do [ -f "$d/thumb.png" ] && sudo cp "$d/thumb.png" "thumb_$(basename "$d").png"; done
+          sudo chown -R "$(id -u)" . && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "body log $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-logs

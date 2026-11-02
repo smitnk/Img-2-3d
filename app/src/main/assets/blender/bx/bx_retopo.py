@@ -107,7 +107,11 @@ def target_bvh(target):
     hit = _BVH_CACHE.get(key)
     if hit is None:
         dg = bpy.context.evaluated_depsgraph_get()
-        hit = BVHTree.FromObject(target, dg)
+        try:
+            hit = BVHTree.FromObject(target, dg)
+        except SystemError:  # hidden / not-evaluated objects return NULL (patch: Img-2-3D): build from mesh data
+            me = target.data
+            hit = BVHTree.FromPolygons([v.co.copy() for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
         _BVH_CACHE.clear()
         _BVH_CACHE[key] = hit
     return hit

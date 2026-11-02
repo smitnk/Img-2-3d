@@ -27,10 +27,13 @@ VIEWS = {
 }
 
 
+FACING = -1  # the character faces -Y (app convention); TripoSR meshes face +Y (set by --facing +y)
+
+
 def view_basis(name):
     """(forward, right, up) unit vectors of an orthographic camera looking along `forward`. "left" means the
-    character's left side (+X), seen by a camera looking -X."""
-    f = np.array(VIEWS[name], float)
+    character's left side (+X), seen by a camera looking -X. Views turn with the character when it faces +Y."""
+    f = np.array(VIEWS[name], float) * ([1, 1, 1] if FACING < 0 else [-1, -1, 1])
     f /= np.linalg.norm(f)
     up = np.array([0, 1.0, 0]) if abs(f[2]) > 0.9 else np.array([0, 0, 1.0])
     r = np.cross(f, up)
@@ -117,13 +120,15 @@ def blend(points, normals, base_rgb, views, occluders=None, base_weight=1e-3, **
     acc = base_rgb * base_weight
     tot = np.full(len(points), base_weight)
     occ = points if occluders is None else occluders
-    for name, img in views:
+    for view in views:
+        name, img = view[:2]
+        gain = view[2] if len(view) > 2 else 1.0  # the source photo outranks AI-painted views where both see a point
         f, r, u = view_basis(name)
         box = frame(occ, f, r, u)
         w, s, t = view_weights(points, normals, f, r, u, box, occluders=occ, **kw)
         s0, s1, t0, t1 = subject_box(img)  # mesh box -> subject box in the picture (photos have margins)
         c = sample(img, s0 + s * (s1 - s0), t0 + t * (t1 - t0))
-        w = w * (c[:, 3] > 0.5)
+        w = w * (c[:, 3] > 0.5) * gain
         acc += c[:, :3] * w[:, None]
         tot += w
     return acc / tot[:, None], tot - base_weight
@@ -191,8 +196,11 @@ def main():
     p.add_argument("--render", help="comma list of views to render from the mesh's own colours into --out (render mode)")
     p.add_argument("--out", required=True)
     p.add_argument("--res", type=int, default=2048)
+    p.add_argument("--facing", default="-y", choices=["-y", "+y"], help="+y for raw TripoSR / refined photo meshes")
     p.add_argument("--subdiv", type=int, default=-1, help="simple subdivisions before sampling; -1 = once if under 60k faces")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    global FACING
+    FACING = 1 if a.facing == "+y" else -1
     os.makedirs(a.out, exist_ok=True)
     if not (a.views or a.render):
         raise SystemExit("give --views (project) or --render (render views)")
@@ -245,9 +253,9 @@ def main():
         c = c.reshape(-1, 4)[:, :3]
         base = c[lv] if col.domain == "POINT" else c
 
-    views = [(v["view"], _load_rgba(os.path.join(base_dir, v["image"]))) for v in spec]
+    views = [(v["view"], _load_rgba(os.path.join(base_dir, v["image"])), float(v.get("weight", 1))) for v in spec]
     rgb, cov = blend(co[lv], ln, base, views, occluders=co)
-    for name, img in views:
+    for name, img, _ in views:
         print(f"texproject: view {name} {img.shape[1]}x{img.shape[0]}")
     print(f"texproject: {100 * (cov > 0).mean():.1f}% of corners covered by views")
 
@@ -258,7 +266,7 @@ def main():
     me.color_attributes.active_color = out
     tex = vcbake.bake(obj, a.res)
     glb = vcbake.export_glb(os.path.join(a.out, "textured.glb"))
-    json.dump({"script": "texproject", "views": [v["view"] for v in spec], "coverage": float((cov > 0).mean()),
+    json.dump({"script": "texproject", "vertices": len(obj.data.vertices), "triangles": sum(len(q.vertices) - 2 for q in obj.data.polygons), "views": [v["view"] for v in spec], "coverage": float((cov > 0).mean()),
                "texture": tex, "files": {"glb": glb}}, open(os.path.join(a.out, "generation.json"), "w"), indent=1)
 
 

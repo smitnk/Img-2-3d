@@ -296,11 +296,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val tex = File(runner.jobIn.apply { mkdirs() }, "tex").apply { deleteRecursively(); mkdirs() }
             m.glb.copyTo(File(runner.jobIn, "input.glb"), overwrite = true)
             val views = PAINT_VIEWS
-            val renders = runner.renderViews(listOf("--in", "/opt/job/input.glb", "--render", views.joinToString(",")), s.threadCount()) { report.line(it) }
+            // TripoSR output (and refines of it) faces +Y in Blender; Blender-built characters face -Y.
+            val facing = if (m.source in setOf(Source.PHOTO, Source.CHARACTER, Source.REFINED)) "+y" else "-y"
+            val renders = runner.renderViews(listOf("--in", "/opt/job/input.glb", "--render", views.joinToString(","), "--facing", facing), s.threadCount()) { report.line(it) }
             report.step(2, "Texture AI")
             val td = TextureDiffusion(texPack.dir, texPack.unet, s.threadCount())
             val entries = org.json.JSONArray()
-            m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front")) }
+            m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front").put("weight", 8)) // real photo beats AI }
             views.forEachIndexed { i, v ->
                 coroutineContext.ensureActive()
                 report.stage("Painting $v view (${i + 1}/${views.size})", i.toFloat() / views.size)
@@ -314,7 +316,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
             File(tex, "views.json").writeText(entries.toString())
             report.step(3, "Blender")
-            val b = blender("texproject.py", listOf("--in", "/opt/job/input.glb", "--views", "/opt/job/tex/views.json", "--res", "2048"), report)
+            val b = blender("texproject.py", listOf("--in", "/opt/job/input.glb", "--views", "/opt/job/tex/views.json", "--res", "2048", "--facing", facing), report)
             saveBlender(b, "${m.name} painted", m.source, thumbFile = m.thumbnail, detail = "AI-painted texture of ${m.name}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }
@@ -705,7 +707,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         const val MAX_SIDE = 1536
         val PAINT_VIEWS = listOf("back", "left", "right")
-        const val PAINT_STRENGTH = 0.5f // how far the AI may move from the model's own colours (texgen CI checks this value)
+        const val PAINT_STRENGTH = 0.35f // how far the AI may move from the model's own colours (texgen CI checks this value)
         val STAGES = mapOf(
             TripoSR.Stage.BACKGROUND to "Removing background",
             TripoSR.Stage.PREPROCESS to "Preparing image",

@@ -33,3 +33,13 @@ pad[20:80, 30:50, 0] = 1; pad[20:80, 50:70, 2] = 1; pad[20:80, 30:70, 3] = 1
 rgb3, _ = tp.blend(P, N, base, [("front", pad)])
 assert (rgb3[front_right, 2] > 0.9).all() and (rgb3[front_left, 0] > 0.9).all(), "subject box not used"
 print("texproject core OK")
+
+# a +Y-facing mesh (raw TripoSR): "front" must hit the +Y side, and the photo outweighs an AI view
+tp.FACING = 1
+rgb4, cov4 = tp.blend(P, N, base, [("front", img)])
+assert (cov4[P[:, 1] < -0.5] == 0).all() and (cov4[P[:, 1] > 0.9] > 0).all(), "facing +y not honoured"
+tp.FACING = -1
+green = np.zeros((64, 64, 4)); green[..., 1] = 1; green[..., 3] = 1
+rgb5, _ = tp.blend(P, N, base, [("front", img, 8.0), ("front_left", green)])
+assert rgb5[front_left, 0].mean() > 0.6, "photo weight ignored"
+print("facing + weight OK")

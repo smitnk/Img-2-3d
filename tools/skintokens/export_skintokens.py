@@ -194,36 +194,43 @@ def main_export(mesh, out):
         mc_ref = MeshCond()(*pc1)
         cl_ref = VaeCond()(c2)
         t0 = time.time()
-        torch.onnx.export(MeshCond(), pc1, f"{out}/mesh_cond.onnx", opset_version=17, input_names=["pc", "feats"],
-                          output_names=["tokens"])
-        torch.onnx.export(VaeCond(), (c2,), f"{out}/vae_cond.onnx", opset_version=17, input_names=["cond"],
-                          output_names=["cond_latents"], dynamic_axes={"cond": {1: "n"}})
-        idx = torch.zeros((2, K), dtype=torch.long)
-        torch.onnx.export(SkinDec(), (idx, cond[None], cl_ref), f"{out}/skin_dec.onnx", opset_version=17,
-                          input_names=["indices", "cond", "cond_latents"], output_names=["skin"],
-                          dynamic_axes={"indices": {0: "m"}, "cond": {1: "n"}, "skin": {0: "m", 1: "n"}})
-        past = tuple(torch.zeros((1, KVH, 3, HD)) for _ in range(2 * L))
-        names = [f"past_{i}" for i in range(2 * L)]
-        torch.onnx.export(Step(), (torch.zeros((1, 1, cfgl.hidden_size)), torch.tensor([[3]]), *past), f"{out}/llm_tmp.onnx",
-                          opset_version=17, input_names=["embeds", "position"] + names,
-                          output_names=["logits"] + [f"present_{i}" for i in range(2 * L)],
-                          dynamic_axes={**{n: {2: "p"} for n in names}, **{f"present_{i}": {2: "q"} for i in range(2 * L)}})
-        print(f"exported in {time.time() - t0:.0f}s, rss {rss_mb()} MB")
+    quantized = os.path.exists(f"{out}/llm_q.onnx")  # second pass (after the re-exec below): only verify
+    with torch.no_grad():
+      if not quantized:
+          torch.onnx.export(MeshCond(), pc1, f"{out}/mesh_cond.onnx", opset_version=17, input_names=["pc", "feats"],
+                            output_names=["tokens"])
+          torch.onnx.export(VaeCond(), (c2,), f"{out}/vae_cond.onnx", opset_version=17, input_names=["cond"],
+                            output_names=["cond_latents"], dynamic_axes={"cond": {1: "n"}})
+          idx = torch.zeros((2, K), dtype=torch.long)
+          torch.onnx.export(SkinDec(), (idx, cond[None], cl_ref), f"{out}/skin_dec.onnx", opset_version=17,
+                            input_names=["indices", "cond", "cond_latents"], output_names=["skin"],
+                            dynamic_axes={"indices": {0: "m"}, "cond": {1: "n"}, "skin": {0: "m", 1: "n"}})
+          past = tuple(torch.zeros((1, KVH, 3, HD)) for _ in range(2 * L))
+          names = [f"past_{i}" for i in range(2 * L)]
+          torch.onnx.export(Step(), (torch.zeros((1, 1, cfgl.hidden_size)), torch.tensor([[3]]), *past), f"{out}/llm_tmp.onnx",
+                            opset_version=17, input_names=["embeds", "position"] + names,
+                            output_names=["logits"] + [f"present_{i}" for i in range(2 * L)],
+                            dynamic_axes={**{n: {2: "p"} for n in names}, **{f"present_{i}": {2: "q"} for i in range(2 * L)}})
+          print(f"exported in {time.time() - t0:.0f}s, rss {rss_mb()} MB")
     np.random.default_rng = real_rng
 
-    import onnx
-    m = onnx.load(f"{out}/llm_tmp.onnx")
-    onnx.save_model(m, f"{out}/llm.onnx", save_as_external_data=True, all_tensors_to_one_file=True, location="llm.onnx.data")
-    del m
-    for f in os.listdir(out):
-        if f.startswith("llm_tmp") or (f not in ("llm.onnx", "llm.onnx.data") and "." not in f):
-            os.remove(os.path.join(out, f))
-    # quantize in a child process so its peak doesn't stack on the live torch model (runner was killed here)
-    import subprocess, sys as _sys
-    subprocess.run([_sys.executable, "-c", "from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
-                    f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'])"],
-                   check=True)
-    print(f"quantized, rss {rss_mb()} MB", flush=True)
+    if not quantized:
+        import onnx
+        m = onnx.load(f"{out}/llm_tmp.onnx")
+        onnx.save_model(m, f"{out}/llm.onnx", save_as_external_data=True, all_tensors_to_one_file=True, location="llm.onnx.data")
+        del m
+        for f in os.listdir(out):
+            if f.startswith("llm_tmp") or (f not in ("llm.onnx", "llm.onnx.data") and "." not in f):
+                os.remove(os.path.join(out, f))
+        # quantizing beside the live torch model got the runner killed: replace this process (frees its RAM),
+        # quantize, then run this same command again, which skips straight to verification
+        import shlex, sys as _sys
+        q = (f"{shlex.quote(_sys.executable)} -c \"from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
+             f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'])\"")
+        again = " ".join(shlex.quote(x) for x in [_sys.executable, "-u"] + _sys.argv)
+        print("re-exec for quantization", flush=True)
+        import atexit; atexit._run_exitfuncs()  # stops demo's bpy server (execv skips atexit)
+        os.execv("/bin/bash", ["bash", "-c", f"{q} && echo quantized && exec {again}"])
 
     import onnxruntime as ort
     mc = ort.InferenceSession(f"{out}/mesh_cond.onnx").run(None, {"pc": pc1[0].numpy(), "feats": pc1[1].numpy()})[0]

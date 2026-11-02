@@ -17,6 +17,7 @@ data class Settings(
     val refineHeight: Float = 1.0f,
     val refineVoxel: Float = 0.008f,
     val refineSmooth: Int = 4,
+    val paintAi: Boolean = false, // AI-painted sides: slow and often worse than TripoSR's colours
     val refineDecimate: Float = 1.0f,
     val refineRig: Boolean = false,
     // Performance
@@ -49,7 +50,7 @@ class SettingsStore(context: Context) {
             .putBoolean("vertexColors", s.vertexColors).putFloat("foregroundRatio", s.foregroundRatio)
             .putBoolean("rig", s.rig).putBoolean("saveBlend", s.saveBlend)
             .putFloat("refineHeight", s.refineHeight).putFloat("refineVoxel", s.refineVoxel)
-            .putInt("refineSmooth", s.refineSmooth).putFloat("refineDecimate", s.refineDecimate)
+            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putFloat("refineDecimate", s.refineDecimate)
             .putBoolean("refineRig", s.refineRig).putInt("threads", s.threads).putBoolean("keepScreenOn", s.keepScreenOn)
             .putString("apiKey", s.apiKey).putString("apiModel", s.apiModel)
             .putBoolean("dynamicColor", s.dynamicColor).putBoolean("autoRotate", s.autoRotate)
@@ -70,6 +71,7 @@ class SettingsStore(context: Context) {
             refineHeight = prefs.getFloat("refineHeight", d.refineHeight),
             refineVoxel = prefs.getFloat("refineVoxel", d.refineVoxel),
             refineSmooth = prefs.getInt("refineSmooth", d.refineSmooth),
+            paintAi = prefs.getBoolean("paintAi", d.paintAi),
             refineDecimate = prefs.getFloat("refineDecimate", d.refineDecimate),
             refineRig = prefs.getBoolean("refineRig", d.refineRig),
             threads = prefs.getInt("threads", d.threads),

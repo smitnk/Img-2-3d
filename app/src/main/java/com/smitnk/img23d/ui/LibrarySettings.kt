@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Switch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -148,6 +149,12 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             progress = (state.texPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
             error = (state.texPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
             onInstall = vm::installTexPack, onRemove = vm::uninstallTexPack,
+            extra = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("AI paints the sides (off: photo on the front, TripoSR colours elsewhere)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.paintAi, { on -> vm.updateSettings { it.copy(paintAi = on) } })
+                }
+            },
         )
 
         SectionHeader("Photo → 3D defaults")

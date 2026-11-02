@@ -144,6 +144,37 @@ def wrap_to(body, ref, amount):
     bpy.data.meshes.remove(old)
 
 
+def photo_onto(ref, path):
+    """Sharpen the reference's blurry TripoSR colours with the source photo, projected from the front (texproject),
+    before they are transferred to the body. The photo outweighs the old colours wherever it sees the surface."""
+    import texproject
+    me = ref.data
+    col = me.color_attributes.active_color or me.color_attributes[0]
+    nv = len(me.vertices)
+    co = np.empty(nv * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    if col.domain == "POINT":
+        pts = co
+        nrm = np.empty(nv * 3)
+        me.vertices.foreach_get("normal", nrm)
+    else:
+        lv = np.empty(len(me.loops), np.int32)
+        me.loops.foreach_get("vertex_index", lv)
+        pts = co[lv]
+        nrm = np.empty(len(me.loops) * 3)
+        me.loops.foreach_get("normal", nrm)
+    c = np.empty(len(col.data) * 4, np.float32)
+    col.data.foreach_get("color", c)
+    c = c.reshape(-1, 4)
+    texproject.FACING = -1
+    rgb, cov = texproject.blend(pts, nrm.reshape(-1, 3), c[:, :3].astype(np.float64),
+                                [("front", texproject._load_rgba(path), 8.0)], occluders=co, base_weight=1.0)
+    c[:, :3] = rgb
+    col.data.foreach_set("color", c.ravel())
+    print(f"photo onto reference: {100 * (cov > 0).mean():.0f}% of its surface sees the photo")
+
+
 def paint_from(body, ref):
     """Photo colours: copy the reference's vertex colours onto the body and bake them into its skin texture."""
     src = ref.data.color_attributes.active_color or ref.data.color_attributes[0]
@@ -275,6 +306,10 @@ def main():
     if ref is not None:
         # Auto-align (bx_rig.model_check: feet on Z=0, centred, mid-foot at Y=0) and read its landmarks: pose, and
         # whether it is a biped at all (a lizard with a tail still fits by silhouette, just less precisely).
+        if spec.get("ref_facing") == "+y":  # TripoSR meshes face +Y; the body faces -Y: turn the reference around
+            q = ref_points(ref) * np.array([-1, -1, 1])
+            ref.data.vertices.foreach_set("co", q.astype(np.float32).ravel())
+            ref.data.update()
         import bx_rig
         bx_rig.model_check([ref], fix=True)
         try:
@@ -349,6 +384,8 @@ def main():
             wrap_to(body, ref, wrap)
         print(f"reference: {len(ref.data.vertices)} verts, colours: {[c.name for c in ref.data.color_attributes]}, wrap {wrap}")
         if spec.get("ref_colors") and len(ref.data.color_attributes):
+            if spec.get("ref_photo") and os.path.isfile(spec["ref_photo"]):
+                photo_onto(ref, spec["ref_photo"])
             paint_from(body, ref)
     mats = {"Mouth": material("Teeth", hex_rgb("#EEE6D8", ""), 0.3), "Tongue": material("Tongue", hex_rgb("#B5525A", ""), 0.4)}
     parts = []

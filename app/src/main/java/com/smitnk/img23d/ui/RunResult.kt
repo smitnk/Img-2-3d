@@ -209,11 +209,12 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                 OutlinedButton(onClick = { vm.paintTexture(m) }, enabled = tex !is PackStatus.Downloading,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Icon(Icons.Rounded.Palette, null); Spacer(Modifier.width(8.dp))
-                    Text(when (tex) {
-                        PackStatus.Ready -> if (m.photo != null) "Paint texture (photo + AI sides)" else "Paint texture with AI"
-                        is PackStatus.Downloading -> "Downloading texture AI… ${tex.done * 100 / maxOf(tex.total, 1)}%"
-                        is PackStatus.Failed -> "Texture AI download failed: tap to retry"
-                        PackStatus.NotInstalled -> "Paint texture: download AI (~1 GB, runs on phone)"
+                    Text(when {
+                        !settings.paintAi -> "Paint texture from photo"
+                        tex is PackStatus.Downloading -> "Downloading texture AI… ${tex.done * 100 / maxOf(tex.total, 1)}%"
+                        tex is PackStatus.Failed -> "Texture AI download failed: tap to retry"
+                        tex == PackStatus.Ready -> if (m.photo != null) "Paint texture (photo + AI sides)" else "Paint texture with AI"
+                        else -> "Paint texture: download AI (~1 GB, runs on phone)"
                     })
                 }
             }

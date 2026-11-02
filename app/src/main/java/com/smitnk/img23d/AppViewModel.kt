@@ -291,16 +291,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun paintTexture(m: Model) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
-        if (!texPack.isReady()) { installTexPack(); return }
-        launchJob("Paint texture", "Blender", 3) { report ->
+        val ai = s.paintAi
+        if (!ai && m.photo == null) { fail("Paint texture", "This model has no saved photo (made before this version). Turn on \"AI paints the sides\" in Settings, or make the model again."); return }
+        if (ai && !texPack.isReady()) { installTexPack(); return }
+        launchJob("Paint texture", "Blender", if (ai) 3 else 1) { report ->
             val tex = File(runner.jobIn.apply { mkdirs() }, "tex").apply { deleteRecursively(); mkdirs() }
             m.glb.copyTo(File(runner.jobIn, "input.glb"), overwrite = true)
-            val views = PAINT_VIEWS
+            val views = if (ai) PAINT_VIEWS else emptyList()
             // TripoSR output (and refines of it) faces +Y in Blender; Blender-built characters face -Y.
             val facing = if (m.source in setOf(Source.PHOTO, Source.CHARACTER, Source.REFINED)) "+y" else "-y"
-            val renders = runner.renderViews(listOf("--in", "/opt/job/input.glb", "--render", views.joinToString(","), "--facing", facing), s.threadCount()) { report.line(it) }
-            report.step(2, "Texture AI")
-            val td = TextureDiffusion(texPack.dir, texPack.unet, s.threadCount())
+            val renders = if (views.isEmpty()) tex else runner.renderViews(listOf("--in", "/opt/job/input.glb", "--render", views.joinToString(","), "--facing", facing), s.threadCount()) { report.line(it) }
+            if (ai) report.step(2, "Texture AI")
+            val td by lazy { TextureDiffusion(texPack.dir, texPack.unet, s.threadCount()) }
             val entries = org.json.JSONArray()
             m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front").put("weight", 8)) } // weight 8: the real photo beats AI views
             views.forEachIndexed { i, v ->
@@ -315,7 +317,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 entries.put(JSONObject().put("image", "$v.png").put("view", v))
             }
             File(tex, "views.json").writeText(entries.toString())
-            report.step(3, "Blender")
+            if (ai) report.step(3, "Blender")
             val b = blender("texproject.py", listOf("--in", "/opt/job/input.glb", "--views", "/opt/job/tex/views.json", "--res", "2048", "--facing", facing), report)
             saveBlender(b, "${m.name} painted", m.source, thumbFile = m.thumbnail, detail = "AI-painted texture of ${m.name}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
@@ -351,11 +353,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun runBody() = blenderJob(if (_state.value.body.fit) "Fit character to model" else "Body Creator") { report ->
         val spec = _state.value.body
-        File(runner.jobIn.apply { mkdirs() }, "body_spec.json").writeText(spec.toJson())
+        val json = JSONObject(spec.toJson())
         spec.reference?.let { id ->
-            val ref = library.get(id)?.glb ?: throw IllegalStateException("The reference model was deleted; remove it in Body Creator")
-            ref.copyTo(File(runner.jobIn, "ref.glb"), overwrite = true)
+            val refModel = library.get(id)
+            val ref = refModel?.glb ?: throw IllegalStateException("The reference model was deleted; remove it in Body Creator")
+            ref.copyTo(File(runner.jobIn.apply { mkdirs() }, "ref.glb"), overwrite = true)
+            if (refModel.source in setOf(Source.PHOTO, Source.CHARACTER, Source.REFINED)) json.put("ref_facing", "+y")
+            refModel.photo?.let { it.copyTo(File(runner.jobIn, "ref_photo.png"), overwrite = true); json.put("ref_photo", "/opt/job/ref_photo.png") }
         }
+        File(runner.jobIn.apply { mkdirs() }, "body_spec.json").writeText(json.toString())
         val b = blender("body_creator.py", listOf("--pack", "/opt/bodypack", "--spec", "/opt/job/body_spec.json"), report)
         // Keep editing from what was built (after a fit: the fitted sliders).
         b.info.optJSONObject("spec")?.let { j -> _state.update { it.copy(body = BodySpec.fromJson(j)) }; refreshBodyPreview() }

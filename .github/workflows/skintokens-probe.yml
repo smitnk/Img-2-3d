@@ -64,7 +64,7 @@ jobs:
           cd /tmp/st
           /usr/bin/time -v python -u $GITHUB_WORKSPACE/tools/skintokens/export_skintokens.py onnx /tmp/stx 2> $GITHUB_WORKSPACE/out/onnx.time | tail -10 | tee $GITHUB_WORKSPACE/out/onnx.txt
           grep -E "Maximum resident|Elapsed" $GITHUB_WORKSPACE/out/onnx.time | tee -a $GITHUB_WORKSPACE/out/onnx.txt
-          tail -15 $GITHUB_WORKSPACE/out/onnx.time | grep -v "^\s" >> $GITHUB_WORKSPACE/out/onnx.txt
+          tail -15 $GITHUB_WORKSPACE/out/onnx.time | grep -v "^\s" >> $GITHUB_WORKSPACE/out/onnx.txt || true
       - name: Pose test renders
         if: always()
         run: |

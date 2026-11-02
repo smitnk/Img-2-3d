@@ -72,6 +72,16 @@ def main(src, dst):
             return inits[tposed[b].input[0]], True
         return None, False
 
+    from collections import Counter
+    prod = {o: n for n in g.node for o in n.output}
+    src = Counter()
+    for n in g.node:
+        if n.op_type in ("MatMul", "Gemm"):
+            b = n.input[1]
+            p0 = prod.get(b)
+            src[f"{n.op_type}<-" + ("init" if b in inits else "input" if p0 is None else p0.op_type +
+                                   ("(init)" if p0.input and p0.input[0] in inits else f"<-{prod[p0.input[0]].op_type if p0.input and p0.input[0] in prod else '?'}"))] += 1
+    print("weights feeding MatMul/Gemm:", dict(src), "| initializers", len(inits), "graph inputs", len(g.input), flush=True)
     new_nodes, new_inits, quantized, done = [], [], 0, set()
     dropped = set()
     for n in g.node:

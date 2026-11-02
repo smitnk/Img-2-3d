@@ -41,6 +41,8 @@ public final class TripoSR {
     public static final class Result {
         public Mesh mesh;
         public float[] preprocessed; // 512x512x3, what the network saw
+        public int[] foreground; // RGBA 0..255, foregroundSize^2: the cut-out subject, centred (front view for texture painting)
+        public int foregroundSize;
         public final Map<String, Long> timingsMs = new HashMap<>();
     }
 
@@ -83,6 +85,8 @@ public final class TripoSR {
         l.onProgress(Stage.PREPROCESS, 0f);
         int[] size = new int[1];
         int[] fg = ImageOps.resizeForeground(rgba, w, h, opt.foregroundRatio, size);
+        res.foreground = fg;
+        res.foregroundSize = size[0];
         float[] comp = ImageOps.compositeGray(fg, size[0] * size[0]);
         float[] img = ImageOps.resize(comp, size[0], size[0], 3, IMAGE_SIZE, IMAGE_SIZE);
         res.preprocessed = img;

@@ -30,6 +30,8 @@ data class Model(
     val blend get() = File(dir, "model.blend").takeIf { it.isFile }
     val thumbnail get() = File(dir, "preprocessed.png").takeIf { it.isFile }
     val script get() = File(dir, "script.py").takeIf { it.isFile }
+    /** The cut-out source photo (TripoSR models and what was made from them): the front view for Paint texture. */
+    val photo get() = File(dir, "photo.png").takeIf { it.isFile }
     val totalMs get() = timingsMs.values.sum()
 }
 

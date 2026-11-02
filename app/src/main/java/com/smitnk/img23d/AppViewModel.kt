@@ -16,10 +16,13 @@ import com.smitnk.img23d.blender.BlenderRuntime
 import com.smitnk.img23d.blender.BuilderSpec
 import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
+import com.smitnk.img23d.body.TexPack
+import com.smitnk.img23d.core.TextureDiffusion
 import com.smitnk.img23d.body.BodySpec
 import com.smitnk.img23d.body.PackStatus
 import com.smitnk.img23d.viewer.GltfMesh
 import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import com.smitnk.img23d.blender.ExportPreset
 import com.smitnk.img23d.blender.MemoryProbe
 import com.smitnk.img23d.blender.Preset
@@ -117,6 +120,7 @@ data class UiState(
     val builderPreviewVersion: Int = 0,
     val body: BodySpec = BodySpec(),
     val bodyPack: PackStatus = PackStatus.NotInstalled,
+    val texPack: PackStatus = PackStatus.NotInstalled,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
     val bodyPreview: GltfMesh? = null,
 ) {
@@ -264,11 +268,54 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------- Body Creator ----------
     val bodyPack = BodyPack(app)
+    val texPack = TexPack(app)
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
 
     init { // after bodyPack is initialized (Kotlin runs initializers in declaration order)
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
+        if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
+    }
+
+    fun installTexPack() = viewModelScope.launch {
+        runCatching { texPack.install { st -> _state.update { it.copy(texPack = st) } } }
+            .onFailure { e -> _state.update { it.copy(texPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
+
+    /**
+     * Paint texture, all on the phone: Blender renders back/left/right from the model's own colours, the texture AI
+     * (LCM img2img, core TextureDiffusion) repaints each render, then texproject.py projects the repaints plus the
+     * source photo (front) onto the mesh and bakes one UV texture.
+     */
+    fun paintTexture(m: Model) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        if (!texPack.isReady()) { installTexPack(); return }
+        launchJob("Paint texture", "Blender", 3) { report ->
+            val tex = File(runner.jobIn.apply { mkdirs() }, "tex").apply { deleteRecursively(); mkdirs() }
+            m.glb.copyTo(File(runner.jobIn, "input.glb"), overwrite = true)
+            val views = PAINT_VIEWS
+            val renders = runner.renderViews(listOf("--in", "/opt/job/input.glb", "--render", views.joinToString(",")), s.threadCount()) { report.line(it) }
+            report.step(2, "Texture AI")
+            val td = TextureDiffusion(texPack.dir, texPack.unet, s.threadCount())
+            val entries = org.json.JSONArray()
+            m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front")) }
+            views.forEachIndexed { i, v ->
+                coroutineContext.ensureActive()
+                report.stage("Painting $v view (${i + 1}/${views.size})", i.toFloat() / views.size)
+                val bmp = android.graphics.BitmapFactory.decodeFile(File(renders, "render_$v.png").path)
+                    ?: throw IllegalStateException("Blender did not render the $v view")
+                val alpha = FloatArray(TextureDiffusion.SIZE * TextureDiffusion.SIZE)
+                val init = TextureDiffusion.toChw(rgbaOf(bmp), bmp.width, bmp.height, alpha)
+                val out = td.paint(init, TextureDiffusion.VIEWS.indexOf(v), 4, PAINT_STRENGTH, TextureDiffusion.seeded(v.hashCode().toLong()), null)
+                bitmapOf(TextureDiffusion.toRgba(out, alpha), TextureDiffusion.SIZE).compressTo(File(tex, "$v.png"))
+                entries.put(JSONObject().put("image", "$v.png").put("view", v))
+            }
+            File(tex, "views.json").writeText(entries.toString())
+            report.step(3, "Blender")
+            val b = blender("texproject.py", listOf("--in", "/opt/job/input.glb", "--views", "/opt/job/tex/views.json", "--res", "2048"), report)
+            saveBlender(b, "${m.name} painted", m.source, thumbFile = m.thumbnail, detail = "AI-painted texture of ${m.name}")
+                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+        }
     }
 
     fun installBodyPack() = viewModelScope.launch {
@@ -421,13 +468,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (mode == PhotoMode.MESH) {
                 library.add("Photo model", Source.PHOTO, { f -> f.outputStream().buffered().use { res.mesh.writeGlb(it) } },
                     res.mesh.vertexCount(), res.mesh.faceCount(), resolution = opt.resolution, timings = res.timingsMs,
-                    peakMemMb = 0, detail = "TripoSR ${opt.resolution}³", thumbnail = thumb)
+                    peakMemMb = 0, detail = "TripoSR ${opt.resolution}³", thumbnail = thumb).also { savePhoto(it, res) }
             } else {
                 val input = File(runner.jobIn.apply { mkdirs() }, "input.glb")
                 input.outputStream().buffered().use { res.mesh.writeGlb(it) }
                 report.step(2, "Blender")
                 val b = blender("refine_mesh.py", refineArgs("Photo character"), report)
                 saveBlender(b, "Photo character", Source.CHARACTER, res.timingsMs, thumb = thumb, detail = "TripoSR ${opt.resolution}³ + Blender refine")
+                    .also { savePhoto(it, res) }
             }
         }
     }
@@ -438,6 +486,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("refine_mesh.py", refineArgs("${m.name} refined"), report)
             saveBlender(b, "${m.name} refined", Source.REFINED, thumbFile = m.thumbnail, detail = "Blender refine of ${m.name}")
+                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }
     }
 
@@ -581,16 +630,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun tripoSR(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
         val w = bmp.width
         val h = bmp.height
-        val argb = IntArray(w * h).also { bmp.getPixels(it, 0, w, 0, 0, w, h) }
-        val rgba = IntArray(w * h * 4)
-        val alpha = bmp.hasAlpha()
-        for (i in argb.indices) {
-            val p = argb[i]
-            rgba[i * 4] = (p shr 16) and 255
-            rgba[i * 4 + 1] = (p shr 8) and 255
-            rgba[i * 4 + 2] = p and 255
-            rgba[i * 4 + 3] = if (alpha) p ushr 24 else 255
-        }
+        val rgba = rgbaOf(bmp)
         val opt = TripoSR.Options().apply {
             resolution = s.resolution
             removeBackground = s.removeBackground
@@ -601,6 +641,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val pipe = TripoSR(models.dir).also { tripo = it }
         val res = pipe.run(rgba, w, h, opt) { stage, f -> report.stage(STAGES[stage] ?: stage.name, if (f > 0f && f < 1f) f else null) }
         return res to opt
+    }
+
+    private fun rgbaOf(bmp: Bitmap): IntArray {
+        val argb = IntArray(bmp.width * bmp.height).also { bmp.getPixels(it, 0, bmp.width, 0, 0, bmp.width, bmp.height) }
+        val alpha = bmp.hasAlpha()
+        return IntArray(argb.size * 4).also { o ->
+            for (i in argb.indices) {
+                val p = argb[i]
+                o[i * 4] = (p shr 16) and 255; o[i * 4 + 1] = (p shr 8) and 255; o[i * 4 + 2] = p and 255
+                o[i * 4 + 3] = if (alpha) p ushr 24 else 255
+            }
+        }
+    }
+
+    private fun bitmapOf(rgba: IntArray, size: Int): Bitmap = Bitmap.createBitmap(
+        IntArray(size * size) { i -> (rgba[i * 4 + 3] shl 24) or (rgba[i * 4] shl 16) or (rgba[i * 4 + 1] shl 8) or rgba[i * 4 + 2] },
+        size, size, Bitmap.Config.ARGB_8888)
+
+    private fun Bitmap.compressTo(f: File) = f.outputStream().use { compress(Bitmap.CompressFormat.PNG, 100, it) }
+
+    private fun savePhoto(m: Model, res: TripoSR.Result) {
+        if (res.foreground != null) bitmapOf(res.foreground, res.foregroundSize).compressTo(File(m.dir, "photo.png"))
     }
 
     private fun fail(title: String, msg: String) = _state.update { it.copy(failure = Failure(title, msg)) }
@@ -640,6 +702,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         const val MAX_SIDE = 1536
+        val PAINT_VIEWS = listOf("back", "left", "right")
+        const val PAINT_STRENGTH = 0.5f // how far the AI may move from the model's own colours (texgen CI checks this value)
         val STAGES = mapOf(
             TripoSR.Stage.BACKGROUND to "Removing background",
             TripoSR.Stage.PREPROCESS to "Preparing image",

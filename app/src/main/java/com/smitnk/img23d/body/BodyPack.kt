@@ -18,25 +18,25 @@ sealed interface PackStatus {
 }
 
 /**
- * Body Creator assets (MakeHuman base mesh, morph targets, skeleton, weights; CC0), built and published by
- * .github/workflows/body.yml as release body-assets-v1. Files are checked against body_info.json's sha256.
+ * A downloadable asset pack published as a GitHub release: [infoName] lists every file with bytes + sha256, files are
+ * verified after download, and a ".ready" copy of the info marks a complete install of at least [requiredVersion].
  */
-class BodyPack(context: Context) {
-    val dir = File(context.filesDir, "bodypack").apply { mkdirs() }
-    private val info = File(dir, "body_info.json")
+open class AssetPack(val dir: File, private val baseUrl: String, private val infoName: String, private val requiredVersion: Int,
+                     private val mustExist: String) {
+    private val info = File(dir, infoName)
     private val ready = File(dir, ".ready")
 
-    fun isReady() = ready.isFile && File(dir, "body.npz").isFile &&
-        runCatching { JSONObject(ready.readText()).optInt("version") >= REQUIRED_VERSION }.getOrDefault(false)
+    init { dir.mkdirs() }
 
-    /** An older pack is installed (v1 had no hair/clothes/skins). */
+    fun isReady() = ready.isFile && File(dir, mustExist).isFile &&
+        runCatching { JSONObject(ready.readText()).optInt("version") >= requiredVersion }.getOrDefault(false)
+
+    /** An older pack is installed. */
     fun needsUpdate() = ready.isFile && !isReady()
-
-    companion object { const val REQUIRED_VERSION = 5 } // v2: hair/clothes/skins, v3: style morphs, v4: chibi/SD + toon eyes, v5: toon head shapes
 
     suspend fun install(onStatus: (PackStatus) -> Unit) = withContext(Dispatchers.IO) {
         ready.delete()
-        download(BuildConfig.BODY_BASE_URL + "body_info.json", info, null) { _, _ -> }
+        download(baseUrl + infoName, info, null) { _, _ -> }
         val files = JSONObject(info.readText()).getJSONObject("files")
         val total = files.keys().asSequence().sumOf { files.getJSONObject(it).getLong("bytes") }
         var before = 0L
@@ -45,7 +45,7 @@ class BodyPack(context: Context) {
             require(name.matches(Regex("[A-Za-z0-9_.-]+"))) { "Bad file name in pack info: $name" } // trust boundary
             val target = File(dir, name)
             if (target.length() != meta.getLong("bytes") || BlenderRuntime.sha256(target) != meta.getString("sha256")) {
-                download(BuildConfig.BODY_BASE_URL + name, target, meta.getLong("bytes")) { d, _ -> onStatus(PackStatus.Downloading(before + d, total)) }
+                download(baseUrl + name, target, meta.getLong("bytes")) { d, _ -> onStatus(PackStatus.Downloading(before + d, total)) }
                 if (BlenderRuntime.sha256(target) != meta.getString("sha256")) {
                     target.delete()
                     throw IOException("Checksum mismatch for $name; deleted, please retry")
@@ -58,6 +58,18 @@ class BodyPack(context: Context) {
     }
 
     fun uninstall() = dir.deleteRecursively().also { dir.mkdirs() }
+}
+
+/** Body Creator assets (MakeHuman base mesh, morph targets, skeleton, weights; CC0), release body-assets-v1 (body.yml). */
+class BodyPack(context: Context) : AssetPack(File(context.filesDir, "bodypack"), BuildConfig.BODY_BASE_URL, "body_info.json",
+    REQUIRED_VERSION, "body.npz") {
+    companion object { const val REQUIRED_VERSION = 5 } // v2: hair/clothes/skins, v3: style morphs, v4: chibi/SD + toon eyes, v5: toon head shapes
+}
+
+/** On-device texture painter (LCM Dreamshaper v7 ONNX, ~1 GB), release texgen-v1 (texgen.yml). */
+class TexPack(context: Context) : AssetPack(File(context.filesDir, "texgen"), BuildConfig.TEXGEN_BASE_URL, "texgen_info.json",
+    1, "prompts.bin") {
+    val unet: String get() = runCatching { JSONObject(File(dir, "texgen_info.json").readText()).getString("unet") }.getOrDefault("unet_q.onnx")
 }
 
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */

@@ -21,6 +21,7 @@ android {
         ndk { abiFilters += listOf("arm64-v8a") }
         buildConfigField("String", "RUNTIME_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/blender-runtime-v1/\"")
         buildConfigField("String", "BODY_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/body-assets-v1/\"")
+        buildConfigField("String", "TEXGEN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/texgen-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }
 

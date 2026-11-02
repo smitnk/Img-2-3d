@@ -46,6 +46,10 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
         }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; r }
     }
 
+    /** texproject.py --render: writes render_<view>.png files; returns the output folder. */
+    suspend fun renderViews(args: List<String>, threads: Int, onLine: (String) -> Unit): File =
+        exec("texproject.py", args, threads, "png", onLine).glb.parentFile!!
+
     /** Re-exports [glb] with a bx_export preset; returns the exported file (fbx/glb/stl). */
     suspend fun export(glb: File, preset: String, name: String, threads: Int, onLine: (String) -> Unit): File {
         glb.copyTo(File(jobIn.apply { mkdirs() }, "export_in.glb"), overwrite = true)

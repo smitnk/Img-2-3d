@@ -1,0 +1,294 @@
+forge_chibi_humanoid OK
+forge_round_buddy OK
+forge_snow_buddy OK
+forge_clay_chibi OK
+Textures
+forge_chibi_humanoid.glb
+forge_clay_chibi.glb
+forge_round_buddy.glb
+forge_snow_buddy.glb
+kenney_character-female-a.glb
+kenney_character-female-b.glb
+kenney_character-female-c.glb
+kenney_character-female-d.glb
+kenney_character-female-e.glb
+kenney_character-female-f.glb
+kenney_character-male-a.glb
+kenney_character-male-b.glb
+kenney_character-male-c.glb
+kenney_character-male-d.glb
+kenney_character-male-e.glb
+kenney_character-male-f.glb
+quaternius_robot.glb
+orig_forge_chibi_humanoid OK
+forge_chibi_humanoid_chibi OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 24588, "bones": 17, "materials": 10}
+post_forge_chibi_humanoid_chibi OK
+POSTPROCESS pass=False errors=19 warnings=20 thumb=thumb.png
+forge_chibi_humanoid_tall OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 24588, "bones": 17, "materials": 10}
+post_forge_chibi_humanoid_tall OK
+POSTPROCESS pass=False errors=20 warnings=20 thumb=thumb.png
+forge_chibi_humanoid_buddy OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 24588, "bones": 17, "materials": 10}
+post_forge_chibi_humanoid_buddy OK
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+orig_forge_clay_chibi OK
+forge_clay_chibi_chibi OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 36442, "bones": 17, "materials": 1}
+post_forge_clay_chibi_chibi OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+forge_clay_chibi_tall OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 36442, "bones": 17, "materials": 1}
+post_forge_clay_chibi_tall OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+forge_clay_chibi_buddy OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 36442, "bones": 17, "materials": 1}
+post_forge_clay_chibi_buddy OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+orig_forge_round_buddy OK
+forge_round_buddy_chibi OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 66252, "bones": 17, "materials": 2}
+post_forge_round_buddy_chibi OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+forge_round_buddy_tall OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 66252, "bones": 17, "materials": 2}
+post_forge_round_buddy_tall OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+forge_round_buddy_buddy OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 66252, "bones": 17, "materials": 2}
+post_forge_round_buddy_buddy OK
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+orig_forge_snow_buddy OK
+forge_snow_buddy_chibi OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 160152, "bones": 17, "materials": 4}
+post_forge_snow_buddy_chibi OK
+POSTPROCESS pass=True errors=0 warnings=9 thumb=thumb.png
+forge_snow_buddy_tall OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 160152, "bones": 17, "materials": 4}
+post_forge_snow_buddy_tall OK
+POSTPROCESS pass=True errors=0 warnings=9 thumb=thumb.png
+forge_snow_buddy_buddy OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 2, 'arm': 4, 'foot': 2, 'leg': 4, 'torso': 3}
+TOON {"triangles": 160152, "bones": 17, "materials": 4}
+post_forge_snow_buddy_buddy OK
+POSTPROCESS pass=True errors=0 warnings=9 thumb=thumb.png
+orig_kenney_character-female-a OK
+kenney_character-female-a_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 876, "bones": 7, "materials": 1}
+post_kenney_character-female-a_chibi OK
+POSTPROCESS pass=False errors=1 warnings=1 thumb=thumb.png
+kenney_character-female-a_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 876, "bones": 7, "materials": 1}
+post_kenney_character-female-a_tall OK
+POSTPROCESS pass=False errors=1 warnings=3 thumb=thumb.png
+kenney_character-female-a_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 876, "bones": 7, "materials": 1}
+post_kenney_character-female-a_buddy OK
+POSTPROCESS pass=False errors=1 warnings=2 thumb=thumb.png
+orig_kenney_character-female-b OK
+kenney_character-female-b_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 742, "bones": 7, "materials": 1}
+post_kenney_character-female-b_chibi OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+kenney_character-female-b_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 742, "bones": 7, "materials": 1}
+post_kenney_character-female-b_tall OK
+POSTPROCESS pass=False errors=2 warnings=3 thumb=thumb.png
+kenney_character-female-b_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 742, "bones": 7, "materials": 1}
+post_kenney_character-female-b_buddy OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+orig_kenney_character-female-c OK
+kenney_character-female-c_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 732, "bones": 7, "materials": 1}
+post_kenney_character-female-c_chibi OK
+POSTPROCESS pass=False errors=2 warnings=3 thumb=thumb.png
+kenney_character-female-c_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 732, "bones": 7, "materials": 1}
+post_kenney_character-female-c_tall OK
+POSTPROCESS pass=False errors=1 warnings=4 thumb=thumb.png
+kenney_character-female-c_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 732, "bones": 7, "materials": 1}
+post_kenney_character-female-c_buddy OK
+POSTPROCESS pass=False errors=2 warnings=2 thumb=thumb.png
+orig_kenney_character-female-d OK
+kenney_character-female-d_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 797, "bones": 7, "materials": 1}
+post_kenney_character-female-d_chibi OK
+POSTPROCESS pass=False errors=2 warnings=3 thumb=thumb.png
+kenney_character-female-d_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 797, "bones": 7, "materials": 1}
+post_kenney_character-female-d_tall OK
+POSTPROCESS pass=False errors=2 warnings=3 thumb=thumb.png
+kenney_character-female-d_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 797, "bones": 7, "materials": 1}
+post_kenney_character-female-d_buddy OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+orig_kenney_character-female-e OK
+kenney_character-female-e_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 756, "bones": 7, "materials": 1}
+post_kenney_character-female-e_chibi OK
+POSTPROCESS pass=False errors=2 warnings=2 thumb=thumb.png
+kenney_character-female-e_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 756, "bones": 7, "materials": 1}
+post_kenney_character-female-e_tall OK
+POSTPROCESS pass=False errors=1 warnings=4 thumb=thumb.png
+kenney_character-female-e_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 756, "bones": 7, "materials": 1}
+post_kenney_character-female-e_buddy OK
+POSTPROCESS pass=False errors=1 warnings=3 thumb=thumb.png
+orig_kenney_character-female-f OK
+kenney_character-female-f_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 788, "bones": 7, "materials": 1}
+post_kenney_character-female-f_chibi OK
+POSTPROCESS pass=False errors=1 warnings=2 thumb=thumb.png
+kenney_character-female-f_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 788, "bones": 7, "materials": 1}
+post_kenney_character-female-f_tall OK
+POSTPROCESS pass=False errors=1 warnings=4 thumb=thumb.png
+kenney_character-female-f_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 788, "bones": 7, "materials": 1}
+post_kenney_character-female-f_buddy OK
+POSTPROCESS pass=False errors=1 warnings=3 thumb=thumb.png
+orig_kenney_character-male-a OK
+kenney_character-male-a_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 723, "bones": 7, "materials": 1}
+post_kenney_character-male-a_chibi OK
+POSTPROCESS pass=False errors=3 warnings=2 thumb=thumb.png
+kenney_character-male-a_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 723, "bones": 7, "materials": 1}
+post_kenney_character-male-a_tall OK
+POSTPROCESS pass=False errors=3 warnings=2 thumb=thumb.png
+kenney_character-male-a_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 723, "bones": 7, "materials": 1}
+post_kenney_character-male-a_buddy OK
+POSTPROCESS pass=False errors=3 warnings=1 thumb=thumb.png
+orig_kenney_character-male-b OK
+kenney_character-male-b_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 690, "bones": 7, "materials": 1}
+post_kenney_character-male-b_chibi OK
+POSTPROCESS pass=False errors=1 warnings=1 thumb=thumb.png
+kenney_character-male-b_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 690, "bones": 7, "materials": 1}
+post_kenney_character-male-b_tall OK
+POSTPROCESS pass=False errors=2 warnings=2 thumb=thumb.png
+kenney_character-male-b_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 690, "bones": 7, "materials": 1}
+post_kenney_character-male-b_buddy OK
+POSTPROCESS pass=False errors=1 warnings=1 thumb=thumb.png
+orig_kenney_character-male-c OK
+kenney_character-male-c_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 793, "bones": 7, "materials": 1}
+post_kenney_character-male-c_chibi OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+kenney_character-male-c_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 793, "bones": 7, "materials": 1}
+post_kenney_character-male-c_tall OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+kenney_character-male-c_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 793, "bones": 7, "materials": 1}
+post_kenney_character-male-c_buddy OK
+POSTPROCESS pass=False errors=2 warnings=0 thumb=thumb.png
+orig_kenney_character-male-d OK
+kenney_character-male-d_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 711, "bones": 7, "materials": 1}
+post_kenney_character-male-d_chibi OK
+POSTPROCESS pass=False errors=2 warnings=3 thumb=thumb.png
+kenney_character-male-d_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 711, "bones": 7, "materials": 1}
+post_kenney_character-male-d_tall OK
+POSTPROCESS pass=False errors=1 warnings=3 thumb=thumb.png
+kenney_character-male-d_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 711, "bones": 7, "materials": 1}
+post_kenney_character-male-d_buddy OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+orig_kenney_character-male-e OK
+kenney_character-male-e_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 710, "bones": 7, "materials": 1}
+post_kenney_character-male-e_chibi OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+kenney_character-male-e_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 710, "bones": 7, "materials": 1}
+post_kenney_character-male-e_tall OK
+POSTPROCESS pass=False errors=4 warnings=3 thumb=thumb.png
+kenney_character-male-e_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 710, "bones": 7, "materials": 1}
+post_kenney_character-male-e_buddy OK
+POSTPROCESS pass=False errors=2 warnings=1 thumb=thumb.png
+orig_kenney_character-male-f OK
+kenney_character-male-f_chibi OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 701, "bones": 7, "materials": 1}
+post_kenney_character-male-f_chibi OK
+POSTPROCESS pass=False errors=1 warnings=1 thumb=thumb.png
+kenney_character-male-f_tall OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 701, "bones": 7, "materials": 1}
+post_kenney_character-male-f_tall OK
+POSTPROCESS pass=False errors=3 warnings=1 thumb=thumb.png
+kenney_character-male-f_buddy OK
+toon: bones {'head': 1, 'neck': 0, 'hand': 0, 'arm': 2, 'foot': 0, 'leg': 2, 'torso': 2}
+TOON {"triangles": 701, "bones": 7, "materials": 1}
+post_kenney_character-male-f_buddy OK
+POSTPROCESS pass=False errors=2 warnings=2 thumb=thumb.png
+orig_quaternius_robot OK
+quaternius_robot_chibi OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 22, 'arm': 6, 'foot': 2, 'leg': 4, 'torso': 7}
+TOON {"triangles": 3234, "bones": 43, "materials": 3}
+post_quaternius_robot_chibi OK
+POSTPROCESS pass=False errors=18 warnings=20 thumb=thumb.png
+quaternius_robot_tall OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 22, 'arm': 6, 'foot': 2, 'leg': 4, 'torso': 7}
+TOON {"triangles": 3234, "bones": 43, "materials": 3}
+post_quaternius_robot_tall OK
+POSTPROCESS pass=False errors=20 warnings=20 thumb=thumb.png
+quaternius_robot_buddy OK
+toon: bones {'head': 1, 'neck': 1, 'hand': 22, 'arm': 6, 'foot': 2, 'leg': 4, 'torso': 7}
+TOON {"triangles": 3234, "bones": 43, "materials": 3}
+post_quaternius_robot_buddy OK
+POSTPROCESS pass=False errors=19 warnings=19 thumb=thumb.png

@@ -1,0 +1,62 @@
+name: SkinTokens CPU probe (RAM / time before an on-device port)
+
+# Runs the original VAST-AI-Research/SkinTokens (MIT) TokenRig on CPU with flash-attention swapped for PyTorch SDPA,
+# rigging a TripoSR mesh, and records peak RAM, time and the rig. Decides whether a phone port is realistic.
+on:
+  push:
+    paths: ["tools/skintokens/**", ".github/workflows/skintokens-probe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: skintokens, cancel-in-progress: true }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY" && df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Fetch SkinTokens + test meshes
+        run: |
+          git clone -q --depth 1 https://github.com/VAST-AI-Research/SkinTokens /tmp/st
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          cd /tmp/st && git log -1 --format=%H
+      - name: Install (CPU)
+        run: |
+          pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r /tmp/st/requirements.txt
+          cp tools/skintokens/flash_attn_interface.py /tmp/st/
+          sed -i 's/v.to("cuda")/v.to("cpu")/' /tmp/st/demo.py
+          grep -rln '"cuda"\|.cuda()' /tmp/st/demo.py /tmp/st/src | head
+      - name: Download models
+        run: cd /tmp/st && python download.py --model && du -sh experiments models
+      - name: Rig TripoSR meshes on CPU
+        run: |
+          cd /tmp/st
+          mkdir -p $GITHUB_WORKSPACE/out
+          run() { name=$1; shift; /usr/bin/time -v python demo.py "$@" > $GITHUB_WORKSPACE/out/$name.log 2> $GITHUB_WORKSPACE/out/$name.time || echo "$name FAILED"
+            echo "== $name: $(grep -E 'Maximum resident|Elapsed' $GITHUB_WORKSPACE/out/$name.time | tr -s ' ' | tr '\n' ';')"
+            tail -n 15 $GITHUB_WORKSPACE/out/$name.time | grep -v "^\s" ; tail -n 8 $GITHUB_WORKSPACE/out/$name.log; }
+          { run lizard_beam1 --input /tmp/forge/assets/reference/lizard-warrior/triposr.glb --output $GITHUB_WORKSPACE/out/lizard_beam1.glb --num_beams 1 --use_transfer
+            run lizard_beam10 --input /tmp/forge/assets/reference/lizard-warrior/triposr.glb --output $GITHUB_WORKSPACE/out/lizard_beam10.glb --use_transfer
+          } 2>&1 | tee $GITHUB_WORKSPACE/out/summary.txt
+      - name: Inspect rigs
+        if: always()
+        run: |
+          pip install -q pygltflib
+          python - <<'PY' | tee -a out/summary.txt
+          import glob, pygltflib
+          for f in sorted(glob.glob("out/*.glb")):
+              g = pygltflib.GLTF2().load(f)
+              print(f, "joints", sum(len(s.joints) for s in g.skins), "meshes", len(g.meshes))
+          PY
+      - name: Push results to ci-logs-skintokens
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-skintokens
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || true
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "skintokens $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-skintokens

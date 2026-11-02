@@ -257,14 +257,16 @@ def main_export(mesh, out):
         return step
 
     ids = {}
-    for name, step in [("torch", torch_step()), ("onnx", ort_llm(f"{out}/llm.onnx", L, KVH, HD)),
-                       ("onnx_q", ort_llm(f"{out}/llm_q.onnx", L, KVH, HD))]:
+    # one LLM at a time, int8 only: holding torch + fp32 ONNX + int8 together got the runner killed
+    for name, make in [("torch", torch_step), ("onnx_q", lambda: ort_llm(f"{out}/llm_q.onnx", L, KVH, HD))]:
+        step = make()
         t0 = time.time()
         ids[name] = greedy(step, embed, prefix, tok, int(model.eos), K, start)
         report[f"{name}_tokens"] = int(len(ids[name]))
         report[f"{name}_seconds"] = round(time.time() - t0, 1)
-        print(name, report[f"{name}_tokens"], "tokens", report[f"{name}_seconds"], "s, rss", rss_mb(), "MB")
-    for name in ("onnx", "onnx_q"):
+        print(name, report[f"{name}_tokens"], "tokens", report[f"{name}_seconds"], "s, rss", rss_mb(), "MB", flush=True)
+        del step
+    for name in ("onnx_q",):
         n = min(len(ids[name]), len(ids["torch"]))
         report[f"{name}_same_prefix"] = int(np.argmin(np.append(ids[name][:n] == ids["torch"][:n], False)))
     # decode skins: torch reference vs skin_dec.onnx on the int8 ids

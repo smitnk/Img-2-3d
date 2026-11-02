@@ -218,8 +218,12 @@ def main_export(mesh, out):
     for f in os.listdir(out):
         if f.startswith("llm_tmp") or (f not in ("llm.onnx", "llm.onnx.data") and "." not in f):
             os.remove(os.path.join(out, f))
-    from onnxruntime.quantization import QuantType, quantize_dynamic
-    quantize_dynamic(f"{out}/llm.onnx", f"{out}/llm_q.onnx", weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul", "Gemm"])
+    # quantize in a child process so its peak doesn't stack on the live torch model (runner was killed here)
+    import subprocess, sys
+    subprocess.run([sys.executable, "-c", "from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
+                    f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'])"],
+                   check=True)
+    print(f"quantized, rss {rss_mb()} MB", flush=True)
 
     import onnxruntime as ort
     mc = ort.InferenceSession(f"{out}/mesh_cond.onnx").run(None, {"pc": pc1[0].numpy(), "feats": pc1[1].numpy()})[0]

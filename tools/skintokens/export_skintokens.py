@@ -117,6 +117,17 @@ def main_export(mesh, out):
     time.sleep(10)
     demo.load_model(demo.MODEL_CKPTS[0], None)
     model, tok = demo.model.eval().requires_grad_(False), demo.tokenizer  # traced weights must not require grad
+    small = all(os.path.exists(f"{out}/{n}.onnx") for n in ("mesh_cond", "vae_cond", "skin_dec"))
+    stage = "verify" if os.path.exists(f"{out}/llm_q.onnx") else "llm" if small else "small"
+    print(f"pass: {stage}, rss {rss_mb()} MB", flush=True)
+    if stage == "llm":  # only the language model is traced in this pass: drop the rest before it doubles in the exporter
+        import gc
+        model.mesh_encoder.cpu(), model.vae.cpu()
+        for m in (model.mesh_encoder, model.vae):
+            for prm in m.parameters():
+                prm.data = torch.empty(0)
+        gc.collect()
+        print(f"freed mesh encoder + skin VAE, rss now {rss_mb()} MB (peak counter)", flush=True)
     cfg = DatasetConfig.parse(shuffle=False, batch_size=1, num_workers=1, pin_memory=False, persistent_workers=False,
                               datapath={"data_name": None, "loader": "bpy_server",
                                         "filepaths": {"articulation": [mesh]}}).split_by_cls()
@@ -190,15 +201,13 @@ def main_export(mesh, out):
 
     pc1 = (V[o1[:4 * T1]][None], Nn[o1[:4 * T1]][None])
     c2 = cond[o2][None]
+    t0 = time.time()
     with torch.no_grad():
-        mc_ref = MeshCond()(*pc1)
-        cl_ref = VaeCond()(c2)
-        t0 = time.time()
+        if stage != "llm":
+            mc_ref = MeshCond()(*pc1)
+            cl_ref = VaeCond()(c2)
     # Each heavy step runs in a fresh process (os.execv of this same command): the LLM export next to everything
     # else loaded pushed the runner past 15 GB RAM + 19 GB swap. Files on disk say which pass this is.
-    small = all(os.path.exists(f"{out}/{n}.onnx") for n in ("mesh_cond", "vae_cond", "skin_dec"))
-    stage = "verify" if os.path.exists(f"{out}/llm_q.onnx") else "llm" if small else "small"
-    print(f"pass: {stage}, rss {rss_mb()} MB", flush=True)
     with torch.no_grad():
         if stage == "small":
             torch.onnx.export(MeshCond(), pc1, f"{out}/mesh_cond.onnx", opset_version=17, input_names=["pc", "feats"],

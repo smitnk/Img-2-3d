@@ -39,7 +39,7 @@ def preview(mesh, path):
 def main(out, images):
     os.makedirs(out, exist_ok=True)
     rem = BackgroundRemover()
-    configs = [("turbo", "hunyuan3d-dit-v2-mini-turbo", 5, 256), ("turbo_hi", "hunyuan3d-dit-v2-mini-turbo", 5, 380)]
+    configs = [("turbo", "hunyuan3d-dit-v2-mini-turbo", 5, 256)]
     report = {}
     pipes = {}
     for name, sub, steps, octree in configs:
@@ -47,14 +47,14 @@ def main(out, images):
         if sub not in pipes:
             pipes[sub] = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
                 "tencent/Hunyuan3D-2mini", subfolder=sub, use_safetensors=True, device="cpu", dtype=torch.float32)
-            try:
-                pipes[sub].enable_flashvdm(mc_algo="mc")
-            except Exception as e:
-                print("flashvdm unavailable:", e)
+            pipes[sub].enable_flashvdm(mc_algo="mc")  # dense decoding took ~60 min per mesh on CPU
         pipe = pipes[sub]
         for m in (pipe.model, pipe.vae, pipe.conditioner):  # some weights load as fp16; CPU needs fp32
             m.float()
         pipe.dtype = torch.float32
+        vd = type(pipe.vae.volume_decoder).__name__
+        print("volume decoder:", vd, flush=True)
+        assert vd.startswith("FlashVDM"), vd
         n_dit = sum(p.numel() for p in pipe.model.parameters()) / 1e6
         n_vae = sum(p.numel() for p in pipe.vae.parameters()) / 1e6
         n_enc = sum(p.numel() for p in pipe.conditioner.parameters()) / 1e6

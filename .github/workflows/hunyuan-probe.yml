@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p out
           (while sleep 30; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ')"; done) &
-          /usr/bin/time -v python -u tools/hunyuan/probe.py out imgs/* 2> >(tee out/probe.time >&2) | grep -v "it/s\]" | tee out/probe.txt
+          /usr/bin/time -v python -u tools/hunyuan/probe.py out imgs/lizard-warrior.png imgs/character1.png 2> >(tee out/probe.time >&2) | tee out/probe.txt
       - name: Push results to ci-logs-hunyuan
         if: always()
         run: |

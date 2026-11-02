@@ -215,13 +215,8 @@ def main_export(mesh, out):
     np.random.default_rng = real_rng
 
     if not quantized:
-        import onnx
-        m = onnx.load(f"{out}/llm_tmp.onnx")
-        onnx.save_model(m, f"{out}/llm.onnx", save_as_external_data=True, all_tensors_to_one_file=True, location="llm.onnx.data")
-        del m
-        for f in os.listdir(out):
-            if f.startswith("llm_tmp") or (f not in ("llm.onnx", "llm.onnx.data") and "." not in f):
-                os.remove(os.path.join(out, f))
+        # keep the exporter's per-tensor data files as they are; re-saving 2.4 GB next to the live torch model got the runner killed
+        os.replace(f"{out}/llm_tmp.onnx", f"{out}/llm.onnx")
         # quantizing beside the live torch model got the runner killed: replace this process (frees its RAM),
         # quantize, then run this same command again, which skips straight to verification
         import shlex, sys as _sys

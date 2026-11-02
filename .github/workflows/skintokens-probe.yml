@@ -54,7 +54,7 @@ jobs:
           python $GITHUB_WORKSPACE/tools/skintokens/test_quant_llm.py
           sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g
           (while sleep 20; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') disk $(df -m / | awk 'NR==2{print $4}')MB free" >&2; done) &
-          /usr/bin/time -v python -u $GITHUB_WORKSPACE/tools/skintokens/export_skintokens.py export /tmp/forge/assets/reference/lizard-warrior/triposr.glb /tmp/stx 2> >(tee $GITHUB_WORKSPACE/out/export.time >&2) | tee $GITHUB_WORKSPACE/out/export.log | grep -v "it/s\|^ *-\?[0-9]" | tail -40 | tee $GITHUB_WORKSPACE/out/export.txt; grep -E "Error|error:" $GITHUB_WORKSPACE/out/export.time | tail -5 | tee -a $GITHUB_WORKSPACE/out/export.txt
+          /usr/bin/time -v python -u $GITHUB_WORKSPACE/tools/skintokens/export_skintokens.py export /tmp/forge/assets/reference/lizard-warrior/triposr.glb /tmp/stx 2> >(tee $GITHUB_WORKSPACE/out/export.time >&2) | tee $GITHUB_WORKSPACE/out/export.log | grep -v "it/s\|^ *-\?[0-9]" | tee $GITHUB_WORKSPACE/out/export.txt; grep -E "Error|error:" $GITHUB_WORKSPACE/out/export.time | tail -5 | tee -a $GITHUB_WORKSPACE/out/export.txt
           tail -30 $GITHUB_WORKSPACE/out/export.time | grep -v "^\s" | tail -12 >> $GITHUB_WORKSPACE/out/export.txt
           ls -la /tmp/stx | tee -a $GITHUB_WORKSPACE/out/export.txt
           cp /tmp/stx/skintokens_info.json $GITHUB_WORKSPACE/out/ 2>/dev/null || true

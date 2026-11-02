@@ -30,6 +30,7 @@ jobs:
           pip install -r /tmp/st/requirements.txt scipy scikit-learn networkx pymeshlab && python -c "import sys; sys.path.insert(0, '/tmp/st'); import demo" || true
           cp tools/skintokens/flash_attn_interface.py /tmp/st/
           sed -i 's/v.to("cuda")/v.to("cpu")/' /tmp/st/demo.py
+          grep -rl flash_attention_2 /tmp/st/src /tmp/st/demo.py | xargs -r sed -i 's/flash_attention_2/sdpa/g'
           sed -i 's/return torch.cuda.get_device_name(0)/return torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"/; s/torch.cuda.synchronize()/torch.cuda.is_available() and torch.cuda.synchronize()/' /tmp/st/src/model/michelangelo/utils/misc.py
           grep -rln '"cuda"\|.cuda()' /tmp/st/demo.py /tmp/st/src | head
       - name: Download models

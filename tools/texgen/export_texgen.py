@@ -79,7 +79,7 @@ def main():
     os.makedirs(tmp, exist_ok=True)
     from diffusers import LatentConsistencyModelPipeline
     pipe = LatentConsistencyModelPipeline.from_pretrained("SimianLuo/LCM_Dreamshaper_v7", torch_dtype=torch.float32)
-    unet, vae = pipe.unet.eval(), pipe.vae.eval()
+    unet, vae = pipe.unet.eval().requires_grad_(False), pipe.vae.eval().requires_grad_(False)
 
     # text + guidance embeddings for every view prompt
     embs = []
@@ -91,17 +91,17 @@ def main():
         tcond = pipe.get_guidance_scale_embedding(torch.tensor([GUIDANCE - 1.0]), embedding_dim=256)[0].numpy()
     np.concatenate([e.ravel() for e in embs] + [tcond.astype(np.float32).ravel()]).tofile(os.path.join(a.out, "prompts.bin"))
 
-    class U(torch.nn.Module):
-        def forward(self, sample, timestep, ehs, tc):
-            return unet(sample, timestep, ehs, timestep_cond=tc).sample
+    class Wrap(torch.nn.Module):  # weights must be registered submodules, or tracing bakes them as constants
+        def __init__(self, m, fn):
+            super().__init__()
+            self.m, self.fn = m, fn
 
-    class E(torch.nn.Module):
-        def forward(self, x):
-            return vae.encode(x).latent_dist.mean
+        def forward(self, *args):
+            return self.fn(self.m, *args)
 
-    class D(torch.nn.Module):
-        def forward(self, z):
-            return vae.decode(z).sample
+    U = lambda: Wrap(unet, lambda m, s, t, e, c: m(s, t, e, timestep_cond=c).sample)
+    E = lambda: Wrap(vae, lambda m, x: m.encode(x).latent_dist.mean)
+    D = lambda: Wrap(vae, lambda m, z: m.decode(z).sample)
 
     t0 = time.time()
     with torch.no_grad():

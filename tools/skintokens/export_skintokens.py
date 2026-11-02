@@ -145,6 +145,10 @@ def main_export(mesh, out):
     np.random.default_rng = lambda seed=None: IdRng()
     idfps = lambda pos, batch, ratio=0.25, random_start=False: torch.arange(int(pos.shape[0]) // 4)  # ratio is always 1/4
     SP.fps, SV.fps = idfps, idfps
+    # aten::rms_norm has no opset-17 ONNX export: spell it out (same maths as torch's default eps)
+    torch.nn.functional.rms_norm = lambda x, shape, weight=None, eps=None: (
+        x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + (eps if eps is not None else torch.finfo(x.dtype).eps))) * (
+        weight if weight is not None else 1.0)
 
     class MeshCond(torch.nn.Module):
         def forward(self, pc, feats):

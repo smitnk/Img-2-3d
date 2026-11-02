@@ -36,6 +36,15 @@ def main(src, dst):
     m = onnx.load(src, load_external_data=False)
     g = m.graph
     inits = {t.name: t for t in g.initializer}
+    # torch's exporter without constant folding stores weights as Constant nodes: treat those like initializers
+    const_nodes = {}
+    for n in g.node:
+        if n.op_type == "Constant":
+            v = next((x.t for x in n.attribute if x.name == "value"), None)
+            if v is not None and v.data_type == TensorProto.FLOAT and len(v.dims) == 2:
+                v.name = n.output[0]
+                inits.setdefault(n.output[0], v)
+                const_nodes[n.output[0]] = n
     out_dir = os.path.dirname(os.path.abspath(dst))
     data_name = os.path.basename(dst) + ".data"
     data_path = os.path.join(out_dir, data_name)
@@ -109,8 +118,15 @@ def main(src, dst):
 
     new_nodes = [n for n in new_nodes if not (n.op_type == "Transpose" and n.output[0] in dropped)]
     used = {i for n in new_nodes for i in n.input}
+    new_nodes = [n for n in new_nodes if not (n.op_type == "Constant" and n.output[0] in const_nodes
+                                              and (n.output[0] in done or n.output[0] not in used))]
+    for n in new_nodes:  # Constants that stay: move their external data into the new file
+        if n.op_type == "Constant":
+            for x in n.attribute:
+                if x.name == "value" and x.t.data_location == TensorProto.EXTERNAL:
+                    x.t.CopyFrom(ext(x.t.name or n.output[0], load_weight(x.t, base)))
     keep = []
-    for t in g.initializer:  # copy the untouched float initializers into the new data file
+    for t in list(g.initializer):  # copy the untouched float initializers into the new data file
         if t.name in done or t.name not in used:
             continue
         keep.append(ext(t.name, load_weight(t, base)) if t.external_data else t)

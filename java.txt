@@ -1,0 +1,5 @@
+TEXGEN check mae=0.02524 (max 0.050) ms=26067
+TEXGEN paint back ms=21900
+TEXGEN paint left ms=21885
+TEXGEN paint right ms=22166
+TEXGEN paint front ms=21897

@@ -1,0 +1,35 @@
+{
+ "views": [
+  "front",
+  "back",
+  "left",
+  "right",
+  "front_left",
+  "front_right",
+  "back_left",
+  "back_right"
+ ],
+ "prompt": "{v} view of a 3d game character, full body, consistent colors, clean detailed hand-painted texture, flat even lighting, no shadows, plain gray background",
+ "guidance": 8.0,
+ "steps": 4,
+ "strength": 0.5,
+ "scale": 0.18215,
+ "check": {
+  "torch": {
+   "seconds": 35.4
+  },
+  "fp32": {
+   "seconds": 21.1,
+   "psnr_vs_torch": 126.02
+  },
+  "q": {
+   "seconds": 20.3,
+   "psnr_vs_torch": 27.79
+  },
+  "qmm": {
+   "seconds": 40.6,
+   "psnr_vs_torch": 27.77
+  }
+ },
+ "unet": "unet_q.onnx"
+}

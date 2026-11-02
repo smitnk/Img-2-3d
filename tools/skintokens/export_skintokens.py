@@ -143,7 +143,7 @@ def main_export(mesh, out):
             return np.arange(k)
     real_rng = np.random.default_rng
     np.random.default_rng = lambda seed=None: IdRng()
-    idfps = lambda pos, batch, ratio=0.25, random_start=False: torch.arange(int(round(pos.shape[0] * ratio)))
+    idfps = lambda pos, batch, ratio=0.25, random_start=False: torch.arange(int(pos.shape[0]) // 4)  # ratio is always 1/4
     SP.fps, SV.fps = idfps, idfps
 
     class MeshCond(torch.nn.Module):

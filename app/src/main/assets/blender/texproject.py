@@ -151,7 +151,7 @@ def main():
     p.add_argument("--views", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--res", type=int, default=2048)
-    p.add_argument("--subdiv", type=int, default=1, help="simple subdivisions before sampling (more colour detail)")
+    p.add_argument("--subdiv", type=int, default=-1, help="simple subdivisions before sampling; -1 = once if under 60k faces")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     os.makedirs(a.out, exist_ok=True)
     spec = json.load(open(a.views))
@@ -171,6 +171,8 @@ def main():
         bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    if a.subdiv < 0:
+        a.subdiv = 1 if len(obj.data.polygons) < 60000 else 0  # TripoSR meshes are ~100k faces: phone RAM
     if a.subdiv:
         # shortcut: colours are sampled per face corner, so detail is limited by mesh density; render-to-UV
         # position maps would sample per texel; upgrade if faces look blurry at --res 2048.

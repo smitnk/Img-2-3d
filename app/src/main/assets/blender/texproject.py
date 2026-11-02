@@ -140,6 +140,45 @@ def _load_rgba(path):
     return px.reshape(h, w, 4)[::-1]
 
 
+def render_views(obj, names, out, res=512):
+    """Orthographic Workbench renders (flat light, vertex colours, transparent background) framed exactly like
+    project(): the mesh's projected box fills the square image's long side, so the alpha cut-out maps back 1:1.
+    These are the init images the on-device painter (core TextureDiffusion) repaints."""
+    import bpy
+    from mathutils import Matrix
+    co = np.empty(len(obj.data.vertices) * 3)
+    obj.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    sc = bpy.context.scene
+    r = sc.render
+    r.engine = "BLENDER_WORKBENCH"
+    r.resolution_x = r.resolution_y = res
+    r.resolution_percentage = 100
+    r.film_transparent = True
+    r.image_settings.file_format, r.image_settings.color_mode = "PNG", "RGBA"
+    sc.view_settings.view_transform = "Standard"
+    sh = sc.display.shading
+    sh.light, sh.color_type = "FLAT", ("VERTEX" if obj.data.color_attributes else "MATERIAL")
+    cam = bpy.data.objects.new("TP_cam", bpy.data.cameras.new("TP_cam"))
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    cam.data.type = "ORTHO"
+    span = np.ptp(co, axis=0).max()
+    for name in names:
+        f, rt, u = view_basis(name)
+        x0, x1, y0, y1 = frame(co, f, rt, u)
+        _, _, d = project(co, f, rt, u)
+        cam.data.ortho_scale = max(x1 - x0, y1 - y0)
+        cam.data.clip_end = 10 * span + 10
+        centre = rt * (x0 + x1) / 2 + u * (y0 + y1) / 2 + f * (d.min() - 2 * span - 1)
+        cam.matrix_world = Matrix([[rt[0], u[0], -f[0], centre[0]], [rt[1], u[1], -f[1], centre[1]],
+                                   [rt[2], u[2], -f[2], centre[2]], [0, 0, 0, 1]])
+        r.filepath = os.path.join(out, f"render_{name}.png")
+        bpy.ops.render.render(write_still=True)
+        print(f"texproject: rendered {name}")
+    json.dump(names, open(os.path.join(out, "renders.json"), "w"))
+
+
 def main():
     import argparse
     import bpy
@@ -148,14 +187,17 @@ def main():
 
     p = argparse.ArgumentParser()
     p.add_argument("--in", dest="inp", required=True)
-    p.add_argument("--views", required=True)
+    p.add_argument("--views", help="views.json to project (project mode)")
+    p.add_argument("--render", help="comma list of views to render from the mesh's own colours into --out (render mode)")
     p.add_argument("--out", required=True)
     p.add_argument("--res", type=int, default=2048)
     p.add_argument("--subdiv", type=int, default=-1, help="simple subdivisions before sampling; -1 = once if under 60k faces")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     os.makedirs(a.out, exist_ok=True)
-    spec = json.load(open(a.views))
-    base_dir = os.path.dirname(os.path.abspath(a.views))
+    if not (a.views or a.render):
+        raise SystemExit("give --views (project) or --render (render views)")
+    spec = json.load(open(a.views)) if a.views else [{"view": v} for v in a.render.split(",")]
+    base_dir = os.path.dirname(os.path.abspath(a.views)) if a.views else a.out
     for v in spec:
         if v["view"] not in VIEWS:
             raise SystemExit(f"unknown view {v['view']!r}; use one of {sorted(VIEWS)}")
@@ -171,6 +213,9 @@ def main():
         bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    if a.render:
+        render_views(obj, [v["view"] for v in spec], a.out)
+        return
     if a.subdiv < 0:
         a.subdiv = 1 if len(obj.data.polygons) < 60000 else 0  # TripoSR meshes are ~100k faces: phone RAM
     if a.subdiv:

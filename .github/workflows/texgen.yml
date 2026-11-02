@@ -1,0 +1,76 @@
+name: Texture painter (LCM Dreamshaper ONNX, on-device)
+
+# Exports the texture painter models (tools/texgen/export_texgen.py), checks ONNX against PyTorch and the app's Java
+# pipeline against the Python reference, repaints sample views, and publishes release texgen-v1.
+on:
+  push:
+    paths: ["tools/texgen/**", ".github/workflows/texgen.yml", "core/src/main/java/com/smitnk/img23d/core/TextureDiffusion.java"]
+  workflow_dispatch:
+    inputs:
+      publish: { description: Publish texgen-v1, type: boolean, default: true }
+permissions:
+  contents: write
+concurrency: { group: texgen, cancel-in-progress: true }
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY" && df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - name: Install
+        run: |
+          pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install "numpy<2" diffusers==0.30.3 transformers==4.44.2 accelerate safetensors onnx==1.17.0 onnxruntime==1.20.0 Pillow
+      - name: Sample image
+        run: git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+      - name: Export + verify
+        run: |
+          set -o pipefail
+          python tools/texgen/export_texgen.py --out texgen --sample /tmp/forge/assets/reference/lizard-warrior/views/v180.png 2>&1 | grep -v "it/s\|Fetching" | tee export.log
+          rm -rf texgen/_fp32; ls -la texgen
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - name: Java pipeline vs reference
+        run: |
+          set -o pipefail
+          gradle :core:test :cli:installDist -q
+          U=$(python -c "import json;print(json.load(open('texgen/texgen_info.json'))['unet'])")
+          C=cli/build/install/cli/bin/cli
+          $C texgen check texgen $U texgen/reference/init.f32 texgen/reference/noise.f32 texgen/reference/out.f32 | tee java.txt
+          mkdir -p painted
+          for v in "v180:back" "v090:left" "v270:right" "v000:front"; do
+            $C texgen paint texgen $U /tmp/forge/assets/reference/lizard-warrior/views/${v%%:*}.png ${v##*:} painted/${v##*:}.png | tee -a java.txt
+          done
+      - name: Push results to ci-logs-texgen
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-texgen
+          cp $GITHUB_WORKSPACE/export.log $GITHUB_WORKSPACE/java.txt . 2>/dev/null || true
+          cp $GITHUB_WORKSPACE/texgen/texgen_info.json $GITHUB_WORKSPACE/texgen/reference/*.png . 2>/dev/null || true
+          cp -r $GITHUB_WORKSPACE/painted . 2>/dev/null || true
+          cp /tmp/forge/assets/reference/lizard-warrior/views/v180.png init_back.png 2>/dev/null || true
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "texgen $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-texgen
+      - name: Publish texgen-v1
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd texgen
+          python - <<'PY'
+          import hashlib, json, os
+          info = json.load(open("texgen_info.json"))
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()}
+                   for f in sorted(os.listdir(".")) if os.path.isfile(f) and f != "texgen_info.json"}
+          info["files"], info["version"] = files, 1
+          json.dump(info, open("texgen_info.json", "w"), indent=1)
+          PY
+          gh release view texgen-v1 >/dev/null 2>&1 || gh release create texgen-v1 --title "Texture painter v1" \
+            --notes "LCM Dreamshaper v7 (SD1.5, CreativeML OpenRAIL-M) exported to ONNX for on-device texture painting."
+          gh release upload texgen-v1 --clobber $(ls | grep -v texgen_info.json)
+          gh release upload texgen-v1 --clobber texgen_info.json

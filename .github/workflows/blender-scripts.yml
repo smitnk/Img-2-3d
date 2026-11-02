@@ -44,6 +44,8 @@ jobs:
           echo '[{"image": "front.png", "view": "front"}, {"image": "back.png", "view": "back"}]' | sudo tee rootfs/tmp/tp/views.json > /dev/null
           run texproject texproject.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --views /tmp/tp/views.json --out /tmp/o/t1 --res 1024
           grep -h "^texproject" log_texproject.txt || true
+          run texrender texproject.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --render back,left,right --out /tmp/tr
+          grep -h "^texproject: rendered" log_texrender.txt || true
           run rigify_humanoid refine_mesh.py -- --in "$(ls rootfs/tmp/o/b4/*.glb | sed 's#^rootfs##')" --out /tmp/o/r4 --height 1.7 --rig
           grep -h "rigify\|baked\|texture bake" log_refine_texture.txt log_rigify_humanoid.txt || true
           for d in rootfs/tmp/o/*/; do g=$(ls "$d"*.glb | head -1 | sed 's#^rootfs##'); run "post_$(basename "$d")" postprocess.py -- --in "$g" --out "$(dirname "$g")"; done

@@ -226,7 +226,7 @@ def main_export(mesh, out):
         # quantize, then run this same command again, which skips straight to verification
         import shlex, sys as _sys
         q = (f"{shlex.quote(_sys.executable)} -c \"from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
-             f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'])\"")
+             f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'], use_external_data_format=True)\"")
         again = " ".join(shlex.quote(x) for x in [_sys.executable, "-u"] + _sys.argv)
         print("re-exec for quantization", flush=True)
         import atexit; atexit._run_exitfuncs()  # stops demo's bpy server (execv skips atexit)

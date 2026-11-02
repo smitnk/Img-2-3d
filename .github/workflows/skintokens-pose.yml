@@ -1,0 +1,25 @@
+name: SkinTokens pose test (on the last probe's rig)
+on:
+  push:
+    paths: ["tools/skintokens/pose_test.py", ".github/workflows/skintokens-pose.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  pose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -q "bpy==4.2.0" numpy
+      - name: Pose and render
+        run: |
+          git clone -q --depth 1 -b ci-logs-skintokens https://github.com/${{ github.repository }} /tmp/logs
+          mkdir -p out && cp /tmp/logs/*.glb /tmp/logs/summary.txt out/
+          for f in out/*.glb; do python tools/skintokens/pose_test.py "$f" "out/$(basename "$f" .glb)" 2>&1 | grep -v "^Fra:\|^Saved\|^ Time" | tail -30 | tee -a out/pose.txt; done
+      - name: Push renders
+        if: always()
+        run: |
+          cd out && git init -q -b ci-logs-skintokens && git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "pose $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-skintokens

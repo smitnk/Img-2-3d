@@ -64,9 +64,6 @@ for name, (pos, rot) in {"front": ((c[0], c[1] - 5 * H, c[2]), (90, 0, 0)), "bac
     cam.rotation_euler = [math.radians(a) for a in rot]
     cam.data.clip_end = 20 * H
     for state in ("posed", "rest"):
-        for pb in rig.pose.bones:
-            if state == "rest":
-                pb.matrix_basis.identity() if False else None
         rig.data.pose_position = "POSE" if state == "posed" else "REST"
         sc.render.filepath = f"{out}_{state}_{name}.png"
         bpy.ops.render.render(write_still=True)

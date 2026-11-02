@@ -42,7 +42,7 @@ jobs:
           gradle :core:test :cli:installDist -q
           U=$(python -c "import json;print(json.load(open('texgen/texgen_info.json'))['unet'])")
           C=cli/build/install/cli/bin/cli
-          $C texgen check texgen $U texgen/reference/init.f32 texgen/reference/noise.f32 texgen/reference/out.f32 | tee java.txt
+          $C texgen check texgen $U texgen/reference/init.f32 texgen/reference/noise.f32 texgen/reference/out.f32 0.05 | tee java.txt
           mkdir -p painted
           for v in "v180:back" "v090:left" "v270:right" "v000:front"; do
             $C texgen paint texgen $U /tmp/forge/assets/reference/lizard-warrior/views/${v%%:*}.png ${v##*:} painted/${v##*:}.png | tee -a java.txt

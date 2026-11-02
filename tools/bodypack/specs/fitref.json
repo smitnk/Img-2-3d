@@ -1,2 +1,2 @@
 {"name": "Fitted", "reference": "/opt/forge/assets/reference/lizard-warrior/triposr.glb", "fit": true, "wrap": 0.3,
- "ref_colors": true, "hair": "", "eyebrows": "", "eyelashes": "", "clothes": [], "rig": true}
+ "ref_colors": true, "ref_facing": "+y", "ref_photo": "/opt/job/ref_photo.png", "hair": "", "eyebrows": "", "eyelashes": "", "clothes": [], "rig": true}

@@ -1,0 +1,47 @@
+name: Hunyuan3D-2mini CPU probe (RAM / time / quality before an on-device port)
+
+on:
+  push:
+    paths: ["tools/hunyuan/**", ".github/workflows/hunyuan-probe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: hunyuan, cancel-in-progress: true }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Fetch Hunyuan3D-2 + test images
+        run: |
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy || git clone -q --depth 1 https://github.com/Tencent/Hunyuan3D-2 /tmp/hy
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          git clone -q --depth 1 https://github.com/Stability-AI/stable-fast-3d /tmp/sf3d
+          mkdir -p imgs && cp /tmp/sf3d/demo_files/examples/character1.png /tmp/sf3d/demo_files/examples/raccoon_wizard.png imgs/
+          find /tmp/forge/assets/reference -maxdepth 2 \( -name '*.png' -o -name '*.jpg' \) | head -20
+          for d in /tmp/forge/assets/reference/*/; do f=$(ls "$d"*.png "$d"*.jpg 2>/dev/null | grep -vi "render\|preview\|triposr" | head -1); [ -n "$f" ] && cp "$f" "imgs/$(basename $d).${f##*.}"; done
+          ls -la imgs
+      - name: Install (CPU)
+        run: |
+          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r /tmp/hy/requirements.txt matplotlib || true
+          cd /tmp/hy && pip install -e . --no-deps
+      - name: Probe
+        run: |
+          mkdir -p out
+          (while sleep 30; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ')"; done) &
+          /usr/bin/time -v python -u tools/hunyuan/probe.py out imgs/* 2> >(tee out/probe.time >&2) | grep -v "it/s\]" | tee out/probe.txt
+      - name: Push results to ci-logs-hunyuan
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-hunyuan
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || true
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "hunyuan $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-hunyuan

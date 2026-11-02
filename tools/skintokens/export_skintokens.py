@@ -280,7 +280,9 @@ def main_export(mesh, out):
         report[f"{name}_same_prefix"] = int(np.argmin(np.append(ids[name][:n] == ids["torch"][:n], False)))
     # decode skins: torch reference vs skin_dec.onnx on the int8 ids
     dec = ort.InferenceSession(f"{out}/skin_dec.onnx")
-    for name in ("torch", "onnx_q"):
+    del model.transformer  # free the LLM before decoding skins (the cgroup killed this step)
+    lm = None
+    for name in ("onnx_q",):
         d = TR.decode(cond=cond, cond_latents=torch.from_numpy(cl[0]), inputs_ids=torch.from_numpy(ids[name]),
                       tokenizer=tok, tokens_per_skin=K, vae=model.vae)
         report[f"{name}_joints"] = int(d["detokenize_output"].joints.shape[0])
@@ -289,8 +291,8 @@ def main_export(mesh, out):
             where = int(np.nonzero(seq == tok.eos)[0][0])
             J = report[f"{name}_joints"]
             skin_tok = seq[where + 1:where + 1 + J * K].reshape(J, K) - tok.vocab_size
-            s = np.concatenate([dec.run(None, {"indices": skin_tok[i:i + 8].astype(np.int64), "cond": cond[None].numpy(),
-                                               "cond_latents": cl})[0] for i in range(0, J, 8)], 0).T
+            s = np.concatenate([dec.run(None, {"indices": skin_tok[i:i + 2].astype(np.int64), "cond": cond[None].numpy(),
+                                               "cond_latents": cl})[0] for i in range(0, J, 2)], 0).T
             report["skin_dec_maxdiff"] = float(np.abs(s - d["skin_pred"].numpy()).max())
     np.savez(f"{out}/reference.npz", points=cond.numpy(), o1=o1, o2=o2, start=np.array(start), ids_q=ids["onnx_q"],
              embed=embed.astype(np.float16))

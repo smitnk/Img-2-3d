@@ -47,7 +47,8 @@ def main(out, images):
         if sub not in pipes:
             pipes[sub] = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
                 "tencent/Hunyuan3D-2mini", subfolder=sub, use_safetensors=True, device="cpu", dtype=torch.float32)
-            pipes[sub].enable_flashvdm(mc_algo="mc")  # dense decoding took ~60 min per mesh on CPU
+            # dense decoding took ~60 min per mesh on CPU; enable_flashvdm() would reload the VAE, so switch the decoder in place
+            pipes[sub].vae.enable_flashvdm_decoder(mc_algo="mc")
         pipe = pipes[sub]
         for m in (pipe.model, pipe.vae, pipe.conditioner):  # some weights load as fp16; CPU needs fp32
             m.float()

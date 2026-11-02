@@ -54,15 +54,37 @@ def main(src, dst):
         t.data_location = TensorProto.EXTERNAL
         return t
 
-    new_nodes, new_inits, quantized, done = [], [], 0, set()
+    # without constant folding torch exports Linear as MatMul(x, Transpose(W)): follow that Transpose to W
+    tposed = {n.output[0]: n for n in g.node if n.op_type == "Transpose" and n.input[0] in inits
+              and list(next((a.ints for a in n.attribute if a.name == "perm"), [1, 0])) == [1, 0]}
+    users = {}
     for n in g.node:
-        w = inits.get(n.input[1]) if n.op_type == "MatMul" and len(n.input) == 2 else None
+        for i in n.input:
+            users.setdefault(i, []).append(n)
+
+    def weight_of(n):
+        if n.op_type != "MatMul" or len(n.input) != 2:
+            return None, False
+        b = n.input[1]
+        if b in inits:
+            return inits[b], False
+        if b in tposed and all(u.op_type == "MatMul" for u in users[b]):
+            return inits[tposed[b].input[0]], True
+        return None, False
+
+    new_nodes, new_inits, quantized, done = [], [], 0, set()
+    dropped = set()
+    for n in g.node:
+        w, t = weight_of(n)
         if w is None or len(w.dims) != 2 or w.data_type != TensorProto.FLOAT:
             new_nodes.append(n)
             continue
+        if t:
+            dropped.add(n.input[1])
         p = f"{n.name or n.output[0]}_q"
         if w.name not in done:
-            q, s = quantize_col(load_weight(w, base))
+            arr = load_weight(w, base)
+            q, s = quantize_col(arr.T if t else arr)
             new_inits += [ext(w.name + "_q", q), ext(w.name + "_s", s),
                           numpy_helper.from_array(np.zeros((), np.int8), w.name + "_z")]
             done.add(w.name)
@@ -75,6 +97,7 @@ def main(src, dst):
         ]
         quantized += 1
 
+    new_nodes = [n for n in new_nodes if not (n.op_type == "Transpose" and n.output[0] in dropped)]
     used = {i for n in new_nodes for i in n.input}
     keep = []
     for t in g.initializer:  # copy the untouched float initializers into the new data file

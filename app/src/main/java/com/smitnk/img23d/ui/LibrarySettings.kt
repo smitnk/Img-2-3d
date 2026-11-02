@@ -141,6 +141,15 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             onInstall = vm::installRuntime, onRemove = vm::uninstallRuntime,
         )
 
+        EngineCard(
+            title = "Texture AI · paint texture", sub = "LCM Dreamshaper (SD1.5) int8 on ONNX Runtime, runs on the phone · ≈1.2 GB. " +
+                "Use: open a model in Library → Paint texture",
+            ready = state.texPack == com.smitnk.img23d.body.PackStatus.Ready,
+            progress = (state.texPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            error = (state.texPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
+            onInstall = vm::installTexPack, onRemove = vm::uninstallTexPack,
+        )
+
         SectionHeader("Photo → 3D defaults")
         Panel {
             ResolutionPicker(s.resolution) { r -> vm.updateSettings { it.copy(resolution = r) } }

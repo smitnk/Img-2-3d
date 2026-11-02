@@ -277,6 +277,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
     }
 
+    fun uninstallTexPack() { texPack.uninstall(); _state.update { it.copy(texPack = PackStatus.NotInstalled) } }
+
     fun installTexPack() = viewModelScope.launch {
         runCatching { texPack.install { st -> _state.update { it.copy(texPack = st) } } }
             .onFailure { e -> _state.update { it.copy(texPack = PackStatus.Failed(e.message ?: e.toString())) } }

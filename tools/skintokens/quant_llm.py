@@ -11,7 +11,7 @@ import sys
 
 import numpy as np
 import onnx
-from onnx import TensorProto, external_data_helper as ed, helper, numpy_helper
+from onnx import TensorProto, helper, numpy_helper
 
 
 def load_weight(t, base):
@@ -43,12 +43,14 @@ def main(src, dst):
         os.remove(data_path)
     f = open(data_path, "ab")
 
-    def ext(name, arr):  # write arr to the shared data file, return an external-data TensorProto
-        t = numpy_helper.from_array(arr, name)
+    def ext(name, arr):  # append arr to the shared data file, return a TensorProto pointing at it
+        arr = np.ascontiguousarray(arr)
+        t = TensorProto(name=name, dims=list(arr.shape), data_type=helper.np_dtype_to_tensor_dtype(arr.dtype))
         off = f.tell()
-        f.write(t.raw_data)
-        t.ClearField("raw_data")
-        ed.set_external_data(t, data_name, offset=off, length=len(arr.tobytes()))
+        f.write(arr.tobytes())
+        for k, v in (("location", data_name), ("offset", str(off)), ("length", str(arr.nbytes))):
+            e = t.external_data.add()
+            e.key, e.value = k, v
         t.data_location = TensorProto.EXTERNAL
         return t
 

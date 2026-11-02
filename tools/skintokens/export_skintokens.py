@@ -219,8 +219,8 @@ def main_export(mesh, out):
         if f.startswith("llm_tmp") or (f not in ("llm.onnx", "llm.onnx.data") and "." not in f):
             os.remove(os.path.join(out, f))
     # quantize in a child process so its peak doesn't stack on the live torch model (runner was killed here)
-    import subprocess, sys
-    subprocess.run([sys.executable, "-c", "from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
+    import subprocess, sys as _sys
+    subprocess.run([_sys.executable, "-c", "from onnxruntime.quantization import QuantType as Q, quantize_dynamic as qd; "
                     f"qd('{out}/llm.onnx', '{out}/llm_q.onnx', weight_type=Q.QInt8, op_types_to_quantize=['MatMul','Gemm'])"],
                    check=True)
     print(f"quantized, rss {rss_mb()} MB", flush=True)

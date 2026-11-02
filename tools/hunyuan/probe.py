@@ -52,6 +52,9 @@ def main(out, images):
             except Exception as e:
                 print("flashvdm unavailable:", e)
         pipe = pipes[sub]
+        for m in (pipe.model, pipe.vae, pipe.conditioner):  # some weights load as fp16; CPU needs fp32
+            m.float()
+        pipe.dtype = torch.float32
         n_dit = sum(p.numel() for p in pipe.model.parameters()) / 1e6
         n_vae = sum(p.numel() for p in pipe.vae.parameters()) / 1e6
         n_enc = sum(p.numel() for p in pipe.conditioner.parameters()) / 1e6

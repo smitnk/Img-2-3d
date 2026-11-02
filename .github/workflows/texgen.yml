@@ -72,5 +72,5 @@ jobs:
           PY
           gh release view texgen-v1 >/dev/null 2>&1 || gh release create texgen-v1 --title "Texture painter v1" \
             --notes "LCM Dreamshaper v7 (SD1.5, CreativeML OpenRAIL-M) exported to ONNX for on-device texture painting."
-          gh release upload texgen-v1 --clobber $(ls | grep -v texgen_info.json)
+          gh release upload texgen-v1 --clobber $(find . -maxdepth 1 -type f ! -name texgen_info.json)
           gh release upload texgen-v1 --clobber texgen_info.json

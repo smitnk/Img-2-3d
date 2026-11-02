@@ -116,7 +116,7 @@ def main_export(mesh, out):
     demo.start_bpy_server()
     time.sleep(10)
     demo.load_model(demo.MODEL_CKPTS[0], None)
-    model, tok = demo.model.eval(), demo.tokenizer
+    model, tok = demo.model.eval().requires_grad_(False), demo.tokenizer  # traced weights must not require grad
     cfg = DatasetConfig.parse(shuffle=False, batch_size=1, num_workers=1, pin_memory=False, persistent_workers=False,
                               datapath={"data_name": None, "loader": "bpy_server",
                                         "filepaths": {"articulation": [mesh]}}).split_by_cls()

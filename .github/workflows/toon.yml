@@ -20,7 +20,9 @@ jobs:
           mkdir -p bases
           curl -fsSL -o kenney.zip https://opengameart.org/sites/default/files/kenney_mini-characters.zip
           unzip -q kenney.zip -d kenney && find kenney -iname "*.glb" | head -20 && cat kenney/License.txt | head -5
-          find kenney -iname "*.glb" | while read f; do cp "$f" "bases/kenney_$(basename "$f" | tr ' ' '_')"; done
+          # characters only (the pack also has props: canes, crutches, glasses); GLBs load their colours from Textures/
+          find kenney -iname "character-*.glb" | while read f; do cp "$f" "bases/kenney_$(basename "$f" | tr ' ' '_')"; done
+          tex=$(find kenney -type d -name Textures | head -1) && cp -r "$tex" bases/Textures
           curl -fsSL -o bases/quaternius_robot.glb https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/RobotExpressive/RobotExpressive.glb
           ls -la bases
       - name: Unpack runtime
@@ -30,7 +32,7 @@ jobs:
           mkdir rootfs && sudo tar -xzf blender-runtime-arm64.tar.gz -C rootfs
           sudo mkdir -p rootfs/opt/app rootfs/opt/job rootfs/opt/bases
           sudo cp -r app/src/main/assets/blender/. rootfs/opt/app/
-          sudo cp tools/toon/*.json rootfs/opt/job/ && sudo cp bases/* rootfs/opt/bases/
+          sudo cp tools/toon/*.json rootfs/opt/job/ && sudo cp -r bases/. rootfs/opt/bases/
           sudo mount -t proc proc rootfs/proc
       - name: Bases and edits
         run: |

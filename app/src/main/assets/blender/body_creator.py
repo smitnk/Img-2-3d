@@ -112,20 +112,28 @@ def align_reference(ref, height):
 
 
 def wrap_to(body, ref, amount):
-    """Pull the torso and legs toward the reference (shrinkwrap). Head, face, arms, hands and feet keep their modelled
-    shape: a photo mesh is mushy there, and arm poses rarely match."""
+    """Pull the torso and legs toward the reference surface (bx_retopo.project, nearest point), blended per vertex by
+    skin weight x amount, then relaxed. Head, face, arms, hands and feet keep their modelled shape: a photo mesh is
+    mushy there, and arm poses rarely match."""
+    import bx_retopo
     allow = ("spine", "pelvis", "breast", "upperleg", "lowerleg", "clavicle")
-    vg = body.vertex_groups.new(name="_wrap")
-    groups = {g.index: g.name for g in body.vertex_groups}
+    names = {g.index: g.name.lower() for g in body.vertex_groups}
+    n = len(body.data.vertices)
+    w = np.zeros(n)
     for vtx in body.data.vertices:
-        w = 0.0
-        for ge in vtx.groups:
-            if groups.get(ge.group, "").lower().startswith(allow):
-                w += ge.weight
-        if w > 0:
-            vg.add([vtx.index], min(1.0, w) * amount, "REPLACE")
-    m = body.modifiers.new("wrap", "SHRINKWRAP")
-    m.target, m.wrap_method, m.vertex_group = ref, "NEAREST_SURFACEPOINT", "_wrap"
+        w[vtx.index] = min(1.0, sum(ge.weight for ge in vtx.groups if names.get(ge.group, "").startswith(allow))) * amount
+    idx = np.nonzero(w > 1e-3)[0]
+    if not len(idx):
+        return
+    before = np.empty(n * 3)
+    body.data.vertices.foreach_get("co", before)
+    before = before.reshape(-1, 3)
+    bx_retopo.project(body, ref, indices=idx.tolist(), method="nearest", keep_center=False)
+    after = np.empty(n * 3)
+    body.data.vertices.foreach_get("co", after)
+    blended = before + (after.reshape(-1, 3) - before) * w[:, None]
+    body.data.vertices.foreach_set("co", blended.astype(np.float32).ravel())
+    body.data.update()
     sm = body.modifiers.new("relax", "CORRECTIVE_SMOOTH")
     sm.iterations, sm.factor = 6, 0.5
     dg = bpy.context.evaluated_depsgraph_get()
@@ -134,7 +142,6 @@ def wrap_to(body, ref, amount):
     body.modifiers.clear()
     body.data = me
     bpy.data.meshes.remove(old)
-    body.vertex_groups.remove(body.vertex_groups["_wrap"])
 
 
 def paint_from(body, ref):
@@ -264,6 +271,20 @@ def main():
     pack = humanmorph.Pack(a.pack)
     z = pack.npz
     ref = load_reference(spec["reference"]) if spec.get("reference") and os.path.isfile(spec["reference"]) else None
+    ref_info = None
+    if ref is not None:
+        # Auto-align (bx_rig.model_check: feet on Z=0, centred, mid-foot at Y=0) and read its landmarks: pose, and
+        # whether it is a biped at all (a lizard with a tail still fits by silhouette, just less precisely).
+        import bx_rig
+        bx_rig.model_check([ref], fix=True)
+        try:
+            lm = bx_rig.landmarks(ref)
+            ref_info = {"biped": True, "pose": lm.get("pose"), "arm_angle": round(float(lm.get("arm_angle", 0)), 1),
+                        "leg_ratio": round(float(lm["crotch"].z / lm["H"]), 3),
+                        "head_ratio": round(float((lm["head_top"].z - lm["chin_bottom"].z) / lm["H"]), 3)}
+        except Exception as e:
+            ref_info = {"biped": False, "why": str(e)[:160]}
+        print("fit: reference landmarks", json.dumps(ref_info))
     if ref is not None and spec.get("fit"):
         import fit
         rp = ref_points(ref)
@@ -427,7 +448,7 @@ def main():
             "spec_extras": sorted([f"{k}_{spec[k]}" for k in ("hair", "eyebrows", "eyelashes") if spec.get(k)]
                                   + [f"clothes_{c}" for c in clothes]),
             "layered": True,  # hair/brows/garments are separate shells by design (see postprocess.py)
-            "rig": rig_info, "files": {"glb": glb}, "spec": spec}
+            "rig": rig_info, "files": {"glb": glb}, "spec": spec, "reference": ref_info}
     json.dump(info, open(os.path.join(a.out, "generation.json"), "w"), indent=2)
     print("BODY", json.dumps({k: info[k] for k in ("triangles", "height_m", "rig")}))
 

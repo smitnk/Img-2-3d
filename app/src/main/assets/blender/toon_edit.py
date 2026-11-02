@@ -22,31 +22,41 @@ sys.path[:0] = [HERE, os.path.join(HERE, "bx")]
 import vcbake  # noqa: E402
 
 REGIONS = ("head", "neck", "hand", "arm", "foot", "leg", "torso")
-PATTERNS = [  # first match wins; order matters (hand before arm, foot before leg)
-    ("head", r"head|skull|face|jaw|eye|ear|hair|brow|mouth|nose|teeth|tongue|cheek|lip"),
-    ("neck", r"neck"),
-    ("hand", r"hand|wrist|finger|thumb|index|middle|ring|pinky|palm|fist"),
-    ("arm", r"arm|shoulder|clavicle|elbow|collar"),
-    ("foot", r"foot|toe|ankle|heel"),
-    ("leg", r"leg|thigh|knee|shin|calf|upleg"),
-    ("torso", r".*"),
+# Bone names are split into words ("mixamorig:LeftForeArm" -> left fore arm, "upper_arm.L" -> upper arm l) and
+# matched as words: substring matching sent "forearm" to the head ("ear").
+WORDS = [  # first region whose word list hits wins; hand before arm, foot before leg
+    ("head", {"head", "skull", "face", "jaw", "eye", "eyes", "ear", "ears", "hair", "brow", "eyebrow", "mouth", "nose",
+              "teeth", "tongue", "cheek", "lip", "lips", "eyelid", "chin", "headtop", "headtopend"}),
+    ("neck", {"neck"}),
+    ("hand", {"hand", "wrist", "finger", "thumb", "index", "middle", "ring", "pinky", "palm", "fist", "hands"}),
+    ("arm", {"arm", "forearm", "upperarm", "lowerarm", "shoulder", "clavicle", "elbow", "collar", "bicep", "arms"}),
+    ("foot", {"foot", "toe", "toes", "ankle", "heel", "feet", "toebase"}),
+    ("leg", {"leg", "thigh", "knee", "shin", "calf", "upleg", "upperleg", "lowerleg", "legs"}),
 ]
+
+
+def words_of(name):
+    n = re.sub(r"([a-z])([A-Z])", r"\1 \2", name.split(":")[-1])  # camelCase -> words, drop "mixamorig:"
+    w = [t for t in re.split(r"[^a-z]+", n.lower()) if t]
+    return set(w) | {"".join(w)} | {a + b for a, b in zip(w, w[1:])}  # "fore arm" also as "forearm"
+
+
 SHAPES = ("round", "oval", "square", "buddy")
 
 
 def region_of(name):
-    n = name.lower()
-    for r, pat in PATTERNS:
-        if re.search(pat, n):
+    w = words_of(name)
+    for r, words in WORDS:
+        if w & words:
             return r
     return "torso"
 
 
 def side_of(name, x):
-    n = name.lower()
-    if re.search(r"(\.|_|-|\b)l(eft)?$|^left|left|_l_|\.l\.", n):
+    w = words_of(name)
+    if w & {"l", "left"}:
         return "L"
-    if re.search(r"(\.|_|-|\b)r(ight)?$|^right|right|_r_|\.r\.", n):
+    if w & {"r", "right"}:
         return "R"
     return "L" if x > 1e-4 else "R" if x < -1e-4 else "C"
 
@@ -167,7 +177,20 @@ def edges_of(me):
     return e.reshape(-1, 2)
 
 
-def smooth(d, edges, n, it=12):
+def smooth(d, edges, n, it=12, p=None):
+    """Laplacian-smooth the displacement over the mesh. Low-poly/flat-shaded meshes store one vertex per face corner:
+    weld coincident vertices first (edges between welded ids) so the pieces move together instead of tearing."""
+    if p is not None:
+        key = np.round(p / max(np.ptp(p, axis=0).max(), 1e-9) * 1e5).astype(np.int64)
+        _, wid, inv_counts = np.unique(key, axis=0, return_inverse=True, return_counts=True)
+        wid = wid.ravel()
+        m = wid.max() + 1
+        dw = np.zeros((m, 3))
+        np.add.at(dw, wid, d)
+        dw /= np.bincount(wid, minlength=m)[:, None]
+        ew = wid[edges] if len(edges) else edges
+        ew = ew[ew[:, 0] != ew[:, 1]] if len(ew) else ew
+        return smooth(dw, ew, m, it)[wid]
     if not len(edges):
         return d
     deg = np.bincount(edges.ravel(), minlength=n).astype(float)
@@ -232,7 +255,7 @@ def main():
                 near = np.argmin(((p[:, None, :] - skull_p[None, ::max(1, len(skull_p) // 4000), :]) ** 2).sum(2), axis=1)
                 ht = skull_d[::max(1, len(skull_p) // 4000)][near] * m[:, head_i:head_i + 1]
         d = displacement(p, m, side, rig, k, ht)
-        d = smooth(d, edges_of(o.data), len(p))
+        d = smooth(d, edges_of(o.data), len(p), p=p)
         q = p + d
         inv = np.array(o.matrix_world.inverted())
         o.data.vertices.foreach_set("co", (q @ inv[:3, :3].T + inv[:3, 3]).astype(np.float32).ravel())

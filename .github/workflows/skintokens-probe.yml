@@ -46,6 +46,22 @@ jobs:
             tail -n 15 $GITHUB_WORKSPACE/out/$name.time | grep -v "^\s" ; tail -n 8 $GITHUB_WORKSPACE/out/$name.log; }
           { run lizard_beam1 --input /tmp/forge/assets/reference/lizard-warrior/triposr.glb --output $GITHUB_WORKSPACE/out/lizard_beam1.glb --num_beams 1 --use_transfer
           } 2>&1 | tee $GITHUB_WORKSPACE/out/summary.txt
+      - name: Export to ONNX + verify vs PyTorch
+        if: always()
+        run: |
+          pip install -q onnx==1.17.0 onnxruntime==1.20.0
+          cd /tmp/st
+          /usr/bin/time -v python -u $GITHUB_WORKSPACE/tools/skintokens/export_skintokens.py export /tmp/forge/assets/reference/lizard-warrior/triposr.glb /tmp/stx 2> $GITHUB_WORKSPACE/out/export.time | grep -v "it/s" | tail -40 | tee $GITHUB_WORKSPACE/out/export.txt
+          tail -30 $GITHUB_WORKSPACE/out/export.time | grep -v "^\s" | tail -12 >> $GITHUB_WORKSPACE/out/export.txt
+          ls -la /tmp/stx | tee -a $GITHUB_WORKSPACE/out/export.txt
+          cp /tmp/stx/skintokens_info.json $GITHUB_WORKSPACE/out/ 2>/dev/null || true
+      - name: ONNX-only run (phone RAM estimate)
+        if: always()
+        run: |
+          cd /tmp/st
+          /usr/bin/time -v python -u $GITHUB_WORKSPACE/tools/skintokens/export_skintokens.py onnx /tmp/stx 2> $GITHUB_WORKSPACE/out/onnx.time | tail -10 | tee $GITHUB_WORKSPACE/out/onnx.txt
+          grep -E "Maximum resident|Elapsed" $GITHUB_WORKSPACE/out/onnx.time | tee -a $GITHUB_WORKSPACE/out/onnx.txt
+          tail -15 $GITHUB_WORKSPACE/out/onnx.time | grep -v "^\s" >> $GITHUB_WORKSPACE/out/onnx.txt
       - name: Pose test renders
         if: always()
         run: |

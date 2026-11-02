@@ -145,10 +145,17 @@ def main_export(mesh, out):
     np.random.default_rng = lambda seed=None: IdRng()
     idfps = lambda pos, batch, ratio=0.25, random_start=False: torch.arange(int(pos.shape[0]) // 4)  # ratio is always 1/4
     SP.fps, SV.fps = idfps, idfps
-    # aten::rms_norm has no opset-17 ONNX export: spell it out (same maths as torch's default eps)
-    torch.nn.functional.rms_norm = lambda x, shape, weight=None, eps=None: (
-        x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + (eps if eps is not None else torch.finfo(x.dtype).eps))) * (
-        weight if weight is not None else 1.0)
+    # aten::rms_norm has no opset-17 ONNX export (and callers bind it directly): register the decomposition
+    from torch.onnx import register_custom_op_symbolic, symbolic_helper as sh
+
+    def rms_sym(g, x, shape, weight, eps):
+        e = sh._maybe_get_const(eps, "f")
+        e = 1.1920929e-07 if e is None or sh._is_none(eps) else float(e)
+        ms = g.op("ReduceMean", g.op("Mul", x, x), axes_i=[-1], keepdims_i=1)
+        y = g.op("Mul", x, g.op("Reciprocal", g.op("Sqrt", g.op("Add", ms, g.op("Constant", value_t=torch.tensor(e))))))
+        return y if sh._is_none(weight) else g.op("Mul", y, weight)
+
+    register_custom_op_symbolic("aten::rms_norm", rms_sym, 17)
 
     class MeshCond(torch.nn.Module):
         def forward(self, pc, feats):

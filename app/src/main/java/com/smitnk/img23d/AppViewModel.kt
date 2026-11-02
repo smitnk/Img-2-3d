@@ -302,7 +302,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             report.step(2, "Texture AI")
             val td = TextureDiffusion(texPack.dir, texPack.unet, s.threadCount())
             val entries = org.json.JSONArray()
-            m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front").put("weight", 8)) // real photo beats AI }
+            m.photo?.let { it.copyTo(File(tex, "front.png"), overwrite = true); entries.put(JSONObject().put("image", "front.png").put("view", "front").put("weight", 8)) } // weight 8: the real photo beats AI views
             views.forEachIndexed { i, v ->
                 coroutineContext.ensureActive()
                 report.stage("Painting $v view (${i + 1}/${views.size})", i.toFloat() / views.size)

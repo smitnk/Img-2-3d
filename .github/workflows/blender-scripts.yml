@@ -40,6 +40,10 @@ jobs:
           run refine_lizard refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r1 --height 1.6
           run refine_rig refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r2 --decimate 0.3 --rig
           run refine_texture refine_mesh.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --out /tmp/o/r3 --decimate 0.3 --texture 1024 --rig
+          sudo mkdir -p rootfs/tmp/tp && sudo cp rootfs/opt/forge/assets/reference/lizard-warrior/front.png rootfs/opt/forge/assets/reference/lizard-warrior/back.png rootfs/tmp/tp/
+          echo '[{"image": "front.png", "view": "front"}, {"image": "back.png", "view": "back"}]' | sudo tee rootfs/tmp/tp/views.json > /dev/null
+          run texproject texproject.py -- --in /opt/forge/assets/reference/lizard-warrior/triposr.glb --views /tmp/tp/views.json --out /tmp/o/t1 --res 1024
+          grep -h "^texproject" log_texproject.txt || true
           run rigify_humanoid refine_mesh.py -- --in "$(ls rootfs/tmp/o/b4/*.glb | sed 's#^rootfs##')" --out /tmp/o/r4 --height 1.7 --rig
           grep -h "rigify\|baked\|texture bake" log_refine_texture.txt log_rigify_humanoid.txt || true
           for d in rootfs/tmp/o/*/; do g=$(ls "$d"*.glb | head -1 | sed 's#^rootfs##'); run "post_$(basename "$d")" postprocess.py -- --in "$g" --out "$(dirname "$g")"; done
@@ -56,7 +60,7 @@ jobs:
           import glob, trimesh
           import json, os
           files = sorted(f for f in glob.glob("rootfs/tmp/o/*/*.glb") if "/x_" not in f)
-          assert len(files) == 9, files
+          assert len(files) == 10, files
           for d in sorted(glob.glob("rootfs/tmp/o/*/")):
               if "/x_" in d:
                   e = json.load(open(d + "export.json")); print("export", e); assert e["bytes"] > 1000; continue

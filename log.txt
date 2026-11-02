@@ -1,0 +1,81 @@
+body_chibi OK 3s
+BODY {"triangles": 87076, "height_m": 1.154, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.277, "right_wrist_moved_m": 0.0, "skinned_verts": 38143}}}
+post_chibi OK 4s
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+face_chibi OK 1s
+body_default OK 2s
+BODY {"triangles": 108724, "height_m": 1.667, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.448, "right_wrist_moved_m": 0.0, "skinned_verts": 54428}}}
+post_default OK 4s
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+face_default OK 1s
+body_fitref OK 19s
+fit: reference landmarks {"biped": false, "why": "'chin_bottom'"}
+fit: reference bbox [-0.446, -0.321, 0.0] [0.446, 0.438, 1.8]
+fit: reference features 0.058 0.158 0.036 0.410 0.084 0.155 0.201
+fit: start [0.07, 0.26, 0.0, 0.08, 1.0, 0.17, 0.45, 1.0, 0.14, 0.2, 0.49] error 2199.7996
+fit: start [0.01, 1.0, 0.0, 0.42, 0.89, 0.55, 0.64, 0.03, 0.0, 0.49, 0.5] error 2570.5521
+fit: start [0.7, 0.02, 0.0, 0.0, 0.26, 0.0, 0.95, 0.99, 0.0, 1.0, 0.47] error 2138.7211
+fit: start [0.0, 0.0, 0.0, 0.18, 1.0, 0.37, 0.59, 0.9, 0.0, 0.0, 0.23] error 1806.9746
+BODYFIT {"macros": {"gender": 0.184, "weight": 1.0, "muscle": 0.367, "age": 0.595, "proportions": 0.0, "height": 0.226}, "sliders": {"style/style-chubby": 0.898}, "error": 1806.97459}
+reference: 35914 verts, colours: ['Color'], wrap 0.3
+photo onto reference: 30% of its surface sees the photo
+photo paint from Color (CORNER, BYTE_COLOR)
+baked 2048px texture, islands cover 42%
+BODY {"triangles": 108724, "height_m": 1.338, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.348, "right_wrist_moved_m": 0.0, "skinned_verts": 54428}}}
+post_fitref OK 4s
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+face_fitref OK 2s
+body_heavy_old OK 2s
+BODY {"triangles": 80472, "height_m": 1.648, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.426, "right_wrist_moved_m": 0.0, "skinned_verts": 34207}}}
+post_heavy_old OK 3s
+POSTPROCESS pass=True errors=0 warnings=8 thumb=thumb.png
+face_heavy_old OK 1s
+body_hero OK 2s
+BODY {"triangles": 86860, "height_m": 1.94, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.538, "right_wrist_moved_m": 0.0, "skinned_verts": 31639}}}
+post_hero OK 4s
+POSTPROCESS pass=True errors=0 warnings=4 thumb=thumb.png
+face_hero OK 1s
+body_kid OK 2s
+BODY {"triangles": 80454, "height_m": 1.204, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.31, "right_wrist_moved_m": 0.0, "skinned_verts": 31983}}}
+post_kid OK 3s
+POSTPROCESS pass=True errors=0 warnings=9 thumb=thumb.png
+face_kid OK 1s
+body_sd OK 2s
+BODY {"triangles": 86492, "height_m": 1.197, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.28, "right_wrist_moved_m": 0.0, "skinned_verts": 31639}}}
+post_sd OK 4s
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+face_sd OK 1s
+body_toon OK 2s
+BODY {"triangles": 74978, "height_m": 1.587, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.428, "right_wrist_moved_m": 0.0, "skinned_verts": 31983}}}
+post_toon OK 3s
+POSTPROCESS pass=True errors=0 warnings=3 thumb=thumb.png
+face_toon OK 1s
+body_woman OK 2s
+BODY {"triangles": 81316, "height_m": 1.434, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.376, "right_wrist_moved_m": 0.0, "skinned_verts": 34695}}}
+post_woman OK 4s
+POSTPROCESS pass=True errors=0 warnings=5 thumb=thumb.png
+face_woman OK 1s
+body_zfit_hero OK 18s
+fit: reference landmarks {"biped": true, "pose": "A", "arm_angle": 40.3, "leg_ratio": 0.467, "head_ratio": 0.112}
+fit: reference bbox [-0.637, -0.336, 0.0] [0.637, 0.22, 1.952]
+fit: reference features 0.042 0.458 0.066 0.283 0.096 0.044 0.134
+fit: start [0.01, 0.09, 0.12, 1.0, 0.49, 0.98, 0.42, 0.02, 0.0, 1.0, 0.7] error 60.6702
+fit: start [0.09, 0.34, 0.0, 0.76, 0.25, 1.0, 0.39, 0.93, 0.61, 1.0, 0.73] error 449.7664
+fit: start [1.0, 0.11, 0.0, 0.0, 0.0, 1.0, 0.5, 0.13, 0.38, 0.0, 1.0] error 2379.2838
+fit: start [0.0, 0.0, 0.68, 1.0, 0.53, 1.0, 0.62, 0.32, 0.17, 0.84, 0.65] error 66.4054
+BODYFIT {"macros": {"gender": 1.0, "weight": 0.492, "muscle": 0.984, "age": 0.419, "proportions": 1.0, "height": 0.699}, "sliders": {"style/style-chibi": 0.092, "style/style-cartoon": 0.122}, "error": 60.67025}
+reference: 54178 verts, colours: [], wrap 0.3
+BODY {"triangles": 112068, "height_m": 1.862, "rig": {"bones": 163, "skinning": "MakeHuman weights (CC0)", "unmatched_groups": [], "selftest": {"left_wrist_moved_m": 0.514, "right_wrist_moved_m": 0.0, "skinned_verts": 54428}}}
+post_zfit_hero OK 4s
+POSTPROCESS pass=True errors=0 warnings=2 thumb=thumb.png
+face_zfit_hero OK 2s
+chibi tris 87076 height 1.154 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.277, 'right_wrist_moved_m': 0.0, 'skinned_verts': 38143}} quality True []
+default tris 108724 height 1.667 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.448, 'right_wrist_moved_m': 0.0, 'skinned_verts': 54428}} quality True []
+fitref tris 108724 height 1.338 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.348, 'right_wrist_moved_m': 0.0, 'skinned_verts': 54428}} quality True []
+heavy_old tris 80472 height 1.648 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.426, 'right_wrist_moved_m': 0.0, 'skinned_verts': 34207}} quality True []
+hero tris 86860 height 1.94 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.538, 'right_wrist_moved_m': 0.0, 'skinned_verts': 31639}} quality True []
+kid tris 80454 height 1.204 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.31, 'right_wrist_moved_m': 0.0, 'skinned_verts': 31983}} quality True []
+sd tris 86492 height 1.197 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.28, 'right_wrist_moved_m': 0.0, 'skinned_verts': 31639}} quality True []
+toon tris 74978 height 1.587 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.428, 'right_wrist_moved_m': 0.0, 'skinned_verts': 31983}} quality True []
+woman tris 81316 height 1.434 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.376, 'right_wrist_moved_m': 0.0, 'skinned_verts': 34695}} quality True []
+zfit_hero tris 112068 height 1.862 rig {'bones': 163, 'skinning': 'MakeHuman weights (CC0)', 'unmatched_groups': [], 'selftest': {'left_wrist_moved_m': 0.514, 'right_wrist_moved_m': 0.0, 'skinned_verts': 54428}} quality True []

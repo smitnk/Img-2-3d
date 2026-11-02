@@ -61,7 +61,7 @@ jobs:
           git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
           sudo mkdir -p rootfs/opt/forge && sudo cp -r /tmp/forge/assets rootfs/opt/forge/
           ls /tmp/forge/assets/reference/lizard-warrior/
-          p=$(ls /tmp/forge/assets/reference/lizard-warrior/*.png /tmp/forge/assets/reference/lizard-warrior/*.jpg 2>/dev/null | grep -vi "render\|preview\|turntable\|triposr" | head -1)
+          p=/tmp/forge/assets/reference/lizard-warrior/front.png
           echo "photo: $p"; pip install -q pillow; [ -n "$p" ] && python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGBA').save(sys.argv[2])" "$p" ref_photo.png && sudo cp ref_photo.png rootfs/opt/job/ref_photo.png
           sudo mount -t proc proc rootfs/proc
       - name: Build characters

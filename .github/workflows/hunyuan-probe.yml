@@ -26,11 +26,11 @@ jobs:
           git clone -q --depth 1 https://github.com/Stability-AI/stable-fast-3d /tmp/sf3d
           mkdir -p imgs && cp /tmp/sf3d/demo_files/examples/character1.png /tmp/sf3d/demo_files/examples/raccoon_wizard.png imgs/
           find /tmp/forge/assets/reference -maxdepth 2 \( -name '*.png' -o -name '*.jpg' \) | head -20
-          for d in /tmp/forge/assets/reference/*/; do f=$(ls "$d"*.png "$d"*.jpg 2>/dev/null | grep -vi "render\|preview\|triposr" | head -1); [ -n "$f" ] && cp "$f" "imgs/$(basename $d).${f##*.}"; done
+          for d in /tmp/forge/assets/reference/*/; do f=$(ls "$d"*front*.png 2>/dev/null | head -1); [ -n "$f" ] && cp "$f" "imgs/$(basename $d).png"; done
           ls -la imgs
       - name: Install (CPU)
         run: |
-          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
           pip install -r /tmp/hy/requirements.txt matplotlib || true
           cd /tmp/hy && pip install -e . --no-deps
       - name: Probe

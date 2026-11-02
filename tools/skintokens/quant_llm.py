@@ -26,9 +26,9 @@ def load_weight(t, base):
 
 def quantize_col(w):
     """w [K,N] float32 -> int8 [K,N], scale [N] (per output column)."""
-    s = np.abs(w).max(axis=0) / 127.0
+    s = np.abs(w).max(axis=0) / 63.0  # 7-bit like ORT reduce_range: x86 u8s8 MatMulInteger saturates on full int8
     s[s == 0] = 1.0
-    return np.clip(np.round(w / s), -127, 127).astype(np.int8), s.astype(np.float32)
+    return np.clip(np.round(w / s), -63, 63).astype(np.int8), s.astype(np.float32)
 
 
 def main(src, dst):

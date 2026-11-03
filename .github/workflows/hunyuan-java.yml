@@ -1,0 +1,48 @@
+name: Hunyuan3D - the app's Java pipeline (desktop JVM)
+
+on:
+  push:
+    paths: ["core/src/main/java/com/smitnk/img23d/core/HunyuanShape.java", "core/src/test/java/com/smitnk/img23d/core/HunyuanShapeTest.java",
+            "cli/src/main/java/com/smitnk/img23d/cli/Hunyuan.java", ".github/workflows/hunyuan-java.yml"]
+  workflow_dispatch:
+    inputs:
+      octree: { description: "Final grid (256 or 128)", default: "256" }
+permissions:
+  contents: write
+concurrency: { group: hunyuan-java, cancel-in-progress: true }
+jobs:
+  java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - name: Unit tests
+        run: |
+          gradle :core:test :cli:installDist -q || { for f in core/build/test-results/test/*.xml; do grep -B2 -A12 "<failure" "$f"; done; exit 1; }
+      - name: Published pack + cut-out photo
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir hy && cd hy && gh release download hunyuan-v1 && ls -la && cd ..
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install -q "rembg[cpu]==2.0.57" pillow
+          python -c "
+          from PIL import Image; from rembg import remove
+          im = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')
+          (remove(im.convert('RGB')) if im.getextrema()[3][0] == 255 else im).save('cutout.png')"
+      - name: Run
+        run: |
+          set -o pipefail
+          mkdir -p out
+          /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json cutout.png out/java_app.glb ${{ inputs.octree || '256' }} \
+            2> >(grep -E "Maximum resident|Elapsed" >&2) | tee out/java.txt
+      - name: Push results to ci-logs-hunyuan-java
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-hunyuan-java
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "hunyuan java $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-hunyuan-java

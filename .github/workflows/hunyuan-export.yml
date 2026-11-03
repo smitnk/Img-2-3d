@@ -6,11 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       publish: { description: Publish hunyuan-v1, type: boolean, default: true }
+      parts_run: { description: "Reuse the exported parts of this run id (skips export)", type: string, default: "" }
 permissions:
   contents: write
 concurrency: { group: hunyuan-export, cancel-in-progress: true }
 jobs:
   part:
+    if: github.event_name != 'workflow_dispatch' || inputs.parts_run == ''
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -43,6 +45,7 @@ jobs:
         with: { name: "hy-${{ matrix.part }}", path: hy/, retention-days: 3 }
   check:
     needs: part
+    if: always() && (needs.part.result == 'success' || needs.part.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -62,7 +65,12 @@ jobs:
           pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers<0.33" onnx==1.17.0 onnxruntime==1.20.0
           cd /tmp/hy && pip install -e . --no-deps
       - uses: actions/download-artifact@v4
-        with: { pattern: "hy-*", path: hy, merge-multiple: true }
+        with:
+          pattern: "hy-*"
+          path: hy
+          merge-multiple: true
+          run-id: ${{ inputs.parts_run || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Check int8 parts against the original pipeline
         run: |
           set -o pipefail

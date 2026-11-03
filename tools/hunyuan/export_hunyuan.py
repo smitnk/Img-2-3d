@@ -182,7 +182,13 @@ def check(out, image):
     print(f"torch pipeline {time.time() - t0:.0f}s", flush=True)
     # sampler with ONNX parts (what the app does)
     sess = lambda n: ort.InferenceSession(f"{out}/{n}.onnx")
-    cond = sess("cond").run(None, {"image": img.numpy()})[0]
+    import gc
+    mesh_t.export(f"{out}/check_torch.glb")
+    p.model = p.conditioner = None  # the torch pipeline (~12 GB) plus ONNX sessions got the runner killed; keep only the VAE
+    gc.collect()
+    c = sess("cond")
+    cond = c.run(None, {"image": img.numpy()})[0]
+    del c
     ge = info["guidance_embed"]
     c_in = cond if ge else np.concatenate([cond, np.zeros_like(cond)])
     dit = sess("dit")
@@ -196,11 +202,12 @@ def check(out, image):
             v = v[1:] + info["guidance_scale"] * (v[:1] - v[1:])
         x = x + (sig[i + 1] - sig[i]) * v
     print(f"onnx int8 sampling {time.time() - t1:.0f}s", flush=True)
+    del dit
+    gc.collect()
     np.save(f"{out}/ref_latents_onnx.npy", x)
     with torch.no_grad():
         mesh_o = p._export(torch.from_numpy(x), "trimesh", 1.01, 0.0, 20000, 256, "mc")[0]
     mesh_o.export(f"{out}/check_onnx_int8.glb")
-    mesh_t.export(f"{out}/check_torch.glb")
     print("CHECK", json.dumps({"faces_onnx": int(len(mesh_o.faces)), "faces_torch": int(len(mesh_t.faces)),
                                "seconds": round(time.time() - t0)}), flush=True)
 

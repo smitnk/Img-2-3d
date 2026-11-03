@@ -168,6 +168,7 @@ def check(out, image):
     if im.getextrema()[3][0] == 255:
         im = BackgroundRemover()(im.convert("RGB"))
     p.vae.enable_flashvdm_decoder(mc_algo="mc")  # dense decode took 65 min here
+    im.save(f"{out}/ref_cutout.png")  # the Java CLI's input
     img = p.prepare_image(im)["image"]
     print("image tensor", tuple(img.shape), flush=True)
     img = img.reshape(1, *img.shape[-3:])

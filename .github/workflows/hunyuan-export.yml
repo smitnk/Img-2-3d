@@ -2,7 +2,8 @@ name: Hunyuan3D-2mini - ONNX int8 export for the phone
 
 on:
   push:
-    paths: ["tools/hunyuan/export_hunyuan.py", ".github/workflows/hunyuan-export.yml", "tools/skintokens/quant_llm.py"]
+    paths: ["tools/hunyuan/export_hunyuan.py", ".github/workflows/hunyuan-export.yml", "tools/skintokens/quant_llm.py",
+            "core/src/main/java/com/smitnk/img23d/core/HunyuanShape.java", "cli/src/main/java/com/smitnk/img23d/cli/Hunyuan.java"]
   workflow_dispatch:
     inputs:
       publish: { description: Publish hunyuan-v1, type: boolean, default: true }
@@ -77,6 +78,15 @@ jobs:
           mkdir -p out; ls -la hy; cat hy/*_info.json
           python -u tools/hunyuan/export_hunyuan.py check hy /tmp/forge/assets/reference/lizard-warrior/front.png 2>&1 | grep --line-buffered -v "it/s" | tee out/check.log
           cp hy/*_info.json hy/check_*.glb out/
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+      - name: The app's Java pipeline on the same cut-out
+        run: |
+          set -o pipefail
+          gradle :core:test :cli:installDist -q
+          /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/dit_info.json hy/ref_cutout.png out/java_app.glb 256 2> >(grep -E "Maximum resident|Elapsed" >&2) | tee out/java.txt
       - name: Push results to ci-logs-hunyuan-export
         if: always()
         run: |

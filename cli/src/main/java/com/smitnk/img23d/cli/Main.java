@@ -22,6 +22,7 @@ import java.util.List;
 public final class Main {
     public static void main(String[] a) throws Exception {
         if (a.length > 0 && a[0].equals("texgen")) { TexGen.main(a); return; }
+        if (a.length > 0 && a[0].equals("hunyuan")) { Hunyuan.main(a); return; }
         File models = new File(a[0]);
         File input = new File(a[1]);
         File out = new File(a[2]);

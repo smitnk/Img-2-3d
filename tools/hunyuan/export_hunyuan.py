@@ -56,24 +56,37 @@ def part(name, out):
     os.makedirs(out, exist_ok=True)
     p = load()
     L, C = p.vae.latent_shape
+    sf = float(p.vae.scale_factor)
+    ge = guidance_free(p)
     with torch.no_grad():
         cond = p.conditioner(image=torch.zeros(1, 3, 512, 512))["main"]
     T, D = cond.shape[1:]
     print(f"part {name}: latents {L}x{C}, cond {T}x{D}, guidance_embed {guidance_free(p)}, rss {rss_mb()} MB", flush=True)
     keep = {"cond": p.conditioner, "dit": p.model, "vae": p.vae, "geo": p.vae}[name]
-    for m in (p.conditioner, p.model, p.vae):  # free the parts this process doesn't export
-        if m is not keep:
-            for prm in m.parameters():
-                prm.data = torch.empty(0)
-    ge = guidance_free(p)
+    import gc
+    for attr in ("conditioner", "model", "vae"):  # drop the parts this process doesn't export (load alone is ~12 GB)
+        if getattr(p, attr) is not keep:
+            setattr(p, attr, None)
+    gc.collect()
+    print(f"kept only {name}, rss now (peak counter) {rss_mb()} MB", flush=True)
     if name == "cond":
-        mod, args = Wrap(p.conditioner, lambda m, im: m(image=im)["main"]), (torch.zeros(1, 3, 512, 512),)
+        enc = p.conditioner.main_image_encoder
+        S = enc.size * 14
+        mean = torch.tensor(enc.mean).view(1, 3, 1, 1)
+        std = torch.tensor(enc.std).view(1, 3, 1, 1)
+
+        def fn(m, im):  # same as the encoder's transform for a square image; upscaling, so no antialias needed
+            x = torch.nn.functional.interpolate((im + 1) / 2, size=(S, S), mode="bilinear", align_corners=False)
+            h = m.model((x - mean) / std).last_hidden_state
+            return h if m.use_cls_token else h[:, 1:]
+        mod, args = Wrap(enc, fn), (torch.zeros(1, 3, 512, 512),)
         names, outs, dyn = ["image"], ["cond"], None
     elif name == "dit":
         g = torch.full((1,), 5.0)
         fn = (lambda m, x, t, c: m(x, t, {"main": c}, guidance=g.expand(x.shape[0]))) if ge else \
             (lambda m, x, t, c: m(x, t, {"main": c}, guidance=None))
-        mod, args = Wrap(p.model, fn), (torch.randn(2, L, C), torch.full((2,), 0.5), cond.repeat(2, 1, 1))
+        b = 1 if ge else 2  # guidance-distilled turbo: one pass per step
+        mod, args = Wrap(p.model, fn), (torch.randn(b, L, C), torch.full((b,), 0.5), cond.repeat(b, 1, 1))
         names, outs, dyn = ["x", "t", "cond"], ["v"], {"x": {0: "b"}, "t": {0: "b"}, "cond": {0: "b"}, "v": {0: "b"}}
     elif name == "vae":
         mod, args = Wrap(p.vae, lambda m, z: m(z)), (torch.randn(1, L, C),)
@@ -87,7 +100,7 @@ def part(name, out):
     with torch.no_grad():
         ref = mod(*args)
         torch.onnx.export(mod, args, f"{out}/{name}_fp32.onnx", opset_version=17, input_names=names, output_names=outs,
-                          dynamic_axes=dyn)
+                          dynamic_axes=dyn, do_constant_folding=name not in ("dit", "cond"))  # folding copies every weight
     print(f"exported {name} in {time.time() - t0:.0f}s, rss {rss_mb()} MB", flush=True)
     import onnxruntime as ort
     s = ort.InferenceSession(f"{out}/{name}_fp32.onnx")
@@ -100,7 +113,7 @@ def part(name, out):
     q = s.run(None, feed)[0]
     rel = float(np.abs(q - r).max() / (np.abs(r).max() + 1e-9))
     info = {"part": name, "fp32_maxdiff": d32, "int8_rel_maxdiff": rel, "L": L, "C": C, "T": int(T), "D": int(D),
-            "guidance_embed": ge, "scale_factor": float(p.vae.scale_factor)}
+            "guidance_embed": ge, "scale_factor": sf}
     if name == "dit":
         p.scheduler.set_timesteps(STEPS, sigmas=np.linspace(0, 1, STEPS))
         info["sigmas"] = [float(x) for x in p.scheduler.sigmas]

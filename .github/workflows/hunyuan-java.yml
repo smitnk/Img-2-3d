@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+      - name: Swap
+        run: sudo fallocate -l 12G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -m
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: gradle/actions/setup-gradle@v4
@@ -37,6 +39,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
+          (while sleep 20; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') java_rss $(ps -C java -o rss= | sort -n | tail -1)"; done) &
           /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json cutout.png out/java_app.glb ${{ inputs.octree || '256' }} \
             2> >(grep -E "Maximum resident|Elapsed" >&2) | tee out/java.txt
       - name: Push results to ci-logs-hunyuan-java

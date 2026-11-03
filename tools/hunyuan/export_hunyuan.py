@@ -83,6 +83,14 @@ def part(name, out):
         mod, args = Wrap(enc, fn), (torch.zeros(1, 3, sz, sz),)
         names, outs, dyn = ["image"], ["cond"], None
     elif name == "dit":
+        # Joint attention over latents + image tokens (~8.4k) builds a 16-head score table of ~4.5 GB at once; on the
+        # phone that set the peak. Trace it 2 heads at a time (same maths, ~0.56 GB each, freed between groups).
+        import hy3dgen.shapegen.models.denoisers.hunyuan3ddit as HD
+        sdpa = torch.nn.functional.scaled_dot_product_attention
+
+        def chunked(q, k, v, *a, **kw):
+            return torch.cat([sdpa(q[:, i:i + 2], k[:, i:i + 2], v[:, i:i + 2]) for i in range(0, q.shape[1], 2)], dim=1)
+        HD.scaled_dot_product_attention = chunked
         g = torch.full((1,), 5.0)
         fn = (lambda m, x, t, c: m(x, t, {"main": c}, guidance=g.expand(x.shape[0]))) if ge else \
             (lambda m, x, t, c: m(x, t, {"main": c}, guidance=None))

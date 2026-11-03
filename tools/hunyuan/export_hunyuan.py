@@ -129,6 +129,8 @@ q.model.save_model_to_file('{out}/b/{name}.onnx', True)
         s = ort.InferenceSession(f"{out}/{v}/{name}.onnx")
         q = s.run(None, feed)[0]
         rels[v] = float(np.abs(q - r).max() / (np.abs(r).max() + 1e-9))
+        cos = float((q * r).sum() / (np.linalg.norm(q) * np.linalg.norm(r) + 1e-12))
+        print(f"{name} {v}: max rel {rels[v]:.4f}, mean abs err / mean abs {np.abs(q - r).mean() / (np.abs(r).mean() + 1e-12):.4f}, cosine {cos:.5f}", flush=True)
         del s
     best = min(rels, key=rels.get)
     print(f"{name}: int8 rel {rels['a']:.4f}, 4-bit rel {rels['b']:.4f} -> {best}", flush=True)

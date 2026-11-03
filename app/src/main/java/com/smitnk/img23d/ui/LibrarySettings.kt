@@ -158,7 +158,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
         )
 
         EngineCard(
-            title = "Hunyuan3D-2mini · detailed photo → 3D", sub = "Tencent Hunyuan3D-2mini Turbo on ONNX Runtime · ≈2.3 GB download. " +
+            title = "Hunyuan3D-2mini · detailed photo → 3D", sub = "Tencent Hunyuan3D-2mini Turbo on ONNX Runtime · ≈2 GB download. " +
                 "Separate limbs, armour and cloth folds; slower than TripoSR (expect 15–30 min). No colours: use Paint texture after. " +
                 "Licence: Tencent Hunyuan 3D 2.0 Community License (not for the EU, UK or South Korea).",
             ready = state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready,

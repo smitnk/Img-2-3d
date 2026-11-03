@@ -31,7 +31,7 @@ def quantize_col(w):
     return np.clip(np.round(w / s), -63, 63).astype(np.int8), s.astype(np.float32)
 
 
-def main(src, dst):
+def main(src, dst, fold_only=False):
     base = os.path.dirname(os.path.abspath(src))
     m = onnx.load(src, load_external_data=False)
     g = m.graph
@@ -100,6 +100,17 @@ def main(src, dst):
             continue
         if t:
             dropped.add(n.input[1])
+        if fold_only:  # fp32 MatMul on a plain initializer (what ORT's MatMul4BitsQuantizer needs)
+            if w.name not in done:
+                arr = load_weight(w, base)
+                new_inits.append(ext(w.name + "_f", np.ascontiguousarray(arr.T if t else arr)))
+                done.add(w.name)
+            n2 = onnx.NodeProto()
+            n2.CopyFrom(n)
+            n2.input[1] = w.name + "_f"
+            new_nodes.append(n2)
+            quantized += 1
+            continue
         p = f"{n.name or n.output[0]}_q"
         if w.name not in done:
             arr = load_weight(w, base)
@@ -140,4 +151,4 @@ def main(src, dst):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], fold_only="--fold-only" in sys.argv)

@@ -59,7 +59,7 @@ def part(name, out):
     sf = float(p.vae.scale_factor)
     ge = guidance_free(p)
     with torch.no_grad():
-        cond = p.conditioner(image=torch.zeros(1, 3, 512, 512))["main"]
+        cond = p.conditioner(image=torch.zeros(1, 3, int(p.image_processor.size), int(p.image_processor.size)))["main"]
     T, D = cond.shape[1:]
     print(f"part {name}: latents {L}x{C}, cond {T}x{D}, guidance_embed {guidance_free(p)}, rss {rss_mb()} MB", flush=True)
     keep = {"cond": p.conditioner, "dit": p.model, "vae": p.vae, "geo": p.vae}[name]
@@ -79,7 +79,8 @@ def part(name, out):
             x = torch.nn.functional.interpolate((im + 1) / 2, size=(S, S), mode="bilinear", align_corners=False)
             h = m.model((x - mean) / std).last_hidden_state
             return h if m.use_cls_token else h[:, 1:]
-        mod, args = Wrap(enc, fn), (torch.zeros(1, 3, 512, 512),)
+        sz = int(p.image_processor.size)
+        mod, args = Wrap(enc, fn), (torch.zeros(1, 3, sz, sz),)
         names, outs, dyn = ["image"], ["cond"], None
     elif name == "dit":
         g = torch.full((1,), 5.0)
@@ -107,16 +108,45 @@ def part(name, out):
     feed = {n: a.numpy() for n, a in zip(names, args)}
     d32 = float(np.abs(s.run(None, feed)[0] - ref.numpy()).max())
     del s
-    subprocess.run([sys.executable, QUANT, f"{out}/{name}_fp32.onnx", f"{out}/{name}.onnx"], check=True)
-    s = ort.InferenceSession(f"{out}/{name}.onnx")
     r = ref.numpy()
-    q = s.run(None, feed)[0]
-    rel = float(np.abs(q - r).max() / (np.abs(r).max() + 1e-9))
-    info = {"part": name, "fp32_maxdiff": d32, "int8_rel_maxdiff": rel, "L": L, "C": C, "T": int(T), "D": int(D),
+    rels = {}
+    # A: int8 weights + dynamic int8 activations (fast); B: 4-bit weight-only MatMulNBits, fp32 activations
+    # (DINOv2's activation outliers wreck A: 93% error)
+    # each variant lives in its own folder under its final file name (the graph stores its data file's name)
+    import shutil
+    for v in ("a", "b"):
+        os.makedirs(f"{out}/{v}", exist_ok=True)
+    subprocess.run([sys.executable, QUANT, f"{out}/{name}_fp32.onnx", f"{out}/a/{name}.onnx"], check=True)
+    subprocess.run([sys.executable, QUANT, f"{out}/{name}_fp32.onnx", f"{out}/{name}_fold.onnx", "--fold-only"], check=True)
+    subprocess.run([sys.executable, "-c", f"""
+import onnx
+from onnxruntime.quantization.matmul_4bits_quantizer import MatMul4BitsQuantizer
+q = MatMul4BitsQuantizer(onnx.load('{out}/{name}_fold.onnx'), block_size=32, is_symmetric=True, accuracy_level=4)
+q.process()
+q.model.save_model_to_file('{out}/b/{name}.onnx', True)
+"""], check=True)
+    for v in ("a", "b"):
+        s = ort.InferenceSession(f"{out}/{v}/{name}.onnx")
+        q = s.run(None, feed)[0]
+        rels[v] = float(np.abs(q - r).max() / (np.abs(r).max() + 1e-9))
+        del s
+    best = min(rels, key=rels.get)
+    print(f"{name}: int8 rel {rels['a']:.4f}, 4-bit rel {rels['b']:.4f} -> {best}", flush=True)
+    for f in os.listdir(f"{out}/{best}"):
+        os.replace(f"{out}/{best}/{f}", f"{out}/{f}")
+    for v in ("a", "b"):
+        shutil.rmtree(f"{out}/{v}")
+    for f in list(os.listdir(out)):
+        if f.startswith(f"{name}_fold.onnx"):
+            os.remove(f"{out}/{f}")
+    rel = rels[best]
+    info = {"part": name, "fp32_maxdiff": d32, "int8_rel_maxdiff": rel, "quant": {"a": "int8 dynamic", "b": "4-bit weight-only"}[best], "rels": rels, "L": L, "C": C, "T": int(T), "D": int(D),
             "guidance_embed": ge, "scale_factor": sf}
-    if name == "dit":
-        p.scheduler.set_timesteps(STEPS, sigmas=np.linspace(0, 1, STEPS))
+    if name == "dit":  # exactly what the pipeline does each run
+        from hy3dgen.shapegen.pipelines import retrieve_timesteps
+        retrieve_timesteps(p.scheduler, STEPS, "cpu", sigmas=np.linspace(0, 1, STEPS))
         info["sigmas"] = [float(x) for x in p.scheduler.sigmas]
+        assert len(info["sigmas"]) == STEPS + 1, info["sigmas"]
         info["guidance_scale"] = 5.0
     json.dump(info, open(f"{out}/{name}_info.json", "w"))
     print("PART", json.dumps(info), flush=True)
@@ -133,7 +163,10 @@ def check(out, image):
     im = Image.open(image).convert("RGBA")
     if im.getextrema()[3][0] == 255:
         im = BackgroundRemover()(im.convert("RGB"))
+    p.vae.enable_flashvdm_decoder(mc_algo="mc")  # dense decode took 65 min here
     img = p.prepare_image(im)["image"]
+    print("image tensor", tuple(img.shape), flush=True)
+    img = img.reshape(1, *img.shape[-3:])
     np.save(f"{out}/ref_image.npy", img.numpy())
     L, C = info["L"], info["C"]
     noise = torch.from_numpy(np.random.default_rng(7).standard_normal((1, L, C)).astype(np.float32))

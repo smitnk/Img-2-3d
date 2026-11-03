@@ -1,0 +1,1 @@
+{"part": "geo", "fp32_maxdiff": 1.0132789611816406e-06, "int8_rel_maxdiff": 0.00708033749833703, "quant": "int8 dynamic", "rels": {"a": 0.00708033749833703, "b": 0.01495150662958622}, "L": 3072, "C": 64, "T": 5330, "D": 1536, "guidance_embed": true, "scale_factor": 1.0188137142395404}

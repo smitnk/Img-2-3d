@@ -1,0 +1,44 @@
+The cache for model files in Transformers v4.22.0 has been updated. Migrating your old cache. This is a one-time only operation. You can interrupt this and resume the migration later on by calling `transformers.utils.move_cache()`.
+Warning:
+Unable to load the following plugins:
+
+	libfilter_ao.so: libfilter_ao.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_ao.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_meshing.so: libfilter_meshing.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_meshing.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_plymc.so: libfilter_plymc.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_plymc.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_sample_gpu.so: libfilter_sample_gpu.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_sample_gpu.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_sdfgpu.so: libfilter_sdfgpu.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_sdfgpu.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_ssynth.so: libfilter_ssynth.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_ssynth.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libfilter_texture_defragmentation.so: libfilter_texture_defragmentation.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libfilter_texture_defragmentation.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libio_base.so: libio_base.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libio_base.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+	libio_x3d.so: libio_x3d.so does not seem to be a Qt Plugin.
+
+Cannot load library /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/pymeshlab/lib/plugins/libio_x3d.so: (libOpenGL.so.0: cannot open shared object file: No such file or directory)
+
+2026-11-03 17:20:17,492 - hy3dgen.shapgen - INFO - Try to load model from local path: /home/runner/.cache/hy3dgen/tencent/Hunyuan3D-2mini/hunyuan3d-dit-v2-mini-turbo
+2026-11-03 17:20:17,492 - hy3dgen.shapgen - INFO - Model path not exists, try to download from huggingface
+2026-11-03 17:20:40,815 - hy3dgen.shapgen - INFO - Loading model from /home/runner/.cache/huggingface/hub/models--tencent--Hunyuan3D-2mini/snapshots/f90a0f7df7d5e6f71109cf333f6a95a0ae3194a6/hunyuan3d-dit-v2-mini-turbo/model.fp16.safetensors
+PointCrossAttentionEncoder INFO: pc_sharpedge_size is given, using pc_size=5120, pc_sharpedge_size=5120
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/numba/np/ufunc/parallel.py:373: NumbaWarning: The TBB threading layer requires TBB version 2021 update 6 or later i.e., TBB_INTERFACE_VERSION >= 12060. Found TBB_INTERFACE_VERSION = 12050. The TBB threading layer is disabled.
+  warnings.warn(problem)
+image tensor (1, 3, 1022, 1022)
+2026-11-03 17:30:35,656 - hy3dgen.shapgen - INFO - FlashVDMVolumeDecoding Resolution: [63, 126, 252]
+torch pipeline 725s
+onnx int8 sampling 358s
+2026-11-03 17:41:52,334 - hy3dgen.shapgen - INFO - FlashVDMVolumeDecoding Resolution: [63, 126, 252]
+CHECK {"faces_onnx": 333226, "faces_torch": 330411, "seconds": 1393}

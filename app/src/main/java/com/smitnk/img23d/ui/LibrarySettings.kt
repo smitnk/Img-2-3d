@@ -157,6 +157,26 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             },
         )
 
+        EngineCard(
+            title = "Hunyuan3D-2mini · detailed photo → 3D", sub = "Tencent Hunyuan3D-2mini Turbo on ONNX Runtime · ≈2.3 GB download. " +
+                "Separate limbs, armour and cloth folds; slower than TripoSR (expect 15–30 min). No colours: use Paint texture after. " +
+                "Licence: Tencent Hunyuan 3D 2.0 Community License (not for the EU, UK or South Korea).",
+            ready = state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready,
+            progress = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            error = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
+            onInstall = vm::installHunyuanPack, onRemove = vm::uninstallHunyuanPack,
+            extra = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Use for Photo → 3D (off: TripoSR)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(hunyuan = on) } })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Detail: ${s.hunyuanOctree}³ (128 is faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuanOctree >= 256, { on -> vm.updateSettings { it.copy(hunyuanOctree = if (on) 256 else 128) } })
+                }
+            },
+        )
+
         SectionHeader("Photo → 3D defaults")
         Panel {
             ResolutionPicker(s.resolution) { r -> vm.updateSettings { it.copy(resolution = r) } }

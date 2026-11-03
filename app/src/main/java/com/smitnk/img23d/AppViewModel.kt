@@ -17,6 +17,8 @@ import com.smitnk.img23d.blender.BuilderSpec
 import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
+import com.smitnk.img23d.body.HunyuanPack
+import com.smitnk.img23d.core.HunyuanShape
 import com.smitnk.img23d.core.TextureDiffusion
 import com.smitnk.img23d.body.BodySpec
 import com.smitnk.img23d.body.PackStatus
@@ -121,6 +123,7 @@ data class UiState(
     val body: BodySpec = BodySpec(),
     val bodyPack: PackStatus = PackStatus.NotInstalled,
     val texPack: PackStatus = PackStatus.NotInstalled,
+    val hunyuanPack: PackStatus = PackStatus.NotInstalled,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
     val bodyPreview: GltfMesh? = null,
 ) {
@@ -269,12 +272,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- Body Creator ----------
     val bodyPack = BodyPack(app)
     val texPack = TexPack(app)
+    val hunyuanPack = HunyuanPack(app)
+    private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
 
     init { // after bodyPack is initialized (Kotlin runs initializers in declaration order)
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
+        if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
+    }
+
+    fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }
+
+    fun installHunyuanPack() = viewModelScope.launch {
+        runCatching { hunyuanPack.install { st -> _state.update { it.copy(hunyuanPack = st) } } }
+            .onFailure { e -> _state.update { it.copy(hunyuanPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun uninstallTexPack() { texPack.uninstall(); _state.update { it.copy(texPack = PackStatus.NotInstalled) } }
@@ -472,19 +485,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (_state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
         if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
-        launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", "TripoSR", steps) { report ->
-            val (res, opt) = tripoSR(bmp, report)
+        val useHunyuan = s.hunyuan && hunyuanPack.isReady()
+        launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
+            val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
+            val engine = if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³" else "TripoSR ${opt.resolution}³"
             val thumb = previewBitmap(res.preprocessed)
             if (mode == PhotoMode.MESH) {
                 library.add("Photo model", Source.PHOTO, { f -> f.outputStream().buffered().use { res.mesh.writeGlb(it) } },
                     res.mesh.vertexCount(), res.mesh.faceCount(), resolution = opt.resolution, timings = res.timingsMs,
-                    peakMemMb = 0, detail = "TripoSR ${opt.resolution}³", thumbnail = thumb).also { savePhoto(it, res) }
+                    peakMemMb = 0, detail = engine, thumbnail = thumb).also { savePhoto(it, res) }
             } else {
                 val input = File(runner.jobIn.apply { mkdirs() }, "input.glb")
                 input.outputStream().buffered().use { res.mesh.writeGlb(it) }
                 report.step(2, "Blender")
                 val b = blender("refine_mesh.py", refineArgs("Photo character"), report)
-                saveBlender(b, "Photo character", Source.CHARACTER, res.timingsMs, thumb = thumb, detail = "TripoSR ${opt.resolution}³ + Blender refine")
+                saveBlender(b, "Photo character", Source.CHARACTER, res.timingsMs, thumb = thumb, detail = "$engine + Blender refine")
                     .also { savePhoto(it, res) }
             }
         }
@@ -553,6 +568,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cancel() {
         tripo?.cancel()
+        hunyuan?.cancel()
         runner.cancel()
         job?.cancel()
     }
@@ -599,6 +615,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } finally {
                 monitor.cancel()
                 tripo = null
+                hunyuan = null
                 System.gc()
             }
         }
@@ -650,6 +667,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         val pipe = TripoSR(models.dir).also { tripo = it }
         val res = pipe.run(rgba, w, h, opt) { stage, f -> report.stage(STAGES[stage] ?: stage.name, if (f > 0f && f < 1f) f else null) }
+        return res to opt
+    }
+
+    /** Photo → shape with Hunyuan3D-2mini; background removal and the saved front photo reuse TripoSR's u2net step. */
+    private fun hunyuan3d(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
+        val w = bmp.width
+        val h = bmp.height
+        var rgba = rgbaOf(bmp)
+        val opt = TripoSR.Options().apply { threads = s.threadCount(); resolution = s.hunyuanOctree }
+        val res = TripoSR.Result()
+        val tp = TripoSR(models.dir).also { tripo = it }
+        if (s.removeBackground && (3 until rgba.size step 4).none { rgba[it] < 255 }) {
+            report.stage("Removing background", null)
+            rgba = tp.removeBackground(rgba, w, h, opt.threads)
+        }
+        val size = IntArray(1)
+        res.foreground = com.smitnk.img23d.core.ImageOps.resizeForeground(rgba, w, h, s.foregroundRatio, size)
+        res.foregroundSize = size[0]
+        res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
+            com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
+        val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { hunyuan = it }
+        res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
+        res.timingsMs.putAll(hs.timingsMs)
         return res to opt
     }
 

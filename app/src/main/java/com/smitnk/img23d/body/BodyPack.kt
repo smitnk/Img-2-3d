@@ -72,6 +72,10 @@ class TexPack(context: Context) : AssetPack(File(context.filesDir, "texgen"), Bu
     val unet: String get() = runCatching { JSONObject(File(dir, "texgen_info.json").readText()).getString("unet") }.getOrDefault("unet_q.onnx")
 }
 
+/** Hunyuan3D-2mini Turbo shape generator (ONNX int8/4-bit, Tencent Hunyuan 3D 2.0 Community License), release hunyuan-v1. */
+class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"), BuildConfig.HUNYUAN_BASE_URL, "hunyuan_info.json",
+    1, "dit.onnx")
+
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */
 data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)
 

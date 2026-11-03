@@ -123,7 +123,7 @@ fun RunningScreen(state: UiState, vm: AppViewModel) {
         Card(Modifier.fillMaxWidth().weight(1f), shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(containerColor = cs.surfaceContainerLowest), border = BorderStroke(1.dp, cs.outlineVariant)) {
             if (r.lines.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(if (r.engine == "TripoSR") "Neural network running on CPU" else "Waiting for Blender output…",
+                Text(if (r.engine == "TripoSR" || r.engine == "Hunyuan3D") "Neural network running on CPU" else "Waiting for Blender output…",
                     style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
             } else LazyColumn(state = list, contentPadding = PaddingValues(12.dp), modifier = Modifier.semantics { contentDescription = "Engine log" }) {
                 items(r.lines) { Text(it, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant) }

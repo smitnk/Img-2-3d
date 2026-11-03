@@ -145,7 +145,9 @@ q.model.save_model_to_file('{out}/b/{name}.onnx', True)
     if name == "dit":  # exactly what the pipeline does each run
         from hy3dgen.shapegen.pipelines import retrieve_timesteps
         retrieve_timesteps(p.scheduler, STEPS, "cpu", sigmas=np.linspace(0, 1, STEPS))
-        info["sigmas"] = [float(x) for x in p.scheduler.sigmas]
+        # turbo = ConsistencyFlowMatchEulerDiscreteScheduler: the run's sigmas live in sigmas_ (sigmas is the 1000-step table)
+        info["sigmas"] = [float(x) for x in getattr(p.scheduler, "sigmas_", p.scheduler.sigmas)]
+        info["scheduler"] = type(p.scheduler).__name__
         assert len(info["sigmas"]) == STEPS + 1, info["sigmas"]
         info["guidance_scale"] = 5.0
     json.dump(info, open(f"{out}/{name}_info.json", "w"))

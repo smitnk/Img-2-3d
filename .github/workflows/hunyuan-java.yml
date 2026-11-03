@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir hy && cd hy && gh release download hunyuan-v1 && ls -la && cd ..
           git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
-          pip install -q "rembg[cpu]==2.0.57" pillow
+          pip install -q "rembg[cpu]" pillow
           python -c "
           from PIL import Image; from rembg import remove
           im = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')

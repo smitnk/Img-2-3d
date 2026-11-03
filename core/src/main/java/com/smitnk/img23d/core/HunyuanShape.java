@@ -47,15 +47,19 @@ public final class HunyuanShape {
 
     /** From hunyuan_info.json (or the CI's dit_info.json): every part carries L, C and scale_factor; dit adds sigmas. */
     public static HunyuanShape fromInfo(File dir, String json, int threads) {
+        return new HunyuanShape(dir, sigmasOf(json), (float) num(json, "scale_factor"), (int) num(json, "L"), (int) num(json, "C"), threads);
+    }
+
+    static float[] sigmasOf(String json) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"sigmas\"\\s*:\\s*\\[([^\\]]*)\\]").matcher(json);
         if (!m.find()) throw new IllegalArgumentException("hunyuan info has no sigmas");
         String[] parts = m.group(1).split(",");
         float[] sig = new float[parts.length];
         for (int i = 0; i < parts.length; i++) sig[i] = Float.parseFloat(parts[i].trim());
-        return new HunyuanShape(dir, sig, (float) num(json, "scale_factor"), (int) num(json, "L"), (int) num(json, "C"), threads);
+        return sig;
     }
 
-    private static double num(String json, String key) {
+    static double num(String json, String key) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*([-0-9.eE]+)").matcher(json);
         if (!m.find()) throw new IllegalArgumentException("hunyuan info has no " + key);
         return Double.parseDouble(m.group(1));

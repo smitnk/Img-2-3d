@@ -33,8 +33,10 @@ public class HunyuanShapeTest {
         assertTrue(chw[20 * 40 + 20] < -0.9f);       // centre: the black subject
     }
 
-    @Test public void readsInfo() {
-        HunyuanShape s = HunyuanShape.fromInfo(new java.io.File("."), "{\"L\": 3072, \"C\": 64, \"scale_factor\": 1.01, \"sigmas\": [0.0, 0.5, 1.0]}", 1);
-        assertTrue(s != null);
+    @Test public void readsInfo() { // no HunyuanShape instance: core tests run without ONNX Runtime on the classpath
+        String j = "{\"L\": 3072, \"C\": 64, \"scale_factor\": 1.01, \"sigmas\": [0.0, 0.5, 1.0]}";
+        org.junit.Assert.assertArrayEquals(new float[]{0f, 0.5f, 1f}, HunyuanShape.sigmasOf(j), 0f);
+        assertEquals(3072, (int) HunyuanShape.num(j, "L"));
+        assertEquals(64, (int) HunyuanShape.num(j, "C"));
     }
 }

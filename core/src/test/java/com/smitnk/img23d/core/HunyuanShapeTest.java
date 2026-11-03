@@ -39,4 +39,41 @@ public class HunyuanShapeTest {
         assertEquals(3072, (int) HunyuanShape.num(j, "L"));
         assertEquals(64, (int) HunyuanShape.num(j, "C"));
     }
+
+    private static void cube(java.util.List<Float> v, java.util.List<Integer> f, float c, float h, boolean inward) {
+        int b = v.size() / 3;
+        for (int i = 0; i < 8; i++) { v.add(c + ((i & 1) == 0 ? -h : h)); v.add(c + ((i & 2) == 0 ? -h : h)); v.add(c + ((i & 4) == 0 ? -h : h)); }
+        int[][] q = {{0, 2, 3, 1}, {4, 5, 7, 6}, {0, 1, 5, 4}, {2, 6, 7, 3}, {0, 4, 6, 2}, {1, 3, 7, 5}};
+        for (int[] r : q) {
+            int[][] tris = {{r[0], r[1], r[2]}, {r[0], r[2], r[3]}};
+            for (int[] t : tris) { f.add(b + t[0]); if (inward) { f.add(b + t[2]); f.add(b + t[1]); } else { f.add(b + t[1]); f.add(b + t[2]); } }
+        }
+    }
+
+    private static Mesh mesh(java.util.List<Float> v, java.util.List<Integer> f) {
+        float[] p = new float[v.size()];
+        for (int i = 0; i < p.length; i++) p[i] = v.get(i);
+        return new Mesh(p, f.stream().mapToInt(Integer::intValue).toArray(), null);
+    }
+
+    @Test public void cleanDropsInwardBubblesAndDegenerateFaces() {
+        java.util.List<Float> v = new java.util.ArrayList<>();
+        java.util.List<Integer> f = new java.util.ArrayList<>();
+        cube(v, f, 0f, 1f, false);  // body
+        cube(v, f, 0f, 0.5f, true); // sealed inward bubble
+        f.add(0); f.add(0); f.add(1); // zero-area triangle
+        Mesh m = HunyuanShape.clean(mesh(v, f), 0);
+        assertEquals(12, m.faceCount());
+        assertEquals(8, m.vertexCount());
+        assertTrue(HunyuanShape.signedVolume(m) > 0);
+    }
+
+    @Test public void cleanDropsSmallFloaters() {
+        java.util.List<Float> v = new java.util.ArrayList<>();
+        java.util.List<Integer> f = new java.util.ArrayList<>();
+        cube(v, f, 0f, 1f, false);
+        cube(v, f, 5f, 0.1f, false); // a second part with the same face count: 50% share each
+        assertEquals(24, HunyuanShape.clean(mesh(v, f), 0.4).faceCount());
+        assertEquals(0, HunyuanShape.clean(mesh(v, f), 0.6).faceCount());
+    }
 }

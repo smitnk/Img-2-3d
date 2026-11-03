@@ -167,6 +167,7 @@ public final class HunyuanShape {
         if (m.faceCount() == 0) throw new IllegalStateException("Hunyuan3D produced an empty surface");
         m.transform(2 * BOUNDS / (g - 1), -BOUNDS);
         if (signedVolume(m) < 0) flip(m);
+        m = clean(m);
         Mesh out = toAppFrame(m);
         timingsMs.put("marching_cubes", ms(t0));
         l.onProgress("Done", 1f);
@@ -314,6 +315,84 @@ public final class HunyuanShape {
                 for (int c = 0; c < 3; c++) chw[c * plane + p] = (Math.min(1f, small[s + c]) * a + (1 - a)) * 2 - 1;
             }
         return chw;
+    }
+
+    /**
+     * Keep the real outer surface: drop zero-area triangles, inward-facing closed parts (sealed bubbles inside the body,
+     * which the app's game-ready check flagged as "normals pointing inward" / "enclosed parts") and loose fragments
+     * under 1% of the faces.
+     */
+    static Mesh clean(Mesh m) { return clean(m, 0.01); }
+
+    static Mesh clean(Mesh m, double minFraction) {
+        float[] p = m.positions;
+        int[] f = m.indices;
+        int nf = f.length / 3, nv = p.length / 3;
+        int[] parent = new int[nv];
+        for (int i = 0; i < nv; i++) parent[i] = i;
+        boolean[] keepFace = new boolean[nf];
+        for (int t = 0; t < nf; t++) {
+            int a = f[t * 3], b = f[t * 3 + 1], c = f[t * 3 + 2];
+            if (a == b || b == c || a == c || area2(p, a, b, c) < 1e-14) continue;
+            keepFace[t] = true;
+            union(parent, a, b);
+            union(parent, a, c);
+        }
+        java.util.Map<Integer, double[]> parts = new HashMap<>(); // root -> {faces, signed volume}
+        for (int t = 0; t < nf; t++) {
+            if (!keepFace[t]) continue;
+            double[] st = parts.computeIfAbsent(find(parent, f[t * 3]), k -> new double[2]);
+            st[0]++;
+            st[1] += tetVolume(p, f[t * 3], f[t * 3 + 1], f[t * 3 + 2]);
+        }
+        int total = 0;
+        for (double[] st : parts.values()) total += (int) st[0];
+        IntListLocal out = new IntListLocal();
+        for (int t = 0; t < nf; t++) {
+            if (!keepFace[t]) continue;
+            double[] st = parts.get(find(parent, f[t * 3]));
+            if (st[1] <= 0 || st[0] < minFraction * total) continue;
+            out.add(f[t * 3]); out.add(f[t * 3 + 1]); out.add(f[t * 3 + 2]);
+        }
+        // compact vertices
+        int[] idx = out.toArray(), remap = new int[nv];
+        java.util.Arrays.fill(remap, -1);
+        int n = 0;
+        for (int v : idx) if (remap[v] < 0) remap[v] = n++;
+        float[] np = new float[n * 3];
+        for (int v = 0; v < nv; v++) if (remap[v] >= 0) System.arraycopy(p, v * 3, np, remap[v] * 3, 3);
+        for (int i = 0; i < idx.length; i++) idx[i] = remap[idx[i]];
+        return new Mesh(np, idx, null);
+    }
+
+    private static int find(int[] par, int x) {
+        while (par[x] != x) { par[x] = par[par[x]]; x = par[x]; }
+        return x;
+    }
+
+    private static void union(int[] par, int a, int b) {
+        int ra = find(par, a), rb = find(par, b);
+        if (ra != rb) par[ra] = rb;
+    }
+
+    private static double area2(float[] p, int a, int b, int c) {
+        double ux = p[b * 3] - p[a * 3], uy = p[b * 3 + 1] - p[a * 3 + 1], uz = p[b * 3 + 2] - p[a * 3 + 2];
+        double vx = p[c * 3] - p[a * 3], vy = p[c * 3 + 1] - p[a * 3 + 1], vz = p[c * 3 + 2] - p[a * 3 + 2];
+        double x = uy * vz - uz * vy, y = uz * vx - ux * vz, z = ux * vy - uy * vx;
+        return x * x + y * y + z * z;
+    }
+
+    private static double tetVolume(float[] p, int a3, int b3, int c3) {
+        int a = a3 * 3, b = b3 * 3, c = c3 * 3;
+        return (p[a] * (p[b + 1] * p[c + 2] - p[b + 2] * p[c + 1]) - p[a + 1] * (p[b] * p[c + 2] - p[b + 2] * p[c])
+                + p[a + 2] * (p[b] * p[c + 1] - p[b + 1] * p[c])) / 6.0;
+    }
+
+    private static final class IntListLocal {
+        int[] a = new int[1 << 16];
+        int n;
+        void add(int v) { if (n == a.length) a = java.util.Arrays.copyOf(a, n * 2); a[n++] = v; }
+        int[] toArray() { return java.util.Arrays.copyOf(a, n); }
     }
 
     static double signedVolume(Mesh m) {

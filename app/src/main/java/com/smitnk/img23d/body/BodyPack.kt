@@ -74,7 +74,7 @@ class TexPack(context: Context) : AssetPack(File(context.filesDir, "texgen"), Bu
 
 /** Hunyuan3D-2mini Turbo shape generator (ONNX int8/4-bit, Tencent Hunyuan 3D 2.0 Community License), release hunyuan-v1. */
 class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"), BuildConfig.HUNYUAN_BASE_URL, "hunyuan_info.json",
-    2, "u2net.onnx") // v2: own u2net (background removal) so the TripoSR pack isn't needed
+    3, "u2net.onnx") // v2: own u2net (no TripoSR pack needed), v3: encoder attention 4 heads at a time (phone RAM)
 
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */
 data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)

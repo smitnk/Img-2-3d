@@ -96,7 +96,7 @@ jobs:
           parts = {p: json.load(open(f"{p}_info.json")) for p in ("cond", "dit", "vae", "geo")}
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()}
                    for f in sorted(os.listdir(".")) if os.path.isfile(f) and not f.endswith("_info.json")}
-          json.dump({"version": 2, "parts": parts, "files": files}, open("hunyuan_info.json", "w"), indent=1)
+          json.dump({"version": 3, "parts": parts, "files": files}, open("hunyuan_info.json", "w"), indent=1)
           PY
           gh release view hunyuan-v1 >/dev/null 2>&1 || gh release create hunyuan-v1 --title "Hunyuan3D-2mini Turbo int8 v1" \
             --notes "tencent/Hunyuan3D-2mini (Tencent Hunyuan 3D 2.0 Community License; not licensed in the EU, UK or South Korea) exported to ONNX int8 for on-device shape generation."

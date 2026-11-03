@@ -75,12 +75,37 @@ def part(name, out):
         mean = torch.tensor(enc.mean).view(1, 3, 1, 1)
         std = torch.tensor(enc.std).view(1, 3, 1, 1)
 
+        # DINOv2 attention over ~5.3k patches x 24 heads is ~2.7 GB at once (the phone's peak, it killed System UI):
+        # trace it 4 heads at a time. Same maths as transformers' eager Dinov2SelfAttention (checked below).
+        from transformers.models.dinov2 import modeling_dinov2 as MD
+        eager = MD.Dinov2SelfAttention.forward
+
+        def chunked_attn(self, hidden_states, head_mask=None, output_attentions=False):
+            q = self.transpose_for_scores(self.query(hidden_states))
+            k = self.transpose_for_scores(self.key(hidden_states))
+            v = self.transpose_for_scores(self.value(hidden_states))
+            ctx = torch.cat([torch.nn.functional.scaled_dot_product_attention(q[:, i:i + 4], k[:, i:i + 4], v[:, i:i + 4])
+                             for i in range(0, q.shape[1], 4)], dim=1)
+            ctx = ctx.permute(0, 2, 1, 3).contiguous()
+            return (ctx.view(ctx.size()[:-2] + (self.all_head_size,)),)
+
         def fn(m, im):  # same as the encoder's transform for a square image; upscaling, so no antialias needed
             x = torch.nn.functional.interpolate((im + 1) / 2, size=(S, S), mode="bilinear", align_corners=False)
             h = m.model((x - mean) / std).last_hidden_state
             return h if m.use_cls_token else h[:, 1:]
         sz = int(p.image_processor.size)
-        mod, args = Wrap(enc, fn), (torch.zeros(1, 3, sz, sz),)
+        mod, args = Wrap(enc, fn), (torch.rand(1, 3, sz, sz) * 2 - 1,)
+        print("encoder attention class:", type(enc.model.encoder.layer[0].attention.attention).__name__, flush=True)
+        with torch.no_grad():
+            before = mod(*args)
+            MD.Dinov2SelfAttention.forward = chunked_attn
+            for sub in enc.model.modules():  # sdpa subclass (if any) inherits from the eager class's forward
+                if isinstance(sub, MD.Dinov2SelfAttention):
+                    sub.forward = chunked_attn.__get__(sub)
+            after = mod(*args)
+        d = float((before - after).abs().max())
+        print(f"chunked attention vs original: max diff {d:.2e}", flush=True)
+        assert d < 1e-3, d
         names, outs, dyn = ["image"], ["cond"], None
     elif name == "dit":
         # Joint attention over latents + image tokens (~8.4k) builds a 16-head score table of ~4.5 GB at once; on the

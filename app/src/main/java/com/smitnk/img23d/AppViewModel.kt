@@ -482,10 +482,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- jobs ----------
     fun runPhoto(mode: PhotoMode) {
         val bmp = _state.value.image ?: return
-        if (_state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
+        val useHunyuan = s.hunyuan && hunyuanPack.isReady()
+        if (!useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
         if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
-        val useHunyuan = s.hunyuan && hunyuanPack.isReady()
         launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
             val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
             val engine = if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³" else "TripoSR ${opt.resolution}³"
@@ -670,14 +670,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return res to opt
     }
 
-    /** Photo → shape with Hunyuan3D-2mini; background removal and the saved front photo reuse TripoSR's u2net step. */
+    /** Photo → shape with Hunyuan3D-2mini; background removal reuses TripoSR's u2net code with the pack's own u2net.onnx. */
     private fun hunyuan3d(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
         val w = bmp.width
         val h = bmp.height
         var rgba = rgbaOf(bmp)
         val opt = TripoSR.Options().apply { threads = s.threadCount(); resolution = s.hunyuanOctree }
         val res = TripoSR.Result()
-        val tp = TripoSR(models.dir).also { tripo = it }
+        val tp = TripoSR(hunyuanPack.dir).also { tripo = it } // only its u2net background removal, shipped in the Hunyuan pack
         if (s.removeBackground && (3 until rgba.size step 4).none { rgba[it] < 255 }) {
             report.stage("Removing background", null)
             rgba = tp.removeBackground(rgba, w, h, opt.threads)

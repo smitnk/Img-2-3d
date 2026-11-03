@@ -163,7 +163,8 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 "Licence: Tencent Hunyuan 3D 2.0 Community License (not for the EU, UK or South Korea).",
             ready = state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready,
             progress = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
-            error = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
+            error = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message
+                ?: if (vm.hunyuanPack.needsUpdate()) "Update available (adds its own background removal, ~170 MB; no TripoSR needed). Tap Install." else null,
             onInstall = vm::installHunyuanPack, onRemove = vm::uninstallHunyuanPack,
             extra = {
                 Row(verticalAlignment = Alignment.CenterVertically) {

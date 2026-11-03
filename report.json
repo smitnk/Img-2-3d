@@ -1,0 +1,16 @@
+{
+ "lizard-warrior_turbo": {
+  "seconds": 511.8,
+  "faces": 330176,
+  "rss_mb": 13844,
+  "watertight": false,
+  "bodies": 20
+ },
+ "character1_turbo": {
+  "seconds": 523.2,
+  "faces": 299246,
+  "rss_mb": 13844,
+  "watertight": false,
+  "bodies": 5
+ }
+}

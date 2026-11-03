@@ -10,15 +10,18 @@ permissions:
   contents: write
 concurrency: { group: hunyuan-export, cancel-in-progress: true }
 jobs:
-  export:
+  part:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: { part: [cond, dit, vae, geo] }
     steps:
       - uses: actions/checkout@v4
       - name: Free disk space + swap
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
-          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+          sudo fallocate -l 12G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: Install (CPU)
@@ -29,20 +32,41 @@ jobs:
           pip install -r /tmp/hy/requirements.txt || true
           pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers<0.33" onnx==1.17.0 onnxruntime==1.20.0
           cd /tmp/hy && pip install -e . --no-deps
-      - name: Export parts (one process each)
+      - name: Export ${{ matrix.part }}
         run: |
           set -o pipefail
-          mkdir -p hy out
-          for p in vae geo dit cond; do
-            sudo systemd-run --scope -q --uid=$(id -u) --gid=$(id -g) -p MemoryMax=13G -p MemorySwapMax=16G \
-              --setenv=PATH="$PATH" --setenv=HOME="$HOME" /usr/bin/time -v python -u tools/hunyuan/export_hunyuan.py part $p hy \
-              2> >(grep -E "Maximum resident|Elapsed|Error|error" | tee -a out/export.time >&2) | grep --line-buffered -v "it/s" | tee -a out/export.log
-            rm -f hy/${p}_fp32.onnx* ; find hy -maxdepth 1 -type f ! -name "*.onnx*" ! -name "*.json" -delete
-            ls -la hy
-          done
+          mkdir -p hy
+          (while sleep 60; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ')"; done) &
+          /usr/bin/time -v python -u tools/hunyuan/export_hunyuan.py part ${{ matrix.part }} hy 2>&1 | grep --line-buffered -vE "it/s|^\s+(Command|User|System|Percent|Average|Exit|Socket|Signals|Swaps|File|Page|Major|Minor|Voluntary|Involuntary)"
+          rm -f hy/${{ matrix.part }}_fp32.onnx*; find hy -maxdepth 1 -type f ! -name "*.onnx*" ! -name "*.json" -delete; ls -la hy
+      - uses: actions/upload-artifact@v4
+        with: { name: "hy-${{ matrix.part }}", path: hy/, retention-days: 3 }
+  check:
+    needs: part
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 12G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install (CPU)
+        run: |
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r /tmp/hy/requirements.txt || true
+          pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers<0.33" onnx==1.17.0 onnxruntime==1.20.0
+          cd /tmp/hy && pip install -e . --no-deps
+      - uses: actions/download-artifact@v4
+        with: { pattern: "hy-*", path: hy, merge-multiple: true }
       - name: Check int8 parts against the original pipeline
         run: |
           set -o pipefail
+          mkdir -p out; ls -la hy; cat hy/*_info.json
           python -u tools/hunyuan/export_hunyuan.py check hy /tmp/forge/assets/reference/lizard-warrior/front.png 2>&1 | grep --line-buffered -v "it/s" | tee out/check.log
           cp hy/*_info.json hy/check_*.glb out/
       - name: Push results to ci-logs-hunyuan-export

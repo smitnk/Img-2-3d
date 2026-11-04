@@ -27,7 +27,7 @@ jobs:
           git clone -q --depth 1 -b ci-logs-hunyuan-java https://github.com/smitnk/Img-2-3d.git /tmp/hj 2>/dev/null && \
             sudo cp "$(ls /tmp/hj/*.glb | head -1)" rootfs/opt/in/hunyuan_lizard.glb || true
           ls -la rootfs/opt/in
-          sudo mount -t proc proc rootfs/proc
+          sudo mount -t proc proc rootfs/proc && sudo mount --rbind /sys rootfs/sys && sudo mount --rbind /dev rootfs/dev  # like the app: proot -b /sys -b /dev
       - name: Rig
         run: |
           B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \

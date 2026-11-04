@@ -145,15 +145,15 @@ class BlenderRuntime(context: Context) {
 /** Resumable HTTP download into [target] (via target.part); [expected] bytes when known. */
 /**
  * Resumable download that rides out dropped connections ("Software caused connection abort" on 4G/5G switches):
- * up to 8 attempts, each resuming from the .part file, waiting 3 s, 6 s ... 30 s between them.
+ * stalls and trickles (< 256 KB in 30 s) too: up to 20 attempts, each resuming from the .part file, waiting 3 s, 6 s ... 30 s between them.
  */
 internal suspend fun download(url: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
     var wait = 3_000L
-    for (attempt in 1..8) {
+    for (attempt in 1..20) {
         try {
             return downloadOnce(url, target, expected, progress)
         } catch (e: IOException) {
-            if (attempt == 8 || e.message?.startsWith("HTTP 4") == true) throw e // a 404 won't fix itself
+            if (attempt == 20 || e.message?.startsWith("HTTP 4") == true) throw e // a 404 won't fix itself
             kotlinx.coroutines.delay(wait)
             wait = (wait * 2).coerceAtMost(30_000L)
         }
@@ -181,11 +181,18 @@ private suspend fun downloadOnce(url: String, target: File, expected: Long?, pro
             var done = if (resumed) start else 0L
             val buf = ByteArray(1 shl 16)
             var last = 0L
+            var windowStart = System.nanoTime()
+            var windowBytes = done
             conn.inputStream.use { input ->
                 while (true) {
                     coroutineContext.ensureActive()
                     val n = input.read(buf)
                     if (n < 0) break
+                    val now = System.nanoTime()
+                    if (now - windowStart > 30_000_000_000L) { // a trickle: reconnect (often lands on a faster server)
+                        if (done - windowBytes < (256 shl 10)) throw IOException("Download too slow, reconnecting")
+                        windowStart = now; windowBytes = done
+                    }
                     raf.write(buf, 0, n)
                     done += n
                     if (done - last > (2 shl 20)) { progress(done, total); last = done }

@@ -24,6 +24,7 @@ sys.path[:0] = [HERE, os.path.join(HERE, "skintok"), os.path.join(HERE, "bx")]
 import vcbake  # noqa: E402
 
 N_SAMPLES = 54000
+N_SKIN = 12000
 T_START = time.time()
 
 
@@ -221,12 +222,17 @@ def main():
     dec = ort.InferenceSession(os.path.join(a.pack, "skin_dec.onnx"), so)
     idx = skin_tok.astype(np.int64)
 
-    def run(c):  # every query point decodes independently from the latents, so the points go in chunks
-        return dec.run(None, {"indices": idx, "cond": c[None], "cond_latents": cl})[0]
-    PC = 2000
-    a_, b_ = run(cond[:PC // 2]), run(cond[:PC])[:, :PC // 2]
+    def run(j, c):  # every query point decodes independently from the latents
+        return dec.run(None, {"indices": idx[j:j + JB], "cond": c[None], "cond_latents": cl})[0]
+    # cost and memory grow with joints x points (~100 KB per pair): decode 12k well-spread samples, 8k pairs a call
+    sel = o2[:N_SKIN]
+    qc = cond[sel]
+    JB, PC = 4, 2000
+    a_, b_ = run(0, qc[:PC // 2]), run(0, qc[:PC])[:, :PC // 2]
     assert np.abs(a_ - b_).max() < 1e-3, "skin decoder points are not independent"
-    skin = np.concatenate([run(cond[i:i + PC]) for i in range(0, len(cond), PC)], 1).T  # [N samples, J]
+    skin = np.concatenate([np.concatenate([run(j, qc[i:i + PC]) for i in range(0, len(qc), PC)], 1)
+                           for j in range(0, J, JB)], 0).T  # [N_SKIN samples, J]
+    pts = pts[sel]
     mark("skin decoded")
     del dec
     skin = np.clip(skin, 0, None)

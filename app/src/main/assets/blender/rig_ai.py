@@ -24,7 +24,7 @@ sys.path[:0] = [HERE, os.path.join(HERE, "skintok"), os.path.join(HERE, "bx")]
 import vcbake  # noqa: E402
 
 N_SAMPLES = 54000
-N_SKIN = 12000
+N_SKIN = 6000
 T_START = time.time()
 
 
@@ -188,10 +188,13 @@ def main():
     cond = np.concatenate([pts, nrm], 1).astype(np.float32)
     so = ort.SessionOptions()
     so.intra_op_num_threads = a.threads
+    so.enable_cpu_mem_arena = False  # the arena kept the decode buffers: 15 GB peak, phone OOM
+    so.enable_mem_pattern = False
     t0 = time.time()
     mc = ort.InferenceSession(os.path.join(a.pack, "mesh_cond.onnx"), so).run(
         None, {"pc": pts[o1[:4 * T1]][None], "feats": nrm[o1[:4 * T1]][None]})[0]
     cl = ort.InferenceSession(os.path.join(a.pack, "vae_cond.onnx"), so).run(None, {"cond": cond[o2][None]})[0]
+    mark("encoders")
     print(f"RIG encoders {time.time() - t0:.1f}s", flush=True)
 
     embed = np.fromfile(os.path.join(a.pack, "embed_f16.bin"), np.float16).reshape(info["vocab"], info["hidden"]).astype(np.float32)
@@ -209,6 +212,7 @@ def main():
     t0 = time.time()
     ids = greedy(step, embed, np.concatenate([mc[0], embed[start]], 0), tok, info["eos"], K, start)
     del s, past
+    mark("llm")
     print(f"RIG llm {len(ids)} tokens in {time.time() - t0:.0f}s", flush=True)
 
     where = int(np.nonzero(ids == tok.eos)[0][0])
@@ -218,7 +222,6 @@ def main():
     if skin_tok.shape[0] != J * K:
         raise SystemExit(f"rig model stopped early ({skin_tok.shape[0]} of {J * K} skin tokens)")
     skin_tok = skin_tok.reshape(J, K) - tok.vocab_size
-    so.enable_cpu_mem_arena = False  # the arena kept the 54k-point decode buffers: 15 GB peak, phone OOM
     dec = ort.InferenceSession(os.path.join(a.pack, "skin_dec.onnx"), so)
     idx = skin_tok.astype(np.int64)
 
@@ -227,7 +230,7 @@ def main():
     # cost and memory grow with joints x points (~100 KB per pair): decode 12k well-spread samples, 8k pairs a call
     sel = o2[:N_SKIN]
     qc = cond[sel]
-    JB, PC = 4, 2000
+    JB, PC = 2, 2000
     a_, b_ = run(0, qc[:PC // 2]), run(0, qc[:PC])[:, :PC // 2]
     assert np.abs(a_ - b_).max() < 1e-3, "skin decoder points are not independent"
     skin = np.concatenate([np.concatenate([run(j, qc[i:i + PC]) for i in range(0, len(qc), PC)], 1)

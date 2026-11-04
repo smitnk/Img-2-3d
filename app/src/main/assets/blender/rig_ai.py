@@ -147,6 +147,11 @@ def greedy(step, embed, prefix, tok, eos, k_skin, start, max_len=2048, penalty=2
 def main():
     a = parse_args()
     t_all = time.time()
+    try:  # background priority + leave 2 cores: at full priority on all cores the phone's System UI stalled
+        os.nice(10)
+    except OSError:
+        pass
+    a.threads = max(1, min(a.threads, (os.cpu_count() or 4) - 2))
     ort = onnxruntime_from_pack(a.pack)
     from tokenizer_part import TokenizerPart
     info = json.load(open(os.path.join(a.pack, "skintokens_info.json")))
@@ -161,6 +166,10 @@ def main():
     for o in [o for o in bpy.context.scene.objects if o.type == "ARMATURE"]:  # replace any old rig
         bpy.data.objects.remove(o)
     v, f, n = mesh_arrays(objs)
+    # free Blender's copy of a big mesh (Hunyuan: ~750k tris) while the networks run; it is re-imported for skinning
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    import gc
+    gc.collect()
     centre, scale = affine(v)
     vn = (v - centre) / scale
     rng = np.random.default_rng(a.seed)
@@ -214,13 +223,14 @@ def main():
     samples_world = pts * scale + centre
     print(f"RIG {J} bones", flush=True)
 
-    # 8-nearest inverse-distance weights per vertex (Asset.from_data), then top 4 (group_per_vertex=4)
-    kd = kdtree.KDTree(len(samples_world))
-    for i, p in enumerate(samples_world):
-        kd.insert(p, i)
-    kd.balance()
+    del v, f, n, embed
+    gc.collect()
 
-    # one mesh object, an armature, vertex groups
+    # re-import the model, one object
+    bpy.ops.import_scene.gltf(filepath=a.inp)
+    for o in [o for o in bpy.context.scene.objects if o.type == "ARMATURE"]:
+        bpy.data.objects.remove(o)
+    objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
     bpy.ops.object.select_all(action="DESELECT")
     for o in objs:
         o.select_set(True)
@@ -229,6 +239,7 @@ def main():
         bpy.ops.object.join()
     mesh = bpy.context.view_layer.objects.active
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    size = float(scale * 2)
 
     arm_data = bpy.data.armatures.new("AIRig")
     arm = bpy.data.objects.new("AIRig", arm_data)
@@ -237,7 +248,6 @@ def main():
     bpy.ops.object.mode_set(mode="EDIT")
     names = [f"bone_{i}" for i in range(J)]
     children = {i: [c for c, p in enumerate(parents) if p == i] for i in range(J)}
-    size = float(np.max(v.max(0) - v.min(0)))
     ebs = []
     for i in range(J):
         eb = arm_data.edit_bones.new(names[i])
@@ -258,26 +268,38 @@ def main():
             ebs[i].use_connect = False
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    groups = [mesh.vertex_groups.new(name=nm) for nm in names]
-    for vi, vert in enumerate(mesh.data.vertices):
-        near = kd.find_n(vert.co, 8)
-        w = np.zeros(J)
-        tot = 0.0
-        for _, idx, dist in near:
-            iw = 1.0 / (dist + 1e-8)
-            w += iw * skin[idx]
-            tot += iw
-        w /= max(tot, 1e-12)
-        top = np.argsort(-w)[:4]
-        top = top[w[top] > 1e-4]
-        sw = w[top].sum()
-        if sw <= 0:
-            top = [int(np.argmin([(Vector(heads[j]) - vert.co).length for j in range(J)]))]
-            ws = [1.0]
-        else:
-            ws = w[top] / sw
-        for j, ww in zip(top, ws):
-            groups[int(j)].add([vi], float(ww), "REPLACE")
+    # Weights live on the 54k samples; Blender's Data Transfer (C code) copies them to every vertex.
+    # A per-vertex Python loop took ~15 min on a 375k-vertex Hunyuan mesh.
+    top4 = np.argsort(-skin, axis=1)[:, :4]
+    w4 = np.take_along_axis(skin, top4, 1)
+    w4 = w4 / np.maximum(w4.sum(1, keepdims=True), 1e-12)
+    cloud_me = bpy.data.meshes.new("rig_samples")
+    cloud_me.from_pydata(samples_world.tolist(), [], [])
+    cloud = bpy.data.objects.new("rig_samples", cloud_me)
+    bpy.context.scene.collection.objects.link(cloud)
+    q = np.round(w4 * 63).astype(np.int64)  # 64 weight levels: J*64 bulk adds instead of 54k*4 single ones
+    for j in range(J):
+        g = cloud.vertex_groups.new(name=names[j])
+        rows, cols = np.nonzero(top4 == j)
+        for lvl in np.unique(q[rows, cols]):
+            if lvl == 0:
+                continue
+            idx = rows[q[rows, cols] == lvl]
+            g.add(idx.tolist(), float(lvl) / 63.0, "REPLACE")
+    for nm in names:
+        mesh.vertex_groups.new(name=nm)
+    dt = mesh.modifiers.new("rig_transfer", "DATA_TRANSFER")
+    dt.object = cloud
+    dt.use_vert_data = True
+    dt.data_types_verts = {"VGROUP_WEIGHTS"}
+    dt.vert_mapping = "NEAREST"
+    dt.layers_vgroup_select_src = "ALL"
+    dt.layers_vgroup_select_dst = "NAME"
+    bpy.context.view_layer.objects.active = mesh
+    bpy.ops.object.modifier_apply(modifier=dt.name)
+    bpy.data.objects.remove(cloud)
+    bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
+    bpy.ops.object.vertex_group_normalize_all(lock_active=False)
     mod = mesh.modifiers.new("AIRig", "ARMATURE")
     mod.object = arm
     mesh.parent = arm

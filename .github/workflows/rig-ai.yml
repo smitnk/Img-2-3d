@@ -30,14 +30,14 @@ jobs:
           sudo mount -t proc proc rootfs/proc && sudo mount --rbind /sys rootfs/sys && sudo mount --rbind /dev rootfs/dev  # like the app: proot -b /sys -b /dev
       - name: Rig
         run: |
-          B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
+          B() { sudo /usr/bin/time -v -o /tmp/time_$$.txt chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
             LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
           mkdir -p out
           for m in triposr_lizard hunyuan_lizard; do
             [ -f rootfs/opt/in/$m.glb ] || continue
             echo "== $m"
             B rig_ai.py -- --in /opt/in/$m.glb --pack /opt/pack --out /tmp/o/$m --threads 4 > out/log_$m.txt 2>&1 || echo "$m FAILED"
-            grep -E "^RIG|Traceback|Error|Maximum resident|Elapsed" out/log_$m.txt | tail -20
+            grep -E "^RIG|Traceback|Error" out/log_$m.txt | grep -v cpuinfo | tail -20; sudo grep -hE "Maximum resident|Elapsed" /tmp/time_*.txt; sudo rm -f /tmp/time_*.txt
             if [ -f rootfs/tmp/o/$m/rigged.glb ]; then
               sudo cp rootfs/tmp/o/$m/rigged.glb out/${m}_rigged.glb
               sudo mkdir -p rootfs/tmp/pose/$m

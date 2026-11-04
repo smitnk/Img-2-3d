@@ -76,8 +76,10 @@ public final class HunyuanShape {
         o.setIntraOpNumThreads(threads);
         o.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
         // The arena + memory-pattern planner held 15.5 GB during the DiT steps on the desktop: free buffers as they go.
-        o.setCPUArenaAllocator(false);
-        o.setMemoryPatternOptimization(false);
+        // Arena off cost speed; with attention now traced in small head groups the pool may fit (-Dhunyuan.arena=true to test).
+        boolean arena = Boolean.getBoolean("hunyuan.arena");
+        o.setCPUArenaAllocator(arena);
+        o.setMemoryPatternOptimization(arena);
         return env.createSession(f.getAbsolutePath(), o);
     }
 

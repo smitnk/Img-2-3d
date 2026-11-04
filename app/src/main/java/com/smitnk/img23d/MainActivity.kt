@@ -30,6 +30,16 @@ class MainActivity : ComponentActivity() {
         uri?.let { vm.pickImage(it, pendingPhotoMode) }
     }
 
+    private var pendingFolder: ((android.net.Uri) -> Unit)? = null
+    private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        val f = pendingFolder
+        pendingFolder = null
+        if (uri != null && f != null) {
+            runCatching { contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+            f(uri)
+        }
+    }
+
     private val scriptPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::importScript) }
 
     private val exporter = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -51,6 +61,7 @@ class MainActivity : ComponentActivity() {
             pickScript = { scriptPicker.launch(arrayOf("text/x-python", "text/plain", "application/x-python-code", "application/octet-stream")) },
             export = { m, blend -> saveAs(if (blend) m.blend!! else m.glb, m.name, if (blend) "blend" else "glb") },
             share = ::share,
+            pickFolder = { then -> pendingFolder = then; folderPicker.launch(null) },
             copy = { label, text ->
                 getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(label, text))
                 Toast.makeText(this, "$label copied", Toast.LENGTH_SHORT).show()

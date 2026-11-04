@@ -45,6 +45,7 @@ class AppCallbacks(
     val pickScript: () -> Unit,
     val export: (Model, Boolean) -> Unit,
     val share: (Model) -> Unit,
+    val pickFolder: ((android.net.Uri) -> Unit) -> Unit,
     val copy: (String, String) -> Unit,
 )
 

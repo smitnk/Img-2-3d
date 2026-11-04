@@ -21,7 +21,7 @@ sealed interface PackStatus {
  * A downloadable asset pack published as a GitHub release: [infoName] lists every file with bytes + sha256, files are
  * verified after download, and a ".ready" copy of the info marks a complete install of at least [requiredVersion].
  */
-open class AssetPack(val dir: File, private val baseUrl: String, private val infoName: String, private val requiredVersion: Int,
+open class AssetPack(val dir: File, private val baseUrl: String, val infoName: String, private val requiredVersion: Int,
                      private val mustExist: String) {
     private val info = File(dir, infoName)
     private val ready = File(dir, ".ready")

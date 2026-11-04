@@ -124,6 +124,8 @@ data class UiState(
     val bodyPack: PackStatus = PackStatus.NotInstalled,
     val texPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
+    /** Backup / restore of packs to a user folder: progress text, or null when idle. */
+    val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
     val bodyPreview: GltfMesh? = null,
 ) {
@@ -281,6 +283,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
+    }
+
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack)
+
+    fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
+        runCatching {
+            for (p in packs()) com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, p) { t -> _state.update { it.copy(packFolder = t) } }
+        }.onFailure { e -> fail("Backup failed", e.message ?: e.toString()) }
+        _state.update { it.copy(packFolder = null) }
+    }
+
+    fun restorePacks(tree: android.net.Uri) = viewModelScope.launch {
+        val found = mutableListOf<String>()
+        runCatching {
+            for (p in packs()) if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, p) { t -> _state.update { it.copy(packFolder = t) } })
+                found += p.dir.name
+        }.onFailure { e -> fail("Restore failed", e.message ?: e.toString()) }
+        _state.update {
+            it.copy(packFolder = null,
+                bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
+                texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
+        }
+        if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan).")
     }
 
     fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }

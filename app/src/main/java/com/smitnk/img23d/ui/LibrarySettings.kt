@@ -146,7 +146,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             title = "Texture AI · paint texture", sub = "LCM Dreamshaper (SD1.5) int8 on ONNX Runtime, runs on the phone · ≈1.2 GB. " +
                 "Use: open a model in Library → Paint texture",
             ready = state.texPack == com.smitnk.img23d.body.PackStatus.Ready,
-            progress = (state.texPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            progress = (state.texPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
             error = (state.texPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
             onInstall = vm::installTexPack, onRemove = vm::uninstallTexPack,
             extra = {
@@ -162,7 +162,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 "Separate limbs, armour and cloth folds; slower than TripoSR (expect 15–30 min). No colours: use Paint texture after. " +
                 "Licence: Tencent Hunyuan 3D 2.0 Community License (not for the EU, UK or South Korea).",
             ready = state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready,
-            progress = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            progress = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
             error = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message
                 ?: if (vm.hunyuanPack.needsUpdate()) "Update available (adds its own background removal, ~170 MB; no TripoSR needed). Tap Install." else null,
             onInstall = vm::installHunyuanPack, onRemove = vm::uninstallHunyuanPack,
@@ -181,6 +181,18 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 }
             },
         )
+
+        SectionHeader("Engine packs on your storage")
+        Panel {
+            Text("Keep a copy of the downloaded packs (Body, Texture AI, Hunyuan3D) in a folder you choose, e.g. Download/Img23d. " +
+                "After reinstalling the app, restore them from that folder instead of downloading again.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.packFolder?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { cb.pickFolder(vm::backupPacks) }, enabled = state.packFolder == null, modifier = Modifier.weight(1f)) { Text("Back up to folder") }
+                OutlinedButton(onClick = { cb.pickFolder(vm::restorePacks) }, enabled = state.packFolder == null, modifier = Modifier.weight(1f)) { Text("Restore from folder") }
+            }
+        }
 
         SectionHeader("Photo → 3D defaults")
         Panel {

@@ -39,10 +39,10 @@ def parse_args():
 
 
 def onnxruntime_from_pack(pack):
-    """The pack ships onnxruntime's aarch64 wheel (a zip); unpack once next to it and import from there."""
+    """The pack ships onnxruntime's aarch64 wheel for Blender's Python 3.12 (a zip); unpack once and import from there."""
     dst = os.path.join(pack, "ort_py")
     if not os.path.isdir(os.path.join(dst, "onnxruntime")):
-        with zipfile.ZipFile(os.path.join(pack, "ort_py311_aarch64.zip")) as z:
+        with zipfile.ZipFile(os.path.join(pack, "ort_aarch64.zip")) as z:
             z.extractall(dst)
     sys.path.insert(0, dst)
     import onnxruntime as ort

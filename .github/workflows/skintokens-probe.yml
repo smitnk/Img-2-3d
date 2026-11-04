@@ -87,9 +87,9 @@ jobs:
         run: |
           mkdir pack && cd /tmp/stx
           cp mesh_cond.onnx* vae_cond.onnx* skin_dec.onnx* llm_q.onnx* embed_f16.bin skintokens_info.json $GITHUB_WORKSPACE/pack/ 2>/dev/null; cd $GITHUB_WORKSPACE/pack
-          # ONNX Runtime for the phone's Blender Python (3.11, aarch64 glibc): the wheel is a zip, unpacked on the phone
-          pip download -q onnxruntime==1.20.0 --only-binary=:all: --no-deps --python-version 3.11 --platform manylinux_2_27_aarch64 -d whl
-          mv whl/*.whl ort_py311_aarch64.zip && rmdir whl
+          # ONNX Runtime for the phone's Blender Python (3.12, aarch64 glibc): the wheel is a zip, unpacked on the phone
+          pip download -q onnxruntime==1.20.0 --only-binary=:all: --no-deps --python-version 3.12 --platform manylinux_2_27_aarch64 -d whl
+          mv whl/*.whl ort_aarch64.zip && rmdir whl
           cp /tmp/st/LICENSE LICENSE-SkinTokens.txt 2>/dev/null || true
           ls -la
           python - <<'PY'

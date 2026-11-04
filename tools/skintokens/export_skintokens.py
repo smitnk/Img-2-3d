@@ -237,7 +237,13 @@ def main_export(mesh, out):
         if stage == "llm":
             q = " ".join(shlex.quote(x) for x in [_sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "quant_llm.py"),
                                                   f"{out}/llm.onnx", f"{out}/llm_q.onnx"])
-            cmd = f"{q} && echo quantized && {cmd}"
+            # also a 4-bit weight-only variant (fp32 activations): int8 dynamic activations diverged from torch after 2 tokens
+            qd = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quant_llm.py")
+            b = (f"{shlex.quote(_sys.executable)} {shlex.quote(qd)} {out}/llm.onnx {out}/llm_fold.onnx --fold-only && mkdir -p {out}/b && "
+                 f"{shlex.quote(_sys.executable)} -c \"import onnx; from onnxruntime.quantization.matmul_4bits_quantizer import "
+                 f"MatMul4BitsQuantizer as Q; q = Q(onnx.load('{out}/llm_fold.onnx'), block_size=32, is_symmetric=True, accuracy_level=4); "
+                 f"q.process(); q.model.save_model_to_file('{out}/b/llm_q.onnx', True)\" && rm -f {out}/llm_fold.onnx*")
+            cmd = f"{q} && {b} && echo quantized && {cmd}"
         atexit._run_exitfuncs()  # stops demo's bpy server (execv skips atexit)
         os.execv("/bin/bash", ["bash", "-c", cmd])
 
@@ -267,7 +273,10 @@ def main_export(mesh, out):
 
     ids = {}
     # one LLM at a time, int8 only: holding torch + fp32 ONNX + int8 together got the runner killed
-    for name, make in [("torch", torch_step), ("onnx_q", lambda: ort_llm(f"{out}/llm_q.onnx", L, KVH, HD))]:
+    variants = [("torch", torch_step), ("onnx_q", lambda: ort_llm(f"{out}/llm_q.onnx", L, KVH, HD))]
+    if os.path.exists(f"{out}/b/llm_q.onnx"):
+        variants.append(("onnx_b", lambda: ort_llm(f"{out}/b/llm_q.onnx", L, KVH, HD)))
+    for name, make in variants:
         step = make()
         t0 = time.time()
         ids[name] = greedy(step, embed, prefix, tok, int(model.eos), K, start)
@@ -275,9 +284,22 @@ def main_export(mesh, out):
         report[f"{name}_seconds"] = round(time.time() - t0, 1)
         print(name, report[f"{name}_tokens"], "tokens", report[f"{name}_seconds"], "s, rss", rss_mb(), "MB", flush=True)
         del step
-    for name in ("onnx_q",):
+    for name in [v for v, _ in variants if v != "torch"]:
         n = min(len(ids[name]), len(ids["torch"]))
         report[f"{name}_same_prefix"] = int(np.argmin(np.append(ids[name][:n] == ids["torch"][:n], False)))
+    if "onnx_b" in ids and report["onnx_b_same_prefix"] > report["onnx_q_same_prefix"]:  # ship the closer one as llm_q.onnx
+        for f in os.listdir(out):
+            if f.startswith("llm_q.onnx"):
+                os.remove(f"{out}/{f}")
+        for f in os.listdir(f"{out}/b"):
+            os.replace(f"{out}/b/{f}", f"{out}/{f}")
+        ids["onnx_q"] = ids["onnx_b"]
+        report["llm_quant"] = "4-bit weight-only"
+    else:
+        report["llm_quant"] = "int8 dynamic"
+    import shutil
+    shutil.rmtree(f"{out}/b", ignore_errors=True)
+    print("chosen LLM:", report["llm_quant"], {k: v for k, v in report.items() if k.endswith("same_prefix")}, flush=True)
     # decode skins: torch reference vs skin_dec.onnx on the int8 ids
     dec = ort.InferenceSession(f"{out}/skin_dec.onnx")
     del model.transformer  # free the LLM before decoding skins (the cgroup killed this step)

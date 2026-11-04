@@ -8,7 +8,8 @@ import bpy
 import numpy as np
 from mathutils import Quaternion, Vector
 
-src, out = sys.argv[1], sys.argv[2]
+args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]  # bpy module or blender -b --python
+src, out = args[0], args[1]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
 rig = next(o for o in bpy.context.scene.objects if o.type == "ARMATURE")

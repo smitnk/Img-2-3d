@@ -304,10 +304,12 @@ def main_export(mesh, out):
     dec = ort.InferenceSession(f"{out}/skin_dec.onnx")
     del model.transformer  # free the LLM before decoding skins (the cgroup killed this step)
     lm = None
-    for name in ("onnx_q",):
+    joints = {}
+    for name in ("torch", "onnx_q"):
         d = TR.decode(cond=cond, cond_latents=torch.from_numpy(cl[0]), inputs_ids=torch.from_numpy(ids[name]),
                       tokenizer=tok, tokens_per_skin=K, vae=model.vae)
         report[f"{name}_joints"] = int(d["detokenize_output"].joints.shape[0])
+        joints[name] = np.asarray(d["detokenize_output"].joints, np.float64)
         if d["skin_pred"] is not None and name == "onnx_q":
             seq = ids[name]
             where = int(np.nonzero(seq == tok.eos)[0][0])
@@ -316,6 +318,14 @@ def main_export(mesh, out):
             s = np.concatenate([dec.run(None, {"indices": skin_tok[i:i + 2].astype(np.int64), "cond": cond[None].numpy(),
                                                "cond_latents": cl})[0] for i in range(0, J, 2)], 0).T
             report["skin_dec_maxdiff"] = float(np.abs(s - d["skin_pred"].numpy()).max())
+    # Tokens are bone coordinates on a 256-step grid: near-ties flip early, so judge the skeleton, not exact tokens.
+    a, b = joints["torch"], joints["onnx_q"]
+    h = float(np.ptp(cond.numpy()[:, :3], axis=0).max())
+    dist = lambda x, y: np.sqrt(((x[:, None] - y[None]) ** 2).sum(-1)).min(1)
+    report["joint_chamfer_of_height"] = round(float((dist(a, b).mean() + dist(b, a).mean()) / 2 / h), 4)
+    report["joint_max_of_height"] = round(float(max(dist(a, b).max(), dist(b, a).max()) / h), 4)
+    print("SKELETON torch vs int8:", report["torch_joints"], "vs", report["onnx_q_joints"], "joints, mean gap",
+          report["joint_chamfer_of_height"], "of height, worst", report["joint_max_of_height"], flush=True)
     np.savez(f"{out}/reference.npz", points=cond.numpy(), o1=o1, o2=o2, start=np.array(start), ids_q=ids["onnx_q"],
              embed=embed.astype(np.float16))
     embed.astype(np.float16).tofile(f"{out}/embed_f16.bin")

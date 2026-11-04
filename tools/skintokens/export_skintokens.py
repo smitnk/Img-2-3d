@@ -329,7 +329,8 @@ def main_export(mesh, out):
     np.savez(f"{out}/reference.npz", points=cond.numpy(), o1=o1, o2=o2, start=np.array(start), ids_q=ids["onnx_q"],
              embed=embed.astype(np.float16))
     embed.astype(np.float16).tofile(f"{out}/embed_f16.bin")
-    json.dump({**report, "tokenizer_config": model.tokenizer_config}, open(f"{out}/skintokens_info.json", "w"), indent=1,
+    json.dump({**report, "tokenizer_config": model.tokenizer_config,
+               "transform_config": getattr(model, "transform_config", {}).get("predict_transform")}, open(f"{out}/skintokens_info.json", "w"), indent=1,
               default=str)
     print("REPORT", json.dumps(report))
 

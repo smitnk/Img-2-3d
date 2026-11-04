@@ -6,6 +6,8 @@ on:
   push:
     paths: ["tools/skintokens/**", ".github/workflows/skintokens-probe.yml"]
   workflow_dispatch:
+    inputs:
+      publish: { description: Publish skintokens-v1 (phone pack), type: boolean, default: false }
 permissions:
   contents: write
 concurrency: { group: skintokens, cancel-in-progress: true }
@@ -79,6 +81,28 @@ jobs:
               g = pygltflib.GLTF2().load(f)
               print(f, "joints", sum(len(s.joints) for s in g.skins), "meshes", len(g.meshes))
           PY
+      - name: Publish skintokens-v1
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir pack && cd /tmp/stx
+          cp mesh_cond.onnx* vae_cond.onnx* skin_dec.onnx* llm_q.onnx* embed_f16.bin skintokens_info.json $GITHUB_WORKSPACE/pack/ 2>/dev/null; cd $GITHUB_WORKSPACE/pack
+          # ONNX Runtime for the phone's Blender Python (3.11, aarch64 glibc): the wheel is a zip, unpacked on the phone
+          pip download -q onnxruntime==1.20.0 --only-binary=:all: --no-deps --python-version 3.11 --platform manylinux_2_27_aarch64 -d whl
+          mv whl/*.whl ort_py311_aarch64.zip && rmdir whl
+          cp /tmp/st/LICENSE LICENSE-SkinTokens.txt 2>/dev/null || true
+          ls -la
+          python - <<'PY'
+          import hashlib, json, os
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()}
+                   for f in sorted(os.listdir(".")) if os.path.isfile(f) and f != "rig_info.json"}
+          json.dump({"version": 1, "files": files}, open("rig_info.json", "w"), indent=1)
+          PY
+          gh release view skintokens-v1 >/dev/null 2>&1 || gh release create skintokens-v1 --title "SkinTokens rig v1 (phone)" \
+            --notes "VAST-AI-Research/SkinTokens (MIT) TokenRig exported to ONNX (int8 LLM) + onnxruntime 1.20 aarch64 wheel, for on-device auto-rigging."
+          gh release upload skintokens-v1 --clobber $(ls | grep -v rig_info.json)
+          gh release upload skintokens-v1 --clobber rig_info.json
+          cp skintokens_info.json $GITHUB_WORKSPACE/out/
       - name: Push results to ci-logs-skintokens
         if: always()
         run: |

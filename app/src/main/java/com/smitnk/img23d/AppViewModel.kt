@@ -687,6 +687,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         res.foregroundSize = size[0]
         res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
             com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
+        System.setProperty("hunyuan.arena", s.hunyuanFast.toString()) // read by HunyuanShape when it opens each part
         val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { hunyuan = it }
         res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)

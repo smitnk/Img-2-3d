@@ -172,7 +172,11 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                     Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(hunyuan = on) } })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Detail: ${s.hunyuanOctree}³ (128 is faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Text("Fast mode: ~1.6x faster, ~1.4 GB more RAM (turn off if the app closes mid-run)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuanFast, { on -> vm.updateSettings { it.copy(hunyuanFast = on) } })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Detail: ${s.hunyuanOctree}³ — on = 256 (detailed), off = 128 (faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(s.hunyuanOctree >= 256, { on -> vm.updateSettings { it.copy(hunyuanOctree = if (on) 256 else 128) } })
                 }
             },

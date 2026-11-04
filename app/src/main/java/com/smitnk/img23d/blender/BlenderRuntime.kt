@@ -143,7 +143,24 @@ class BlenderRuntime(context: Context) {
 }
 
 /** Resumable HTTP download into [target] (via target.part); [expected] bytes when known. */
+/**
+ * Resumable download that rides out dropped connections ("Software caused connection abort" on 4G/5G switches):
+ * up to 8 attempts, each resuming from the .part file, waiting 3 s, 6 s ... 30 s between them.
+ */
 internal suspend fun download(url: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
+    var wait = 3_000L
+    for (attempt in 1..8) {
+        try {
+            return downloadOnce(url, target, expected, progress)
+        } catch (e: IOException) {
+            if (attempt == 8 || e.message?.startsWith("HTTP 4") == true) throw e // a 404 won't fix itself
+            kotlinx.coroutines.delay(wait)
+            wait = (wait * 2).coerceAtMost(30_000L)
+        }
+    }
+}
+
+private suspend fun downloadOnce(url: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
     val name = target.name
     val part = File(target.path + ".part")
     val start = if (expected != null) part.length() else 0L

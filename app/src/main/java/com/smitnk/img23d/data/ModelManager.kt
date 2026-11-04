@@ -71,45 +71,9 @@ class ModelManager(context: Context) {
         onStatus(ModelStatus.Ready)
     }
 
-    private suspend fun fetch(name: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
-        val part = File(target.path + ".part")
-        val start = if (expected != null) part.length() else 0L
-        val conn = (URL(BuildConfig.MODEL_BASE_URL + name).openConnection() as HttpURLConnection).apply {
-            instanceFollowRedirects = true
-            connectTimeout = 20_000
-            readTimeout = 60_000
-            if (start > 0) setRequestProperty("Range", "bytes=$start-")
-        }
-        try {
-            val code = conn.responseCode
-            if (code !in 200..299) throw IOException("HTTP $code downloading $name")
-            val resumed = code == 206
-            val total = expected ?: conn.contentLengthLong
-            RandomAccessFile(part, "rw").use { raf ->
-                if (!resumed) raf.setLength(0)
-                raf.seek(if (resumed) start else 0)
-                var done = if (resumed) start else 0L
-                val buf = ByteArray(1 shl 16)
-                conn.inputStream.use { input ->
-                    var last = 0L
-                    while (true) {
-                        coroutineContext.ensureActive()
-                        val n = input.read(buf)
-                        if (n < 0) break
-                        raf.write(buf, 0, n)
-                        done += n
-                        if (done - last > (4 shl 20)) { progress(done, total); last = done }
-                    }
-                }
-                progress(done, total)
-            }
-            if (expected != null && part.length() != expected) throw IOException("Incomplete download of $name")
-            target.delete()
-            if (!part.renameTo(target)) throw IOException("Cannot move $name into place")
-        } finally {
-            conn.disconnect()
-        }
-    }
+    private suspend fun fetch(name: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) =
+        com.smitnk.img23d.blender.download(BuildConfig.MODEL_BASE_URL + name, target, expected, progress) // retries + resume
+
 
     fun delete() {
         dir.listFiles()?.forEach { it.delete() }

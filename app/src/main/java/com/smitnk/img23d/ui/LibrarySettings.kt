@@ -127,6 +127,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             },
             error = (state.modelStatus as? ModelStatus.Failed)?.message,
             onInstall = vm::downloadModels, onRemove = vm::deleteModels,
+            onSave = { cb.pickFolder { vm.backupOne("models", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("models", it) } },
             extra = { if (state.modelStatus != ModelStatus.Ready) TextButton(onClick = vm::verifyPushedModels) { Text("Verify files copied with adb") } },
         )
         EngineCard(
@@ -149,6 +150,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             progress = (state.texPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
             error = (state.texPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
             onInstall = vm::installTexPack, onRemove = vm::uninstallTexPack,
+            onSave = { cb.pickFolder { vm.backupOne("texgen", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("texgen", it) } },
             extra = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("AI paints the sides (off: photo on the front, TripoSR colours elsewhere)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -166,14 +168,11 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             error = (state.hunyuanPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message
                 ?: if (vm.hunyuanPack.needsUpdate()) "Update available (adds its own background removal, ~170 MB; no TripoSR needed). Tap Install." else null,
             onInstall = vm::installHunyuanPack, onRemove = vm::uninstallHunyuanPack,
+            onSave = { cb.pickFolder { vm.backupOne("hunyuan", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuan", it) } },
             extra = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Use for Photo → 3D (off: TripoSR)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(hunyuan = on) } })
-                }
-                val mem = listOf("Low · ~2.7 GB, slowest", "Medium · faster shaping, ~+0.7 GB", "High · fastest, ~+1.4 GB (closed an 8 GB phone)")
-                LabeledSlider("Memory for generation: ${mem[s.hunyuanMemory.coerceIn(0, 2)]}", s.hunyuanMemory.toFloat(), 0f..2f, "%.0f", steps = 1) { v ->
-                    vm.updateSettings { it.copy(hunyuanMemory = kotlin.math.round(v).toInt()) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Detail: ${s.hunyuanOctree}³ — on = 256 (detailed), off = 128 (faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -184,7 +183,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
 
         SectionHeader("Engine packs on your storage")
         Panel {
-            Text("Keep a copy of the downloaded packs (TripoSR, Body, Texture AI, Hunyuan3D; Blender is small, re-download it) in a folder you choose, e.g. Download/Img23d. " +
+            Text("Save all installed packs at once (each engine card above also has its own Save / Load). Pick a folder you choose, e.g. Download/Img23d. " +
                 "After reinstalling the app, restore them from that folder instead of downloading again.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             state.packFolder?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
@@ -271,6 +270,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
 private fun EngineCard(
     title: String, sub: String, ready: Boolean, progress: Pair<String, Float?>?, error: String?,
     onInstall: () -> Unit, onRemove: () -> Unit, extra: @Composable () -> Unit = {},
+    onSave: (() -> Unit)? = null, onLoad: (() -> Unit)? = null,
 ) {
     var confirm by remember { mutableStateOf(false) }
     Panel {
@@ -293,6 +293,10 @@ private fun EngineCard(
             } else OutlinedButton(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Remove") }
         }
         extra()
+        if (onSave != null || onLoad != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (onSave != null && ready) OutlinedButton(onClick = onSave, modifier = Modifier.weight(1f)) { Text("Save to folder") }
+            if (onLoad != null && !ready) OutlinedButton(onClick = onLoad, modifier = Modifier.weight(1f)) { Text("Load from folder") }
+        }
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false }, title = { Text("Remove engine?") },

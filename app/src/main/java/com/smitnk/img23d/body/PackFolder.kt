@@ -66,7 +66,10 @@ object PackFolder {
     suspend fun restore(ctx: Context, tree: Uri, dir: File, infoName: String, markReady: (String) -> Unit,
                         progress: (String) -> Unit): Boolean =
         withContext(Dispatchers.IO) {
-            val folder = subfolder(ctx, tree, dir.name, false) ?: return@withContext false
+            val root = DocumentsContract.getTreeDocumentId(tree)
+            val folder = subfolder(ctx, tree, dir.name, false) // picked the parent (e.g. "Imgto3d model")
+                ?: root.takeIf { r -> children(ctx, tree, r).any { it.name == infoName } } // or the pack folder itself
+                ?: return@withContext false
             val kids = children(ctx, tree, folder).associateBy { it.name }
             val info = kids[infoName] ?: return@withContext false
             fun copy(c: Child, to: File) {

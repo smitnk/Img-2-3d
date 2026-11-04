@@ -202,7 +202,7 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
             if (m.source == Source.BODY) FilledTonalButton(onClick = { vm.openBodyEditor(m) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.Edit, null); Spacer(Modifier.width(8.dp)); Text("Edit in Body Creator")
             } else OutlinedButton(onClick = { vm.fitBodyTo(m) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Make editable character (Body Creator)")
+                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Fit an editable human body to it (Body Creator)")
             }
             if (m.source != Source.BODY) {
                 val tex = vm.state.collectAsState().value.texPack

@@ -315,6 +315,36 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan).")
     }
 
+    /** One engine's pack to / from a folder: key = its folder name (models, texgen, hunyuan, bodypack). */
+    fun backupOne(key: String, tree: android.net.Uri) = viewModelScope.launch {
+        val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
+        runCatching {
+            if (key == "models") {
+                if (!models.isReady()) error("TripoSR isn't fully installed yet")
+                com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, models.dir, true, show)
+            } else {
+                val p = packs().first { it.dir.name == key }
+                if (!p.isReady()) error("This pack isn't fully installed yet")
+                com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, p, show)
+            }
+        }.onFailure { e -> fail("Save failed", e.message ?: e.toString()) }
+        _state.update { it.copy(packFolder = null) }
+    }
+
+    fun restoreOne(key: String, tree: android.net.Uri) = viewModelScope.launch {
+        val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
+        runCatching {
+            val ok = if (key == "models") com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show)
+            else com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, packs().first { it.dir.name == key }, show)
+            if (!ok) error("No saved \"$key\" pack there. Pick the folder you saved to, or its \"$key\" folder.")
+        }.onFailure { e -> fail("Load failed", e.message ?: e.toString()) }
+        _state.update {
+            it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
+                texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
+        }
+    }
+
     fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }
 
     fun installHunyuanPack() = viewModelScope.launch {
@@ -719,7 +749,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         res.foregroundSize = size[0]
         res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
             com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
-        System.setProperty("hunyuan.arena", listOf("false", "dit", "true")[s.hunyuanMemory.coerceIn(0, 2)]) // read per part
+        System.setProperty("hunyuan.arena", "false") // the ORT memory pool force-closed an 8 GB phone even for the shape steps only
         val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { hunyuan = it }
         res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)

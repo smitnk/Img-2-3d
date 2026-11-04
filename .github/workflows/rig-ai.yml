@@ -31,7 +31,7 @@ jobs:
       - name: Rig
         run: |
           B() { sudo chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
-            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /usr/bin/time -v /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
+            LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
           mkdir -p out
           for m in triposr_lizard hunyuan_lizard; do
             [ -f rootfs/opt/in/$m.glb ] || continue

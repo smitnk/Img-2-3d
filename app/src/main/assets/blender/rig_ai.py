@@ -24,6 +24,12 @@ sys.path[:0] = [HERE, os.path.join(HERE, "skintok"), os.path.join(HERE, "bx")]
 import vcbake  # noqa: E402
 
 N_SAMPLES = 54000
+T_START = time.time()
+
+
+def mark(msg):
+    import resource
+    print(f"RIG [{time.time() - T_START:6.0f}s, peak {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024} MB] {msg}", flush=True)
 
 
 def parse_args():
@@ -226,6 +232,7 @@ def main():
     del v, f, n, embed
     gc.collect()
 
+    mark("re-import")
     # re-import the model, one object
     bpy.ops.import_scene.gltf(filepath=a.inp)
     for o in [o for o in bpy.context.scene.objects if o.type == "ARMATURE"]:
@@ -241,6 +248,7 @@ def main():
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     size = float(scale * 2)
 
+    mark("armature")
     arm_data = bpy.data.armatures.new("AIRig")
     arm = bpy.data.objects.new("AIRig", arm_data)
     bpy.context.scene.collection.objects.link(arm)
@@ -273,6 +281,7 @@ def main():
     top4 = np.argsort(-skin, axis=1)[:, :4]
     w4 = np.take_along_axis(skin, top4, 1)
     w4 = w4 / np.maximum(w4.sum(1, keepdims=True), 1e-12)
+    mark("sample cloud groups")
     cloud_me = bpy.data.meshes.new("rig_samples")
     cloud_me.from_pydata(samples_world.tolist(), [], [])
     cloud = bpy.data.objects.new("rig_samples", cloud_me)
@@ -288,6 +297,7 @@ def main():
             g.add(idx.tolist(), float(lvl) / 63.0, "REPLACE")
     for nm in names:
         mesh.vertex_groups.new(name=nm)
+    mark("data transfer")
     dt = mesh.modifiers.new("rig_transfer", "DATA_TRANSFER")
     dt.object = cloud
     dt.use_vert_data = True
@@ -298,12 +308,14 @@ def main():
     bpy.context.view_layer.objects.active = mesh
     bpy.ops.object.modifier_apply(modifier=dt.name)
     bpy.data.objects.remove(cloud)
+    mark("limit 4")
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(lock_active=False)
     mod = mesh.modifiers.new("AIRig", "ARMATURE")
     mod.object = arm
     mesh.parent = arm
 
+    mark("export")
     os.makedirs(a.out, exist_ok=True)
     glb = vcbake.export_glb(os.path.join(a.out, "rigged.glb"), deform_only=False)
     tris = sum(len(p.vertices) - 2 for p in mesh.data.polygons)

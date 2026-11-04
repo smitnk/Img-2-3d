@@ -121,7 +121,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             title = "TripoSR · image to 3D", sub = "Original stabilityai/TripoSR weights (ONNX) + rembg u2net · ≈1.9 GB",
             ready = state.modelStatus == ModelStatus.Ready,
             progress = when (val m = state.modelStatus) {
-                is ModelStatus.Downloading -> "Downloading ${m.file}" to (if (m.total > 0) m.done.toFloat() / m.total else null)
+                is ModelStatus.Downloading -> "Downloading ${m.file} · ${m.done shr 20} / ${m.total shr 20} MB" to (if (m.total > 0) m.done.toFloat() / m.total else null)
                 is ModelStatus.Verifying -> "Verifying ${m.file}" to null
                 else -> null
             },
@@ -133,7 +133,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             title = "Blender 4.2.3 LTS · procedural", sub = "Headless Blender in an ARM64 Linux userland via proot · ≈126 MB download",
             ready = state.runtime == RuntimeStatus.Ready,
             progress = when (val r = state.runtime) {
-                is RuntimeStatus.Downloading -> "Downloading ${r.file}" to (if (r.total > 0) r.done.toFloat() / r.total else null)
+                is RuntimeStatus.Downloading -> "Downloading ${r.file} · ${r.done shr 20} / ${r.total shr 20} MB" to (if (r.total > 0) r.done.toFloat() / r.total else null)
                 is RuntimeStatus.Verifying -> "Verifying ${r.file}" to null
                 is RuntimeStatus.Extracting -> "Unpacking" to (if (r.total > 0) r.done.toFloat() / r.total else null)
                 else -> null
@@ -171,9 +171,9 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                     Text("Use for Photo → 3D (off: TripoSR)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(hunyuan = on) } })
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Fast mode: ~1.6x faster, ~1.4 GB more RAM (turn off if the app closes mid-run)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(s.hunyuanFast, { on -> vm.updateSettings { it.copy(hunyuanFast = on) } })
+                val mem = listOf("Low · ~2.7 GB, slowest", "Medium · faster shaping, ~+0.7 GB", "High · fastest, ~+1.4 GB (closed an 8 GB phone)")
+                LabeledSlider("Memory for generation: ${mem[s.hunyuanMemory.coerceIn(0, 2)]}", s.hunyuanMemory.toFloat(), 0f..2f, "%.0f", steps = 1) { v ->
+                    vm.updateSettings { it.copy(hunyuanMemory = kotlin.math.round(v).toInt()) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Detail: ${s.hunyuanOctree}³ — on = 256 (detailed), off = 128 (faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -184,7 +184,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
 
         SectionHeader("Engine packs on your storage")
         Panel {
-            Text("Keep a copy of the downloaded packs (Body, Texture AI, Hunyuan3D) in a folder you choose, e.g. Download/Img23d. " +
+            Text("Keep a copy of the downloaded packs (TripoSR, Body, Texture AI, Hunyuan3D; Blender is small, re-download it) in a folder you choose, e.g. Download/Img23d. " +
                 "After reinstalling the app, restore them from that folder instead of downloading again.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             state.packFolder?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

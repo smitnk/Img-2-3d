@@ -38,14 +38,20 @@ object PackFolder {
         return DocumentsContract.getDocumentId(made)
     }
 
-    /** Copy every file of an installed [pack] into <tree>/<pack dir name>/ (existing same-size files are kept). */
-    suspend fun backup(ctx: Context, tree: Uri, pack: AssetPack, progress: (String) -> Unit) = withContext(Dispatchers.IO) {
-        if (!pack.isReady()) return@withContext
-        val folder = subfolder(ctx, tree, pack.dir.name, true)!!
+    suspend fun backup(ctx: Context, tree: Uri, pack: AssetPack, progress: (String) -> Unit) =
+        backup(ctx, tree, pack.dir, pack.isReady(), progress)
+
+    suspend fun restore(ctx: Context, tree: Uri, pack: AssetPack, progress: (String) -> Unit): Boolean =
+        restore(ctx, tree, pack.dir, pack.infoName, { File(pack.dir, ".ready").writeText(it) }, progress)
+
+    /** Copy every file of an installed pack [dir] into <tree>/<dir name>/ (existing same-size files are kept). */
+    suspend fun backup(ctx: Context, tree: Uri, dir: File, ready: Boolean, progress: (String) -> Unit) = withContext(Dispatchers.IO) {
+        if (!ready) return@withContext
+        val folder = subfolder(ctx, tree, dir.name, true)!!
         val have = children(ctx, tree, folder).associateBy { it.name }
-        for (f in pack.dir.listFiles().orEmpty().filter { it.isFile && !it.name.endsWith(".part") }) {
+        for (f in dir.listFiles().orEmpty().filter { it.isFile && !it.name.endsWith(".part") }) {
             if (have[f.name]?.size == f.length()) continue
-            progress("Backing up ${pack.dir.name}/${f.name}")
+            progress("Backing up ${dir.name}/${f.name} (${f.length() shr 20} MB)")
             have[f.name]?.let { DocumentsContract.deleteDocument(ctx.contentResolver, DocumentsContract.buildDocumentUriUsingTree(tree, it.id)) }
             val doc = DocumentsContract.createDocument(ctx.contentResolver, DocumentsContract.buildDocumentUriUsingTree(tree, folder),
                 "application/octet-stream", f.name) ?: throw IOException("Cannot create ${f.name}")
@@ -57,25 +63,25 @@ object PackFolder {
      * Copy a pack back from <tree>/<pack dir name>/ and verify it against its own info file (bytes + sha256), then mark
      * it ready. Returns false when the folder has no copy of this pack.
      */
-    suspend fun restore(ctx: Context, tree: Uri, pack: AssetPack, progress: (String) -> Unit): Boolean =
+    suspend fun restore(ctx: Context, tree: Uri, dir: File, infoName: String, markReady: (String) -> Unit,
+                        progress: (String) -> Unit): Boolean =
         withContext(Dispatchers.IO) {
-            val folder = subfolder(ctx, tree, pack.dir.name, false) ?: return@withContext false
+            val folder = subfolder(ctx, tree, dir.name, false) ?: return@withContext false
             val kids = children(ctx, tree, folder).associateBy { it.name }
-            val infoName = pack.infoName
             val info = kids[infoName] ?: return@withContext false
             fun copy(c: Child, to: File) {
                 ctx.contentResolver.openInputStream(DocumentsContract.buildDocumentUriUsingTree(tree, c.id))!!
                     .use { inp -> to.outputStream().use { inp.copyTo(it, 1 shl 20) } }
             }
-            copy(info, File(pack.dir, infoName))
-            val files = JSONObject(File(pack.dir, infoName).readText()).getJSONObject("files")
+            copy(info, File(dir, infoName))
+            val files = JSONObject(File(dir, infoName).readText()).getJSONObject("files")
             for (name in files.keys()) {
                 require(name.matches(Regex("[A-Za-z0-9_.-]+"))) { "Bad file name in pack info: $name" } // trust boundary
                 val meta = files.getJSONObject(name)
-                val target = File(pack.dir, name)
+                val target = File(dir, name)
                 if (target.length() != meta.getLong("bytes") || BlenderRuntime.sha256(target) != meta.getString("sha256")) {
-                    val c = kids[name] ?: throw IOException("Backup of ${pack.dir.name} is missing $name")
-                    progress("Restoring ${pack.dir.name}/$name")
+                    val c = kids[name] ?: throw IOException("Backup of ${dir.name} is missing $name")
+                    progress("Restoring ${dir.name}/$name (${meta.getLong("bytes") shr 20} MB)")
                     copy(c, target)
                     if (BlenderRuntime.sha256(target) != meta.getString("sha256")) {
                         target.delete()
@@ -83,7 +89,7 @@ object PackFolder {
                     }
                 }
             }
-            File(pack.dir, ".ready").writeText(File(pack.dir, infoName).readText())
+            markReady(File(dir, infoName).readText())
             true
         }
 }

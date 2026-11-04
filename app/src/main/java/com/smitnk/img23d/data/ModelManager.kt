@@ -49,6 +49,9 @@ class ModelManager(context: Context) {
         return m.all { File(dir, it.name).length() == it.bytes } && File(dir, VERIFIED).isFile
     }
 
+    /** After a restore from a backup folder (PackFolder verified every sha256). */
+    fun markVerified() = File(dir, VERIFIED).writeText("ok")
+
     suspend fun download(onStatus: (ModelStatus) -> Unit) = withContext(Dispatchers.IO) {
         File(dir, VERIFIED).delete()
         fetch("model_info.json", info, null) { _, _ -> }

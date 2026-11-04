@@ -289,7 +289,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         runCatching {
-            for (p in packs()) com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, p) { t -> _state.update { it.copy(packFolder = t) } }
+            val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
+            com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, models.dir, models.isReady(), show)
+            for (p in packs()) com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, p, show)
         }.onFailure { e -> fail("Backup failed", e.message ?: e.toString()) }
         _state.update { it.copy(packFolder = null) }
     }
@@ -297,8 +299,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun restorePacks(tree: android.net.Uri) = viewModelScope.launch {
         val found = mutableListOf<String>()
         runCatching {
-            for (p in packs()) if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, p) { t -> _state.update { it.copy(packFolder = t) } })
-                found += p.dir.name
+            val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
+            if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show)) {
+                found += "models"
+                _state.update { it.copy(modelStatus = ModelStatus.Ready) }
+            }
+            for (p in packs()) if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, p, show)) found += p.dir.name
         }.onFailure { e -> fail("Restore failed", e.message ?: e.toString()) }
         _state.update {
             it.copy(packFolder = null,
@@ -713,7 +719,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         res.foregroundSize = size[0]
         res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
             com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
-        System.setProperty("hunyuan.arena", s.hunyuanFast.toString()) // read by HunyuanShape when it opens each part
+        System.setProperty("hunyuan.arena", listOf("false", "dit", "true")[s.hunyuanMemory.coerceIn(0, 2)]) // read per part
         val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { hunyuan = it }
         res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)

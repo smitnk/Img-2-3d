@@ -217,9 +217,17 @@ def main():
     if skin_tok.shape[0] != J * K:
         raise SystemExit(f"rig model stopped early ({skin_tok.shape[0]} of {J * K} skin tokens)")
     skin_tok = skin_tok.reshape(J, K) - tok.vocab_size
+    so.enable_cpu_mem_arena = False  # the arena kept the 54k-point decode buffers: 15 GB peak, phone OOM
     dec = ort.InferenceSession(os.path.join(a.pack, "skin_dec.onnx"), so)
-    skin = np.concatenate([dec.run(None, {"indices": skin_tok[i:i + 2].astype(np.int64), "cond": cond[None], "cond_latents": cl})[0]
-                           for i in range(0, J, 2)], 0).T  # [N samples, J]
+    idx = skin_tok.astype(np.int64)
+
+    def run(c):  # every query point decodes independently from the latents, so the points go in chunks
+        return dec.run(None, {"indices": idx, "cond": c[None], "cond_latents": cl})[0]
+    PC = 2000
+    a_, b_ = run(cond[:PC // 2]), run(cond[:PC])[:, :PC // 2]
+    assert np.abs(a_ - b_).max() < 1e-3, "skin decoder points are not independent"
+    skin = np.concatenate([run(cond[i:i + PC]) for i in range(0, len(cond), PC)], 1).T  # [N samples, J]
+    mark("skin decoded")
     del dec
     skin = np.clip(skin, 0, None)
 

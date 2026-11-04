@@ -218,6 +218,10 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     })
                 }
             }
+            OutlinedButton(onClick = { vm.rigAi(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp))
+                Text(if (vm.rigPack.isReady()) "Rig with AI (SkinTokens)" else "Rig with AI · install in Settings")
+            }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER) OutlinedButton(onClick = { vm.refine(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Refine in Blender")
             }

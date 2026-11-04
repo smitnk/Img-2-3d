@@ -77,6 +77,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             "-b", "${scripts.path}:/opt/app",
             "-b", "${jobIn.path}:/opt/job",
             "-b", "${File(context.filesDir, "bodypack").apply { mkdirs() }.path}:/opt/bodypack", // Body Creator assets
+            "-b", "${File(context.filesDir, "rigpack").apply { mkdirs() }.path}:/opt/rigpack", // Rig with AI (SkinTokens)
             "-w", "/opt/app",
             "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
             "--python-exit-code", "1", "--python", script, "--",

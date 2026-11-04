@@ -181,6 +181,17 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             },
         )
 
+        EngineCard(
+            title = "Rig with AI · SkinTokens", sub = "VAST-AI SkinTokens (MIT) int8 on ONNX Runtime inside Blender · ≈1 GB. " +
+                "Predicts bones and skin weights for the exact model (needs the Blender engine). Use: open a model → Rig with AI",
+            ready = state.rigPack == com.smitnk.img23d.body.PackStatus.Ready,
+            progress = (state.rigPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            error = (state.rigPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message
+                ?: if (vm.rigPack.needsUpdate()) "Update available (fixes the runtime for the phone's Blender). Tap Install." else null,
+            onInstall = vm::installRigPack, onRemove = vm::uninstallRigPack,
+            onSave = { cb.pickFolder { vm.backupOne("rigpack", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("rigpack", it) } },
+        )
+
         SectionHeader("Engine packs on your storage")
         Panel {
             Text("Save all installed packs at once (each engine card above also has its own Save / Load). Pick a folder you choose, e.g. Download/Img23d. " +

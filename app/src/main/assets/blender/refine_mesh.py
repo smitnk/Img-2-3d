@@ -93,6 +93,36 @@ def rigify(body, rigid=None):
         return None, {"rigify_error": str(e)[:200]}
 
 
+def drop_specks(obj, share=0.01):
+    """Voxel remesh can leave tiny islands (the game-ready check's "floating fragment"): drop parts under 1% of faces."""
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.faces.ensure_lookup_table()
+    seen, parts = set(), []
+    for f in bm.faces:
+        if f.index in seen:
+            continue
+        stack, part = [f], []
+        seen.add(f.index)
+        while stack:
+            g = stack.pop()
+            part.append(g)
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h.index not in seen:
+                        seen.add(h.index)
+                        stack.append(h)
+        parts.append(part)
+    tiny = [part for part in parts if len(part) < share * len(bm.faces)]
+    small = [g for part in tiny for g in part]
+    if small and len(small) < len(bm.faces):
+        bmesh.ops.delete(bm, geom=small, context="FACES")
+        bm.to_mesh(obj.data)
+        print(f"refine: dropped {len(tiny)} loose parts ({len(small)} faces)")
+    bm.free()
+
+
 def main():
     a = parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -129,6 +159,7 @@ def main():
     bpy.context.scene.collection.objects.link(out)
     bake(out, ("REMESH", {"mode": "VOXEL", "voxel_size": max(0.002, a.voxel * a.height), "use_smooth_shade": True}),
          ("SMOOTH", {"factor": 0.6, "iterations": max(0, a.smooth)}))
+    drop_specks(out)
 
     colors = src.data.color_attributes
     if a.keep_colors and len(colors):

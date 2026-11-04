@@ -26,11 +26,23 @@ android {
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }
 
+    signingConfigs {
+        // One fixed key for every CI build, so a new APK installs over the old one and keeps the downloaded engine packs
+        // (a fresh runner-generated debug key forced an uninstall, which wiped them).
+        // shortcut: this key is in the repo (debug-grade, standard "android" passwords); use a private keystore before publishing.
+        create("ci") {
+            storeFile = file("ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug { signingConfig = signingConfigs.getByName("ci") }
         release {
             isMinifyEnabled = false
-            // shortcut: release is signed with the debug key so CI produces an installable APK; add a real keystore before publishing.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("ci")
         }
     }
     compileOptions {

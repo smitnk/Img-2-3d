@@ -23,6 +23,7 @@ final class Hunyuan {
             rgba[i * 4] = (p >> 16) & 255; rgba[i * 4 + 1] = (p >> 8) & 255; rgba[i * 4 + 2] = p & 255;
             rgba[i * 4 + 3] = bi.getColorModel().hasAlpha() ? (p >>> 24) : 255;
         }
+        hs.fast = Boolean.getBoolean("hunyuan.fast");
         int octree = a.length > 5 ? Integer.parseInt(a[5]) : 256;
         long t0 = System.nanoTime();
         final String[] last = {""};

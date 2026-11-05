@@ -40,8 +40,8 @@ jobs:
           set -o pipefail
           mkdir -p out
           (while sleep 20; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') java_rss $(ps -C java -o rss= | sort -n | tail -1)"; done) &
-          for arena in false dit; do echo "== arena=$arena"
-            JAVA_OPTS="-Dhunyuan.arena=$arena" /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json cutout.png out/java_app_$arena.glb ${{ inputs.octree || '256' }} \
+          for fast in false true; do echo "== fast=$fast"
+            JAVA_OPTS="-Dhunyuan.arena=false -Dhunyuan.fast=$fast" /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json cutout.png out/java_app_fast_$fast.glb ${{ inputs.octree || '256' }} \
               2> >(grep -E "Maximum resident|Elapsed" >&2) | tee -a out/java.txt
           done
       - name: Push results to ci-logs-hunyuan-java

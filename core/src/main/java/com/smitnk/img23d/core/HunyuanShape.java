@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class HunyuanShape {
     public static final float BOUNDS = 1.01f, BORDER = 0.15f;
     public static final int CHUNK = 8000;
+    /** Fast mode: one dilation (not two) around the surface on the finest level, ~half the geo.onnx queries. */
+    public boolean fast;
 
     public interface Listener { void onProgress(String stage, float fraction); }
 
@@ -204,7 +206,7 @@ public final class HunyuanShape {
                     for (int c = 0; c < g; c++)
                         if (curr[(a * g + b) * g + c] != 0 && 2 * a < ng && 2 * b < ng && 2 * c < ng)
                             next[((2 * a) * ng + 2 * b) * ng + 2 * c] = 1;
-            for (int e = 0; e < 2 - expand; e++) next = dilate(next, ng);
+            for (int e = 0; e < (fast && last ? 1 : 2 - expand); e++) next = dilate(next, ng);
             int count = 0;
             for (byte bt : next) if (bt != 0) count++;
             int[] sel = new int[count];

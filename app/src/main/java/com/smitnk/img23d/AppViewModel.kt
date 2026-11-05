@@ -575,7 +575,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
         launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
             val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
-            val engine = if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³" else "TripoSR ${opt.resolution}³"
+            val engine = if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³${if (s.hunyuanFast) " fast" else ""}" else "TripoSR ${opt.resolution}³"
             val thumb = previewBitmap(res.preprocessed)
             if (mode == PhotoMode.MESH) {
                 library.add("Photo model", Source.PHOTO, { f -> f.outputStream().buffered().use { res.mesh.writeGlb(it) } },
@@ -762,7 +762,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val w = bmp.width
         val h = bmp.height
         var rgba = rgbaOf(bmp)
-        val opt = TripoSR.Options().apply { threads = s.threadCount(); resolution = s.hunyuanOctree }
+        // fast: 4 threads, the phone's big cores; 8 threads made the fast cores wait for the little ones
+        val opt = TripoSR.Options().apply { threads = if (s.hunyuanFast) s.threadCount().coerceAtMost(4) else s.threadCount(); resolution = s.hunyuanOctree }
         val res = TripoSR.Result()
         val tp = TripoSR(hunyuanPack.dir).also { tripo = it } // only its u2net background removal, shipped in the Hunyuan pack
         if (s.removeBackground && (3 until rgba.size step 4).none { rgba[it] < 255 }) {
@@ -775,7 +776,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
             com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
         System.setProperty("hunyuan.arena", "false") // the ORT memory pool force-closed an 8 GB phone even for the shape steps only
-        val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { hunyuan = it }
+        val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { it.fast = s.hunyuanFast; hunyuan = it }
         res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)
         return res to opt

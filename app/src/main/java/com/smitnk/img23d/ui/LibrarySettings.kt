@@ -178,6 +178,10 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                     Text("Detail: ${s.hunyuanOctree}³ — on = 256 (detailed), off = 128 (faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(s.hunyuanOctree >= 256, { on -> vm.updateSettings { it.copy(hunyuanOctree = if (on) 256 else 128) } })
                 }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fast mode — fewer surface checks, 4 threads (off = current quality path)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuanFast, { on -> vm.updateSettings { it.copy(hunyuanFast = on) } })
+                }
             },
         )
 

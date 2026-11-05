@@ -42,6 +42,8 @@ def parse_args():
     p.add_argument("--name", default="AI rig")
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--yaw", type=float, default=0.0, help="turn the model about the up axis before the networks (degrees)")
+    p.add_argument("--skeleton-only", action="store_true", help="stop after the skeleton (diagnostics)")
     return p.parse_args(argv)
 
 
@@ -177,6 +179,9 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     import gc
     gc.collect()
+    c_, s_ = np.cos(np.radians(a.yaw)), np.sin(np.radians(a.yaw))
+    R = np.array([[c_, -s_, 0], [s_, c_, 0], [0, 0, 1]])  # Blender is Z-up
+    v, n = v @ R.T, n @ R.T
     centre, scale = affine(v)
     vn = (v - centre) / scale
     rng = np.random.default_rng(a.seed)
@@ -218,6 +223,12 @@ def main():
     where = int(np.nonzero(ids == tok.eos)[0][0])
     det = tok.detokenize(ids=ids[:where + 1])
     J = det.joints.shape[0]
+    lo_, hi_ = vn.min(0), vn.max(0)
+    pad = 0.05 * (hi_ - lo_)
+    inside = float(np.all((det.joints >= lo_ - pad) & (det.joints <= hi_ + pad), 1).mean())
+    print(f"RIG skeleton yaw {a.yaw:g}: {J} joints, {inside:.0%} inside the model box", flush=True)
+    if a.skeleton_only:
+        return
     skin_tok = ids[where + 1:where + 1 + J * K]
     if skin_tok.shape[0] != J * K:
         raise SystemExit(f"rig model stopped early ({skin_tok.shape[0]} of {J * K} skin tokens)")
@@ -241,9 +252,9 @@ def main():
     skin = np.clip(skin, 0, None)
 
     # back to the model's own space
-    heads = det.joints * scale + centre
+    heads = (det.joints * scale + centre) @ R  # undo the yaw
     parents = list(det.parents)
-    samples_world = pts * scale + centre
+    samples_world = (pts * scale + centre) @ R
     print(f"RIG {J} bones", flush=True)
 
     del v, f, n, embed

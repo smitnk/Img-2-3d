@@ -33,6 +33,9 @@ jobs:
           B() { sudo /usr/bin/time -v -o /tmp/time_$$.txt chroot rootfs /usr/bin/env -i HOME=/root TMPDIR=/tmp LANG=C.UTF-8 PATH=/usr/bin:/bin EGL_PLATFORM=surfaceless \
             LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe XDG_CACHE_HOME=/tmp/.cache /bin/sh -c "cd /opt/app && /opt/blender/blender -b --factory-startup --python-exit-code 1 --python $*"; }
           mkdir -p out
+          for m in triposr_lizard hunyuan_lizard; do for y in 0 90 180 270; do
+            [ -f rootfs/opt/in/$m.glb ] && B rig_ai.py -- --in /opt/in/$m.glb --pack /opt/pack --out /tmp/y --threads 4 --yaw $y --skeleton-only 2>&1 | grep "RIG skeleton" | sed "s/^/$m /"
+          done; done
           for m in triposr_lizard hunyuan_lizard; do
             [ -f rootfs/opt/in/$m.glb ] || continue
             echo "== $m"

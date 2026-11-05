@@ -316,27 +316,35 @@ public final class HunyuanShape {
         for (int y = 0; y < ch; y++)
             for (int x = 0; x < cw; x++)
                 for (int c = 0; c < 4; c++) crop[(y * cw + x) * 4 + c] = rgba[((y + y0) * w + x + x0) * 4 + c] / 255f;
-        int desired = (int) (size * (1 - BORDER));
+        // like hy3dgen ImageProcessorV2: subject scaled into a max(w,h) square at its own resolution and put on white,
+        // then that square resized to the model size (area-style down, smooth up)
+        int sq = Math.max(w, h);
+        int desired = (int) (sq * (1 - BORDER));
         float scale = desired / (float) Math.max(cw, ch);
         int nw = Math.max(1, (int) (cw * scale)), nh = Math.max(1, (int) (ch * scale));
-        // shortcut: hy3dgen resizes INTER_AREA to the max(H,W) square then INTER_CUBIC to 512+; one antialiased resize here.
         float[] small = ImageOps.resize(crop, cw, ch, 4, nw, nh);
-        int ox = (size - nw) / 2, oy = (size - nh) / 2, plane = size * size;
-        float[] chw = new float[3 * plane];
-        java.util.Arrays.fill(chw, 1f);
+        int ox = (sq - nw) / 2, oy = (sq - nh) / 2;
+        float[] canvas = new float[sq * sq * 3];
+        java.util.Arrays.fill(canvas, 1f);
         for (int y = 0; y < nh; y++)
             for (int x = 0; x < nw; x++) {
-                int s = (y * nw + x) * 4, p = (y + oy) * size + x + ox;
+                int s = (y * nw + x) * 4, p = ((y + oy) * sq + x + ox) * 3;
                 float a = Math.max(0f, Math.min(1f, small[s + 3]));
-                for (int c = 0; c < 3; c++) chw[c * plane + p] = (Math.min(1f, small[s + c]) * a + (1 - a)) * 2 - 1;
+                for (int c = 0; c < 3; c++) canvas[p + c] = Math.min(1f, small[s + c]) * a + (1 - a);
             }
+        float[] img = ImageOps.resize(canvas, sq, sq, 3, size, size);
+        int plane = size * size;
+        float[] chw = new float[3 * plane];
+        for (int i = 0; i < plane; i++)
+            for (int c = 0; c < 3; c++) chw[c * plane + i] = Math.max(0f, Math.min(1f, img[i * 3 + c])) * 2 - 1;
         return chw;
     }
 
     /**
      * Keep the real outer surface: drop zero-area triangles, inward-facing closed parts (sealed bubbles inside the body,
      * which the app's game-ready check flagged as "normals pointing inward" / "enclosed parts") and loose fragments
-     * under 1% of the faces.
+     * under 1% of the faces that float away from the main body. Small parts on or next to the body (eyes, buttons,
+     * accessories of a separate-part character) are kept.
      */
     static Mesh clean(Mesh m) { return clean(m, 0.01); }
 
@@ -354,20 +362,33 @@ public final class HunyuanShape {
             union(parent, a, b);
             union(parent, a, c);
         }
-        java.util.Map<Integer, double[]> parts = new HashMap<>(); // root -> {faces, signed volume}
+        // root -> {faces, signed volume, min xyz, max xyz}
+        java.util.Map<Integer, double[]> parts = new HashMap<>();
         for (int t = 0; t < nf; t++) {
             if (!keepFace[t]) continue;
-            double[] st = parts.computeIfAbsent(find(parent, f[t * 3]), k -> new double[2]);
+            double[] st = parts.computeIfAbsent(find(parent, f[t * 3]), k -> new double[]{0, 0, 9e9, 9e9, 9e9, -9e9, -9e9, -9e9});
             st[0]++;
             st[1] += tetVolume(p, f[t * 3], f[t * 3 + 1], f[t * 3 + 2]);
+            for (int k = 0; k < 3; k++)
+                for (int d = 0; d < 3; d++) {
+                    float x = p[f[t * 3 + k] * 3 + d];
+                    st[2 + d] = Math.min(st[2 + d], x);
+                    st[5 + d] = Math.max(st[5 + d], x);
+                }
         }
         int total = 0;
-        for (double[] st : parts.values()) total += (int) st[0];
+        double[] main = null;
+        for (double[] st : parts.values()) {
+            total += (int) st[0];
+            if (st[1] > 0 && (main == null || st[1] > main[1])) main = st; // biggest volume = the body
+        }
+        double near = 0; // a small part within 3% of the main body's size from its box counts as attached
+        if (main != null) for (int d = 0; d < 3; d++) near = Math.max(near, 0.03 * (main[5 + d] - main[2 + d]));
         IntListLocal out = new IntListLocal();
         for (int t = 0; t < nf; t++) {
             if (!keepFace[t]) continue;
             double[] st = parts.get(find(parent, f[t * 3]));
-            if (st[1] <= 0 || st[0] < minFraction * total) continue;
+            if (st[1] <= 0 || (st != main && st[0] < minFraction * total && gap(st, main) > near)) continue;
             out.add(f[t * 3]); out.add(f[t * 3 + 1]); out.add(f[t * 3 + 2]);
         }
         // compact vertices
@@ -379,6 +400,13 @@ public final class HunyuanShape {
         for (int v = 0; v < nv; v++) if (remap[v] >= 0) System.arraycopy(p, v * 3, np, remap[v] * 3, 3);
         for (int i = 0; i < idx.length; i++) idx[i] = remap[idx[i]];
         return new Mesh(np, idx, null);
+    }
+
+    /** Largest per-axis gap between two parts' bounding boxes (0 when they overlap). */
+    private static double gap(double[] a, double[] b) {
+        double g = 0;
+        for (int d = 0; d < 3; d++) g = Math.max(g, Math.max(a[2 + d] - b[5 + d], b[2 + d] - a[5 + d]));
+        return g;
     }
 
     private static int find(int[] par, int x) {

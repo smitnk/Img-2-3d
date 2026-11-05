@@ -21,7 +21,6 @@ data class Settings(
     val hunyuan: Boolean = false, // Photo → 3D with Hunyuan3D-2mini instead of TripoSR (when its pack is installed)
     val hunyuanOctree: Int = 256,
     val hunyuanFast: Boolean = false, // fewer surface queries + big cores only
-    val hunyuanMemory: Int = 0, // 0 low RAM, 1 medium (pool for the shape steps), 2 high (pool everywhere; crashed an 8 GB phone)
     val refineDecimate: Float = 1.0f,
     val refineRig: Boolean = false,
     // Performance
@@ -54,7 +53,7 @@ class SettingsStore(context: Context) {
             .putBoolean("vertexColors", s.vertexColors).putFloat("foregroundRatio", s.foregroundRatio)
             .putBoolean("rig", s.rig).putBoolean("saveBlend", s.saveBlend)
             .putFloat("refineHeight", s.refineHeight).putFloat("refineVoxel", s.refineVoxel)
-            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putBoolean("hunyuan", s.hunyuan).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putInt("hunyuanMemory", s.hunyuanMemory).putFloat("refineDecimate", s.refineDecimate)
+            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putBoolean("hunyuan", s.hunyuan).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putFloat("refineDecimate", s.refineDecimate)
             .putBoolean("refineRig", s.refineRig).putInt("threads", s.threads).putBoolean("keepScreenOn", s.keepScreenOn)
             .putString("apiKey", s.apiKey).putString("apiModel", s.apiModel)
             .putBoolean("dynamicColor", s.dynamicColor).putBoolean("autoRotate", s.autoRotate)
@@ -79,7 +78,6 @@ class SettingsStore(context: Context) {
             hunyuan = prefs.getBoolean("hunyuan", d.hunyuan),
             hunyuanOctree = prefs.getInt("hunyuanOctree", d.hunyuanOctree),
             hunyuanFast = prefs.getBoolean("hunyuanFast", d.hunyuanFast),
-            hunyuanMemory = prefs.getInt("hunyuanMemory", d.hunyuanMemory),
             refineDecimate = prefs.getFloat("refineDecimate", d.refineDecimate),
             refineRig = prefs.getBoolean("refineRig", d.refineRig),
             threads = prefs.getInt("threads", d.threads),

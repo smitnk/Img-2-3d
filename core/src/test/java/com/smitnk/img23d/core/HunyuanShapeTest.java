@@ -74,7 +74,15 @@ public class HunyuanShapeTest {
         cube(v, f, 0f, 1f, false);
         cube(v, f, 5f, 0.1f, false); // a second part with the same face count: 50% share each
         assertEquals(24, HunyuanShape.clean(mesh(v, f), 0.4).faceCount());
-        assertEquals(0, HunyuanShape.clean(mesh(v, f), 0.6).faceCount());
+        assertEquals(12, HunyuanShape.clean(mesh(v, f), 0.6).faceCount()); // the main body always stays
+    }
+
+    @Test public void cleanKeepsSmallPartsTouchingTheBody() {
+        java.util.List<Float> v = new java.util.ArrayList<>();
+        java.util.List<Integer> f = new java.util.ArrayList<>();
+        cube(v, f, 0f, 1f, false);
+        cube(v, f, 1.02f, 0.05f, false); // an "eye" just outside the body's surface
+        assertEquals(24, HunyuanShape.clean(mesh(v, f), 0.6).faceCount());
     }
 
     @org.junit.Test

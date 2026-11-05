@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class HunyuanShape {
     public static final float BOUNDS = 1.01f, BORDER = 0.15f;
     public static final int CHUNK = 8000;
-    /** Fast mode: one dilation (not two) around the surface on the finest level, ~half the geo.onnx queries. */
+    /** Fast mode: 3 shape steps instead of 5, and one dilation (not two) around the surface on the finest level. */
     public boolean fast;
 
     public interface Listener { void onProgress(String stage, float fraction); }
@@ -50,6 +50,15 @@ public final class HunyuanShape {
     /** From hunyuan_info.json (or the CI's dit_info.json): every part carries L, C and scale_factor; dit adds sigmas. */
     public static HunyuanShape fromInfo(File dir, String json, int threads) {
         return new HunyuanShape(dir, sigmasOf(json), (float) num(json, "scale_factor"), (int) num(json, "L"), (int) num(json, "C"), threads);
+    }
+
+    /** Fast mode: every other sigma, keeping the last (5 steps -> 3), so the shape model runs ~40% less. */
+    static float[] fewerSteps(float[] s) {
+        int n = (s.length + 1) / 2 + (s.length % 2 == 0 ? 1 : 0);
+        float[] o = new float[n];
+        for (int i = 0; i < n - 1; i++) o[i] = s[2 * i];
+        o[n - 1] = s[s.length - 1];
+        return o;
     }
 
     static float[] sigmasOf(String json) {
@@ -130,6 +139,7 @@ public final class HunyuanShape {
         float[] x = new float[n];
         Random r = new Random(seed);
         for (int i = 0; i < n; i++) x[i] = (float) r.nextGaussian();
+        float[] sigmas = fast ? fewerSteps(this.sigmas) : this.sigmas;
         int steps = sigmas.length - 1;
         try (OrtSession s = open("dit.onnx")) {
             for (int i = 0; i < steps; i++) {

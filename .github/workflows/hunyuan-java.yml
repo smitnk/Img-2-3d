@@ -44,6 +44,17 @@ jobs:
             JAVA_OPTS="-Dhunyuan.arena=false -Dhunyuan.fast=$fast" /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json cutout.png out/java_app_fast_$fast.glb ${{ inputs.octree || '256' }} \
               2> >(grep -E "Maximum resident|Elapsed" >&2) | tee -a out/java.txt
           done
+          python3 - <<'PY' | tee -a out/java.txt
+          import json,struct,numpy as np
+          from scipy.spatial import cKDTree
+          def pts(f):
+              b=open(f,'rb').read(); n=struct.unpack('<I',b[12:16])[0]; j=json.loads(b[20:20+n]); d=b[20+n+8:]
+              a=j['accessors'][j['meshes'][0]['primitives'][0]['attributes']['POSITION']]; v=j['bufferViews'][a['bufferView']]
+              return np.frombuffer(d,np.float32,a['count']*3,v.get('byteOffset',0)+a.get('byteOffset',0)).reshape(-1,3)
+          A,B=pts('out/java_app_fast_false.glb'),pts('out/java_app_fast_true.glb')
+          h=np.ptp(A,0).max(); dab=cKDTree(B).query(A)[0]; dba=cKDTree(A).query(B)[0]
+          print(f"FAST_VS_NORMAL chamfer mean {(dab.mean()+dba.mean())/2/h:.4f}H, 95% {max(np.percentile(dab,95),np.percentile(dba,95))/h:.4f}H, max {max(dab.max(),dba.max())/h:.4f}H")
+          PY
       - name: Push results to ci-logs-hunyuan-java
         if: always()
         run: |

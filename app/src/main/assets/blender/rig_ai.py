@@ -89,14 +89,14 @@ def affine(v):
 
 
 def sample_surface(v, f, n, k, rng):
-    """Area-weighted random points with barycentric normals (sample_vertex_groups without vertex groups)."""
+    """Area-weighted random points with their FACE normals, like sample_vertex_groups (vertex normals broke Hunyuan meshes)."""
     a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
     area = np.linalg.norm(np.cross(b - a, c - a), axis=1)
     tri = rng.choice(len(f), k, p=area / area.sum())
     r1, r2 = np.sqrt(rng.random(k)), rng.random(k)
     w = np.stack([1 - r1, r1 * (1 - r2), r1 * r2], 1)
     pts = (w[:, :, None] * v[f[tri]]).sum(1)
-    nr = (w[:, :, None] * n[f[tri]]).sum(1)
+    nr = np.cross(b - a, c - a)[tri]
     nr /= np.maximum(np.linalg.norm(nr, axis=1, keepdims=True), 1e-10)  # AugmentNormalize
     return pts.astype(np.float32), nr.astype(np.float32)
 

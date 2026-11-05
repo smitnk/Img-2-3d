@@ -1,0 +1,28 @@
+04:28:36 | INFO: Data are loaded, start creating Blender stuff
+04:28:36 | INFO: Blender create Mesh node geometry_0
+04:28:37 | INFO: glTF import finished in 0.19s
+EGL Error (0x3009): EGL_BAD_MATCH: Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface).
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+Saved: '/tmp/pose/triposr_lizard_posed_front.png'
+Time: 00:01.15 (Saving: 00:00.13)
+
+Saved: '/tmp/pose/triposr_lizard_rest_front.png'
+Time: 00:00.32 (Saving: 00:00.02)
+
+Saved: '/tmp/pose/triposr_lizard_posed_back.png'
+Time: 00:00.33 (Saving: 00:00.02)
+
+Saved: '/tmp/pose/triposr_lizard_rest_back.png'
+Time: 00:00.31 (Saving: 00:00.02)
+
+Saved: '/tmp/pose/triposr_lizard_posed_side.png'
+Time: 00:00.32 (Saving: 00:00.02)
+
+Saved: '/tmp/pose/triposr_lizard_rest_side.png'
+Time: 00:00.32 (Saving: 00:00.02)
+
+bones: ['bone_0', 'bone_1', 'bone_2', 'bone_3', 'bone_4', 'bone_5', 'bone_6', 'bone_7', 'bone_8', 'bone_9', 'bone_10', 'bone_11', 'bone_12', 'bone_13', 'bone_14', 'bone_15', 'bone_16', 'bone_17', 'bone_18', 'bone_19', 'bone_20', 'bone_21', 'bone_22', 'bone_23', 'bone_24', 'bone_25', 'bone_26', 'bone_27', 'bone_28', 'bone_29', 'bone_30', 'bone_31', 'bone_32', 'bone_33', 'bone_34', 'bone_35', 'bone_36', 'bone_37', 'bone_38', 'bone_39', 'bone_40', 'bone_41', 'bone_42', 'bone_43', 'bone_44', 'bone_45', 'bone_46', 'bone_47']
+POSE driven bones: {'arm': ['bone_8', 'bone_29'], 'leg': ['bone_10', 'bone_26', 'bone_41', 'bone_45']}
+POSE mean move 0.065H, max 0.453H, head moved 0.340H (should be ~0)
+
+Blender quit

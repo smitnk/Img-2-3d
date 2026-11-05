@@ -1,0 +1,37 @@
+04:25:39 | INFO: Data are loaded, start creating Blender stuff
+04:25:39 | INFO: Blender create Mesh node geometry_0
+04:25:39 | INFO: glTF import finished in 0.09s
+RIG mesh 35914 verts, 71736 tris; sampled 54000
+RIG [     5s, peak 2368 MB] encoders
+RIG encoders 4.0s
+rig tokens: 50 (25.7/s)
+rig tokens: 100 (24.8/s)
+rig tokens: 150 (23.9/s)
+rig tokens: 200 (23.6/s)
+rig tokens: 250 (23.2/s)
+rig tokens: 300 (22.6/s)
+rig tokens: 350 (21.9/s)
+RIG [    37s, peak 2368 MB] llm
+RIG llm 363 tokens in 31s
+RIG skeleton yaw 0: 48 joints, 100% inside the model box
+RIG [   176s, peak 2368 MB] skin decoded
+RIG 48 bones
+RIG [   176s, peak 2368 MB] re-import
+04:28:35 | INFO: Data are loaded, start creating Blender stuff
+04:28:35 | INFO: Blender create Mesh node geometry_0
+04:28:35 | INFO: glTF import finished in 0.08s
+RIG [   177s, peak 2368 MB] armature
+RIG [   177s, peak 2368 MB] sample cloud groups
+RIG [   177s, peak 2368 MB] data transfer
+RIG [   177s, peak 2368 MB] limit 4
+RIG [   177s, peak 2368 MB] export
+04:28:36 | INFO: Starting glTF 2.0 export
+04:28:36 | INFO: Extracting primitive: geometry_0
+04:28:36 | INFO: Primitives created: 1
+04:28:36 | INFO: Finished glTF 2.0 export in 0.21492934226989746 s
+ERROR Draco mesh compression is not available because library could not be found at /opt/blender/4.2/python/lib/python3.12/site-packages/libextern_draco.so
+
+RIG_DONE {"bones": 48, "skinning": "SkinTokens (AI, int8 ONNX)", "seconds": 177}
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

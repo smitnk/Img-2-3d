@@ -185,6 +185,23 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             },
         )
 
+        EngineCard(
+            title = "TRELLIS.2 · best shape, slowest", sub = "Microsoft TRELLIS.2 (4B) on trellis.cpp, 4-bit weights, CPU · ≈2.8 GB download. " +
+                "Needs the Blender engine installed (it runs inside its Linux runtime). Expect 1–2 hours per model on an 8 GB phone; " +
+                "keep the app open and the phone charging. Shape only: use Paint texture after.",
+            ready = state.trellisPack == com.smitnk.img23d.body.PackStatus.Ready,
+            progress = (state.trellisPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            error = (state.trellisPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
+            onInstall = vm::installTrellisPack, onRemove = vm::uninstallTrellisPack,
+            onSave = { cb.pickFolder { vm.backupOne("trellis", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("trellis", it) } },
+            extra = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Use for Photo → 3D (wins over Hunyuan3D)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.trellis, { on -> vm.updateSettings { it.copy(trellis = on) } })
+                }
+            },
+        )
+
         SectionHeader("Engine packs on your storage")
         Panel {
             Text("Save all installed packs at once (each engine card above also has its own Save / Load). Pick a folder you choose, e.g. Download/Img23d. " +

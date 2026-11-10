@@ -121,14 +121,15 @@ internal fun EngineWarning(text: String, onFix: () -> Unit) {
 @Composable
 fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppViewModel, cb: AppCallbacks) {
     val character = mode == PhotoMode.CHARACTER
-    val tripoReady = state.modelStatus == ModelStatus.Ready ||
-        (settings.hunyuan && state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready) // Hunyuan brings its own u2net
+    val trellis = settings.trellis && state.trellisPack == com.smitnk.img23d.body.PackStatus.Ready
+    val tripoReady = state.modelStatus == ModelStatus.Ready || trellis ||
+        (settings.hunyuan && state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready) // both bring their own u2net
     val blenderReady = state.runtime == RuntimeStatus.Ready
-    val ready = tripoReady && (!character || blenderReady)
+    val ready = tripoReady && (!(character || trellis) || blenderReady) // TRELLIS.2 runs inside the Blender runtime
     FormWithAction(if (character) "Make character" else "Generate 3D", Icons.Rounded.AutoAwesome, ready && state.image != null, { vm.runPhoto(mode) }) {
         if (!tripoReady) EngineWarning(if (settings.hunyuan) "Hunyuan3D needs an update (adds background removal). Tap to open Settings → Engines and tap Install."
             else "TripoSR model is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
-        if (character && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
+        if ((character || trellis) && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
         val img = state.image
         Box(
             Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.extraLarge).background(MaterialTheme.colorScheme.surfaceContainer),

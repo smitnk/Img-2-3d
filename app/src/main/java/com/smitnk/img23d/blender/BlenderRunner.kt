@@ -57,31 +57,20 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
         return exec("export_preset.py", listOf("--in", "/opt/job/export_in.glb", "--preset", preset, "--name", name), threads, ext, onLine).glb
     }
 
-    private suspend fun exec(
-        script: String, args: List<String>, threads: Int, outExt: String, onLine: (String) -> Unit, clearOut: Boolean = true,
-    ): BlenderResult = withContext(Dispatchers.IO) {
-        check(runtime.isReady()) { "Blender engine is not installed" }
-        val scripts = ScriptAssets.install(context)
-        val guestOut = "/tmp/forge-job"
-        val hostOut = File(runtime.rootfs, guestOut.removePrefix("/"))
-        if (clearOut) hostOut.deleteRecursively()
-        hostOut.mkdirs()
+    /** proot into the runtime's rootfs with /opt/job bound; [rest] = more binds, then the guest command. */
+    private fun proot(vararg rest: String): List<String> {
         jobIn.mkdirs()
-        val tmp = File(context.cacheDir, "proot-tmp").apply { deleteRecursively(); mkdirs() }
-
-        val cmd = listOf(
+        return listOf(
             File(runtime.bin, "proot").path,
             "--kill-on-exit", "--link2symlink", "-0",
             "-r", runtime.rootfs.path,
             "-b", "/dev", "-b", "/proc", "-b", "/sys",
-            "-b", "${scripts.path}:/opt/app",
             "-b", "${jobIn.path}:/opt/job",
-            "-b", "${File(context.filesDir, "bodypack").apply { mkdirs() }.path}:/opt/bodypack", // Body Creator assets
-            "-w", "/opt/app",
-            "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
-            "--python-exit-code", "1", "--python", script, "--",
-        ) + args + listOf("--out", guestOut)
+        ) + rest
+    }
 
+    private fun guest(cmd: List<String>): ProcessBuilder {
+        val tmp = File(context.cacheDir, "proot-tmp").apply { deleteRecursively(); mkdirs() }
         val pb = ProcessBuilder(cmd).redirectErrorStream(true).directory(runtime.dir)
         pb.environment().apply {
             clear() // never leak Android's LD_PRELOAD/BOOTCLASSPATH etc. into the guest
@@ -98,6 +87,54 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             put("GALLIUM_DRIVER", "llvmpipe")
             put("XDG_CACHE_HOME", "/tmp/.cache") // Mesa shader cache; always writable
         }
+        return pb
+    }
+
+    /**
+     * Runs a Linux program from [dir] (bound at /opt/tool) inside the runtime, e.g. the TRELLIS.2 generator. proot is
+     * what lets a glibc binary run on Android at all (it answers the syscalls Android's sandbox refuses).
+     */
+    suspend fun tool(dir: File, cmd: List<String>, onLine: (String) -> Unit): Unit = withContext(Dispatchers.IO) {
+        check(runtime.isReady()) { "Blender engine is not installed" }
+        val log = ArrayDeque<String>()
+        val p = guest(proot("-b", "${dir.path}:/opt/tool", "-w", "/opt/job") + cmd).start().also { process = it }
+        try {
+            p.inputStream.bufferedReader().useLines { lines ->
+                for (line in lines) {
+                    coroutineContext.ensureActive()
+                    if (log.size >= 200) log.removeFirst()
+                    log.addLast(line)
+                    onLine(line)
+                }
+            }
+            p.waitFor(30, TimeUnit.SECONDS)
+            coroutineContext.ensureActive()
+            val code = if (p.isAlive) -1 else p.exitValue()
+            if (code != 0) throw BlenderException("${cmd.first().substringAfterLast('/')} exited with code $code\n" + log.takeLast(25).joinToString("\n"), log.toList())
+        } finally {
+            if (p.isAlive) p.destroyForcibly()
+            if (process === p) process = null
+        }
+    }
+
+    private suspend fun exec(
+        script: String, args: List<String>, threads: Int, outExt: String, onLine: (String) -> Unit, clearOut: Boolean = true,
+    ): BlenderResult = withContext(Dispatchers.IO) {
+        check(runtime.isReady()) { "Blender engine is not installed" }
+        val scripts = ScriptAssets.install(context)
+        val guestOut = "/tmp/forge-job"
+        val hostOut = File(runtime.rootfs, guestOut.removePrefix("/"))
+        if (clearOut) hostOut.deleteRecursively()
+        hostOut.mkdirs()
+        val cmd = proot(
+            "-b", "${scripts.path}:/opt/app",
+            "-b", "${File(context.filesDir, "bodypack").apply { mkdirs() }.path}:/opt/bodypack", // Body Creator assets
+            "-w", "/opt/app",
+            "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
+            "--python-exit-code", "1", "--python", script, "--",
+        ) + args + listOf("--out", guestOut)
+
+        val pb = guest(cmd)
         val log = ArrayDeque<String>()
         val t0 = System.nanoTime()
         val p = pb.start().also { process = it }

@@ -60,7 +60,7 @@ jobs:
             ( while sleep 60; do r=$(ps -C trellis-cli -o rss= | head -1); echo "MON $(date +%T) rss_mb=$(( ${r:-0} / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/$1.txt 2>/dev/null &
             MON=$!
             timeout ${3}m /usr/bin/time -v -o out/time_$1.txt ./trellis.cpp/build/trellis-cli cut.png out/$1.glb --models models --backend CPU \
-              --res 512 --no-texture --steps $2 --threads 4 --faces 50000 --box-uv --seed 42 --verbose --no-fa >> out/$1.txt 2>&1  # --no-fa: exact attention, 3.3x faster on CPU than FlashAttention
+              --res 512 --no-texture --steps $2 --threads 4 --faces 200000 --seed 42 --verbose --no-fa >> out/$1.txt 2>&1  # --no-fa: exact attention, 3.3x faster on CPU than FlashAttention
             echo "EXIT $? ($1, $2 steps)" | tee -a out/$1.txt
             kill $MON 2>/dev/null || true
             grep -E "Maximum resident|Elapsed" out/time_$1.txt || true

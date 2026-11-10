@@ -18,6 +18,7 @@ import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
 import com.smitnk.img23d.body.HunyuanPack
+import com.smitnk.img23d.body.TrellisPack
 import com.smitnk.img23d.core.HunyuanShape
 import com.smitnk.img23d.core.TextureDiffusion
 import com.smitnk.img23d.body.BodySpec
@@ -124,6 +125,7 @@ data class UiState(
     val bodyPack: PackStatus = PackStatus.NotInstalled,
     val texPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
+    val trellisPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -275,6 +277,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val bodyPack = BodyPack(app)
     val texPack = TexPack(app)
     val hunyuanPack = HunyuanPack(app)
+    val trellisPack = TrellisPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -283,10 +286,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
+        if (trellisPack.isReady()) _state.update { it.copy(trellisPack = PackStatus.Ready) }
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack)
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, trellisPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         runCatching {
@@ -311,12 +315,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(packFolder = null,
                 bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
-                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
+                trellisPack = if (trellisPack.isReady()) PackStatus.Ready else it.trellisPack)
         }
-        if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan).")
+        if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / trellis).")
     }
 
-    /** One engine's pack to / from a folder: key = its folder name (models, texgen, hunyuan, bodypack). */
+    /** One engine's pack to / from a folder: key = its folder name (models, texgen, hunyuan, trellis, bodypack). */
     fun backupOne(key: String, tree: android.net.Uri) = viewModelScope.launch {
         val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
         runCatching {
@@ -342,11 +347,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _state.update {
             it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
-                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
+                trellisPack = if (trellisPack.isReady()) PackStatus.Ready else it.trellisPack)
         }
     }
 
     fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }
+
+    fun uninstallTrellisPack() { trellisPack.uninstall(); _state.update { it.copy(trellisPack = PackStatus.NotInstalled) } }
+
+    fun installTrellisPack() = viewModelScope.launch {
+        runCatching { trellisPack.install { st -> _state.update { it.copy(trellisPack = st) } } }
+            .onFailure { e -> _state.update { it.copy(trellisPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
 
     fun installHunyuanPack() = viewModelScope.launch {
         runCatching { hunyuanPack.install { st -> _state.update { it.copy(hunyuanPack = st) } } }
@@ -545,13 +558,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- jobs ----------
     fun runPhoto(mode: PhotoMode) {
         val bmp = _state.value.image ?: return
-        val useHunyuan = s.hunyuan && hunyuanPack.isReady()
-        if (!useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
-        if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
+        val useTrellis = s.trellis && trellisPack.isReady()
+        val useHunyuan = !useTrellis && s.hunyuan && hunyuanPack.isReady()
+        if (!useTrellis && !useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
+        // TRELLIS.2 is a Linux program: it runs inside the Blender engine's runtime
+        if ((mode == PhotoMode.CHARACTER || useTrellis) && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
-        launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D", if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
-            val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
-            val engine = if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³${if (s.hunyuanFast) " fast" else ""}" else "TripoSR ${opt.resolution}³"
+        launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D",
+            if (useTrellis) "TRELLIS.2" else if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
+            val (res, opt) = if (useTrellis) trellis3d(bmp, report) else if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
+            val engine = if (useTrellis) "TRELLIS.2 512 · $TRELLIS_STEPS steps"
+                else if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³${if (s.hunyuanFast) " fast" else ""}" else "TripoSR ${opt.resolution}³"
             val thumb = previewBitmap(res.preprocessed)
             if (mode == PhotoMode.MESH) {
                 library.add("Photo model", Source.PHOTO, { f -> f.outputStream().buffered().use { res.mesh.writeGlb(it) } },
@@ -758,6 +775,58 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return res to opt
     }
 
+    /**
+     * Photo → shape with TRELLIS.2 (trellis.cpp, 4-bit weights, CPU): the cut-out goes in as a PNG, the generator runs
+     * as a Linux program in the Blender runtime, and its PLY mesh comes back. --no-fa: exact attention, 3.3x faster
+     * than FlashAttention on a CPU.
+     */
+    private suspend fun trellis3d(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
+        val w = bmp.width
+        val h = bmp.height
+        var rgba = rgbaOf(bmp)
+        val opt = TripoSR.Options().apply { threads = s.threadCount().coerceAtMost(4); resolution = 512 }
+        val res = TripoSR.Result()
+        if (s.removeBackground && (3 until rgba.size step 4).none { rgba[it] < 255 }) {
+            report.stage("Removing background", null)
+            val tp = TripoSR(trellisPack.dir).also { tripo = it } // only its u2net background removal, shipped in the pack
+            rgba = tp.removeBackground(rgba, w, h, opt.threads)
+            tripo = null
+        }
+        val size = IntArray(1)
+        res.foreground = com.smitnk.img23d.core.ImageOps.resizeForeground(rgba, w, h, s.foregroundRatio, size)
+        res.foregroundSize = size[0]
+        res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
+            com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
+        // hard alpha, cropped to the subject: a faint halo made TRELLIS.2 build a half-size model with floaters
+        var x0 = w; var y0 = h; var x1 = -1; var y1 = -1
+        val argb = IntArray(w * h) { i ->
+            val on = rgba[i * 4 + 3] > 127
+            if (on) { val x = i % w; val y = i / w; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y }
+            if (on) (255 shl 24) or (rgba[i * 4] shl 16) or (rgba[i * 4 + 1] shl 8) or rgba[i * 4 + 2] else 0
+        }
+        if (x1 < 0) error("Nothing left after removing the background")
+        val job = runner.jobIn.apply { mkdirs() }
+        val cut = Bitmap.createBitmap(Bitmap.createBitmap(argb, w, h, Bitmap.Config.ARGB_8888), x0, y0, x1 - x0 + 1, y1 - y0 + 1)
+        File(job, "trellis_in.png").outputStream().use { cut.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val ply = File(job, "trellis_out.ply").apply { delete() }
+        File(trellisPack.dir, "trellis-cli").setExecutable(true)
+        var passes = 0
+        var stage = "Starting TRELLIS.2"
+        val t0 = System.nanoTime()
+        runner.tool(trellisPack.dir, listOf("/opt/tool/trellis-cli", "/opt/job/trellis_in.png", "/opt/job/trellis_out.glb",
+            "--models", "/opt/tool", "--backend", "CPU", "--res", "512", "--no-texture", "--no-fa", "--steps", TRELLIS_STEPS.toString(),
+            "--faces", "200000", "--threads", opt.threads.toString(), "--seed", (System.nanoTime() and 0x7fffffff).toString(), "--verbose")) { line ->
+            // "[3/6] sparse-structure flow + decode" names the stage; each "dit.forward done" is one pass of it
+            Regex("""^\[(\d)/\d] (.+)""").find(line)?.let { stage = it.groupValues[2].take(60); passes = 0; report.stage("TRELLIS.2 · $stage", null) }
+            if (line.contains("dit.forward") && line.contains("done in")) report.stage("TRELLIS.2 · $stage · pass ${++passes}", null)
+        }
+        if (!ply.isFile) error("TRELLIS.2 wrote no mesh")
+        res.mesh = com.smitnk.img23d.core.TrellisMesh.read(ply)
+        res.timingsMs["trellis"] = (System.nanoTime() - t0) / 1_000_000
+        File(job, "trellis_out.glb").delete(); ply.delete()
+        return res to opt
+    }
+
     private fun rgbaOf(bmp: Bitmap): IntArray {
         val argb = IntArray(bmp.width * bmp.height).also { bmp.getPixels(it, 0, bmp.width, 0, 0, bmp.width, bmp.height) }
         val alpha = bmp.hasAlpha()
@@ -817,6 +886,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         const val MAX_SIDE = 1536
+        const val TRELLIS_STEPS = 12 // trellis.cpp default; each step is ~2 passes of the 1.3B flow model
         val PAINT_VIEWS = listOf("back", "left", "right")
         const val PAINT_STRENGTH = 0.35f // how far the AI may move from the model's own colours (texgen CI checks this value)
         val STAGES = mapOf(

@@ -42,9 +42,11 @@ jobs:
           pip install -q --break-system-packages "rembg[cpu]" pillow
           python3 -c "
           from PIL import Image; from rembg import remove
-          im = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')
+          src = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')
+          # the reference is already a cut-out whose hidden RGB is smeared edge colour: rembg on that gave a full-frame
+          # mask and TRELLIS built a flat plate. Put it on white first, like a real photo reaching the app.
+          im = Image.new('RGBA', src.size, (255, 255, 255, 255)); im.alpha_composite(src)
           cut = remove(im)
-          # hard alpha + crop to the subject: rembg's faint halo made TRELLIS place a half-size model with floaters
           a = cut.split()[3].point(lambda v: 255 if v > 127 else 0); cut.putalpha(a)
           cut = cut.crop(a.getbbox()); cut.save('cut.png'); print('cut-out', im.size, '->', cut.size)"
       - name: Full run (real quality, real time, peak RAM)

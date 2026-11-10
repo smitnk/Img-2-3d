@@ -76,24 +76,3 @@ class TexPack(context: Context) : AssetPack(File(context.filesDir, "texgen"), Bu
 class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"), BuildConfig.HUNYUAN_BASE_URL, "hunyuan_info.json",
     3, "u2net.onnx") // v2: own u2net (no TripoSR pack needed), v3: encoder attention 4 heads at a time (phone RAM)
 
-/** Rig with AI: SkinTokens / TokenRig (VAST-AI-Research, MIT) ONNX + onnxruntime for Blender's Python, release skintokens-v1. */
-class RigPack(context: Context) : AssetPack(File(context.filesDir, "rigpack"), BuildConfig.RIG_BASE_URL, "rig_info.json",
-    2, "llm_q.onnx") // v2: onnxruntime wheel for Python 3.12
-
-/** One wearable or look from the pack's assets.json (MakeHuman system assets). */
-data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)
-
-/** Catalog of the installed pack, by kind: hair, eyebrows, eyelashes, clothes, skins, eyes. Empty for an old pack. */
-fun BodyPack.catalog(): Map<String, List<BodyAsset>> {
-    val f = File(dir, "assets.json")
-    if (!f.isFile) return emptyMap()
-    val j = JSONObject(f.readText())
-    return j.keys().asSequence().associateWith { kind ->
-        val a = j.getJSONArray(kind)
-        (0 until a.length()).map { i ->
-            val o = a.getJSONObject(i)
-            BodyAsset(kind, o.getString("name"), o.optString("label", o.getString("name")),
-                o.optString("thumb", "").takeIf { it.isNotBlank() && it != "null" }?.let { File(dir, it) }?.takeIf { it.isFile })
-        }
-    }
-}

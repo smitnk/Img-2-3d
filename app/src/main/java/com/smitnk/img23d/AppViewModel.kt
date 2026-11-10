@@ -18,7 +18,6 @@ import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
 import com.smitnk.img23d.body.HunyuanPack
-import com.smitnk.img23d.body.RigPack
 import com.smitnk.img23d.core.HunyuanShape
 import com.smitnk.img23d.core.TextureDiffusion
 import com.smitnk.img23d.body.BodySpec
@@ -125,7 +124,6 @@ data class UiState(
     val bodyPack: PackStatus = PackStatus.NotInstalled,
     val texPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
-    val rigPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -277,7 +275,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val bodyPack = BodyPack(app)
     val texPack = TexPack(app)
     val hunyuanPack = HunyuanPack(app)
-    val rigPack = RigPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -286,29 +283,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
-        if (rigPack.isReady()) _state.update { it.copy(rigPack = PackStatus.Ready) }
+        File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, rigPack)
-
-    fun uninstallRigPack() { rigPack.uninstall(); _state.update { it.copy(rigPack = PackStatus.NotInstalled) } }
-
-    fun installRigPack() = viewModelScope.launch {
-        runCatching { rigPack.install { st -> _state.update { it.copy(rigPack = st) } } }
-            .onFailure { e -> _state.update { it.copy(rigPack = PackStatus.Failed(e.message ?: e.toString())) } }
-    }
-
-    /** Rig with AI: SkinTokens predicts bones + skin weights for this exact mesh (rig_ai.py in the phone's Blender). */
-    fun rigAi(m: Model) {
-        if (!runtime.isReady() || !rigPack.isReady()) { go(Dest.Settings); return }
-        launchJob("Rig with AI", "Blender", 1) { report ->
-            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
-            val b = blender("rig_ai.py", listOf("--in", "/opt/job/input.glb", "--pack", "/opt/rigpack", "--name", "${m.name} rigged",
-                "--threads", s.threadCount().toString()), report)
-            saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "AI rig (SkinTokens) of ${m.name}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
-        }
-    }
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         runCatching {
@@ -333,8 +311,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(packFolder = null,
                 bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
-                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
-                rigPack = if (rigPack.isReady()) PackStatus.Ready else it.rigPack)
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
         }
         if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan).")
     }
@@ -365,8 +342,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _state.update {
             it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
-                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
-                rigPack = if (rigPack.isReady()) PackStatus.Ready else it.rigPack)
+                hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack)
         }
     }
 

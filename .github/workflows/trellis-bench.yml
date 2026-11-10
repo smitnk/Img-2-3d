@@ -1,0 +1,49 @@
+name: TRELLIS.2 CPU speed variants (one sparse-structure step per variant)
+
+on:
+  push:
+    paths: [".github/workflows/trellis-bench.yml"]
+  workflow_dispatch:
+concurrency: { group: trellis-bench, cancel-in-progress: true }
+env:
+  TRELLIS_SHA: 6851891d706e2e26a8bb9dd99f28de851d68b64d
+  HF: https://huggingface.co/ilintar/trellis2-gguf/resolve/main
+jobs:
+  bench:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: base,    q: q4, flags: "" }
+          - { name: fa-fast, q: q4, flags: "--fa-fast" }
+          - { name: no-fa,   q: q4, flags: "--no-fa" }
+          - { name: f32,     q: q4, flags: "--f32" }
+          - { name: q8,      q: q8, flags: "" }
+          - { name: t2,      q: q4, flags: "", threads: 2 }
+    steps:
+      - name: Build trellis-cli (CPU only)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q cmake ninja-build >/dev/null
+          git clone -q https://github.com/pwilkin/trellis.cpp && cd trellis.cpp && git checkout -q $TRELLIS_SHA
+          git submodule update --init --recursive --depth 1 -q
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DTRELLIS_WEBP=OFF > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
+          cmake --build build --target trellis-cli -j 4 2>&1 | tail -2
+      - name: Weights + cut-out photo
+        run: |
+          mkdir models
+          for f in dinov3 ss_flow ss_dec; do curl -sSL --retry 5 -o models/$f.gguf $HF/${{ matrix.q }}/$f.gguf; done
+          ls -la models
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install -q --break-system-packages "rembg[cpu]" pillow
+          python3 -c "
+          from PIL import Image; from rembg import remove
+          remove(Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')).save('cut.png')"
+      - name: One step (${{ matrix.name }})
+        run: |
+          # stops after the sparse-structure stage: the shape weights are not downloaded
+          timeout 40m ./trellis.cpp/build/trellis-cli cut.png out.glb --models models --backend CPU --res 512 --no-texture \
+            --steps 1 --threads ${{ matrix.threads || 4 }} --seed 42 --verbose ${{ matrix.flags }} > log.txt 2>&1 || true
+          grep -E "FlashAttention|dinov3 +done|dit.forward +done|\[flow\] [0-9]+ steps|active voxels|rror|nan/inf=[1-9]" log.txt | cut -c1-160
+          echo "BENCH ${{ matrix.name }}: $(grep -m1 -oE 'dit.forward +done in [0-9.]+ ms' log.txt)"

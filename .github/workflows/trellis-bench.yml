@@ -16,24 +16,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: base,    q: q4, flags: "" }
-          - { name: fa-fast, q: q4, flags: "--fa-fast" }
-          - { name: no-fa,   q: q4, flags: "--no-fa" }
-          - { name: f32,     q: q4, flags: "--f32" }
-          - { name: q8,      q: q8, flags: "" }
-          - { name: t2,      q: q4, flags: "", threads: 2 }
+          - { name: no-fa,        q: q4/, flags: "--no-fa" }
+          - { name: no-fa-q8,     q: q8/, flags: "--no-fa" }
+          - { name: no-fa-f16w,   q: "",  flags: "--no-fa" }
+          - { name: no-fa-f32,    q: q4/, flags: "--no-fa --f32" }
+          - { name: no-fa-repack, q: q4/, flags: "--no-fa", repack: true }
+          - { name: no-fa-noomp,  q: q4/, flags: "--no-fa", cmake: "-DGGML_OPENMP=OFF" }
     steps:
       - name: Build trellis-cli (CPU only)
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q cmake ninja-build >/dev/null
           git clone -q https://github.com/pwilkin/trellis.cpp && cd trellis.cpp && git checkout -q $TRELLIS_SHA
           git submodule update --init --recursive --depth 1 -q
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DTRELLIS_WEBP=OFF > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
+          # repack: let the CPU backend use ggml's aarch64 repacked Q4_0 matmul kernels (trellis.cpp skips them on CPU)
+          if [ "${{ matrix.repack }}" = "true" ]; then python3 - <<'PY'
+          p='src/trellis_model.cpp'; s=open(p).read()
+          a='            reg = nullptr;\n'
+          assert a in s; open(p,'w').write(s.replace(a,'',1))
+          PY
+          fi
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DTRELLIS_WEBP=OFF ${{ matrix.cmake }} > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
           cmake --build build --target trellis-cli -j 4 2>&1 | tail -2
       - name: Weights + cut-out photo
         run: |
           mkdir models
-          for f in dinov3 ss_flow ss_dec; do curl -sSL --retry 5 -o models/$f.gguf $HF/${{ matrix.q }}/$f.gguf; done
+          for f in dinov3 ss_flow ss_dec; do curl -sSL --retry 5 -o models/$f.gguf $HF/${{ matrix.q }}$f.gguf; done
           ls -la models
           git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
           pip install -q --break-system-packages "rembg[cpu]" pillow
@@ -43,7 +50,8 @@ jobs:
       - name: One step (${{ matrix.name }})
         run: |
           # stops after the sparse-structure stage: the shape weights are not downloaded
-          timeout 40m ./trellis.cpp/build/trellis-cli cut.png out.glb --models models --backend CPU --res 512 --no-texture \
+          timeout 40m /usr/bin/time -v -o time.txt ./trellis.cpp/build/trellis-cli cut.png out.glb --models models --backend CPU --res 512 --no-texture \
             --steps 1 --threads ${{ matrix.threads || 4 }} --seed 42 --verbose ${{ matrix.flags }} > log.txt 2>&1 || true
-          grep -E "FlashAttention|dinov3 +done|dit.forward +done|\[flow\] [0-9]+ steps|active voxels|rror|nan/inf=[1-9]" log.txt | cut -c1-160
+          /usr/bin/true; grep -E "FlashAttention|extra-bufts: dev|dinov3 +done|dit.forward +done|\[flow\] [0-9]+ steps|active voxels|rror|nan/inf=[1-9]" log.txt | cut -c1-160
+          grep -E "Maximum resident" time.txt
           echo "BENCH ${{ matrix.name }}: $(grep -m1 -oE 'dit.forward +done in [0-9.]+ ms' log.txt)"

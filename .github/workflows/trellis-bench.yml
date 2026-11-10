@@ -16,12 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: no-fa,        q: q4/, flags: "--no-fa" }
-          - { name: no-fa-q8,     q: q8/, flags: "--no-fa" }
-          - { name: no-fa-f16w,   q: "",  flags: "--no-fa" }
-          - { name: no-fa-f32,    q: q4/, flags: "--no-fa --f32" }
-          - { name: no-fa-repack, q: q4/, flags: "--no-fa", repack: true }
-          - { name: no-fa-noomp,  q: q4/, flags: "--no-fa", cmake: "-DGGML_OPENMP=OFF" }
+          - { name: f32,         q: q4/, flags: "--no-fa --f32" }
+          - { name: f32-repack,  q: q4/, flags: "--no-fa --f32", repack: true }
     steps:
       - name: Build trellis-cli (CPU only)
         run: |
@@ -52,6 +48,6 @@ jobs:
           # stops after the sparse-structure stage: the shape weights are not downloaded
           timeout 40m /usr/bin/time -v -o time.txt ./trellis.cpp/build/trellis-cli cut.png out.glb --models models --backend CPU --res 512 --no-texture \
             --steps 1 --threads ${{ matrix.threads || 4 }} --seed 42 --verbose ${{ matrix.flags }} > log.txt 2>&1 || true
-          /usr/bin/true; grep -E "FlashAttention|extra-bufts: dev|dinov3 +done|dit.forward +done|\[flow\] [0-9]+ steps|active voxels|rror|nan/inf=[1-9]" log.txt | cut -c1-160
+          /usr/bin/true; grep -E "FlashAttention|extra-bufts: dev|dinov3 +done|dit.forward +done|\[flow\] [0-9]+ steps|active voxels|rror|dit-fwd|cond_512|CPU_REPACK" log.txt | cut -c1-160
           grep -E "Maximum resident" time.txt
           echo "BENCH ${{ matrix.name }}: $(grep -m1 -oE 'dit.forward +done in [0-9.]+ ms' log.txt)"

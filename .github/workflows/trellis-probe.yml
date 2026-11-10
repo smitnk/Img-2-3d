@@ -2,10 +2,8 @@ name: TRELLIS.2 CPU probe (trellis.cpp + Q4 GGUF on ARM64, RAM / time before a p
 
 on:
   push:
-    paths: [".github/workflows/trellis-probe.yml"]
+    paths: [".github/workflows/trellis-probe.yml", "tools/trellis/**"]
   workflow_dispatch:
-    inputs:
-      steps: { description: Flow steps for the long run, default: "12" }
 permissions:
   contents: write
 concurrency: { group: trellis-probe, cancel-in-progress: true }
@@ -16,15 +14,23 @@ jobs:
   probe:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        steps: [12, 8]
     steps:
+      - uses: actions/checkout@v4
       - name: Swap
         run: sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -m; nproc; lscpu | grep -E "Model name|Flags" | cut -c1-400
       - name: Build trellis-cli (CPU only)
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q cmake ninja-build >/dev/null
-          git clone -q https://github.com/pwilkin/trellis.cpp && cd trellis.cpp && git checkout -q $TRELLIS_SHA
+          git clone -q https://github.com/pwilkin/trellis.cpp trellis.cpp && cd trellis.cpp && git checkout -q $TRELLIS_SHA
           git submodule update --init --recursive --depth 1 -q
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DTRELLIS_WEBP=OFF > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
+          python3 $GITHUB_WORKSPACE/tools/trellis/patch_trellis.py .
+          # the phone build: static, no OpenMP, Dimensity 7200 instruction set (no -march=native)
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTRELLIS_WEBP=OFF -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
+            -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+i8mm+fp16 -DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS=-static > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
           cmake --build build --target trellis-cli -j 4 2>&1 | tail -5
           ls -la build/trellis-cli || find build -name "trellis-cli*" -type f
       - name: Q4 weights (shape only, no texture) + cut-out photo
@@ -37,14 +43,17 @@ jobs:
           python3 -c "
           from PIL import Image; from rembg import remove
           im = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')
-          remove(im).save('cut.png'); print('cut-out', im.size)"
+          cut = remove(im)
+          # hard alpha + crop to the subject: rembg's faint halo made TRELLIS place a half-size model with floaters
+          a = cut.split()[3].point(lambda v: 255 if v > 127 else 0); cut.putalpha(a)
+          cut = cut.crop(a.getbbox()); cut.save('cut.png'); print('cut-out', im.size, '->', cut.size)"
       - name: Full run (real quality, real time, peak RAM)
         run: |
           push() {
-            rm -rf /tmp/cilog && mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-trellis
+            rm -rf /tmp/cilog && mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-trellis-${{ matrix.steps }}
             cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
             git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "trellis probe $GITHUB_RUN_ID $1"
-            git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-trellis
+            git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-trellis-${{ matrix.steps }}
             cd $GITHUB_WORKSPACE
           }
           run() {  # name steps timeout-minutes
@@ -59,4 +68,4 @@ jobs:
             ls -la out
             push $1
           }
-          run full "${{ inputs.steps || '12' }}" 300
+          run full ${{ matrix.steps }} 300

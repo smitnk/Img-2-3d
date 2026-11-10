@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: rp-weight,   q: q4/, flags: "--no-fa --f32", repack: true, only: ".weight" }
-          - { name: rp-weight16, q: q4/, flags: "--no-fa",       repack: true, only: ".weight" }
+          - { name: phone-static, q: q4/, flags: "--no-fa", repack: true, only: ".weight",
+              cmake: "-DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+i8mm+fp16 -DGGML_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS=-static" }
     steps:
       - name: Build trellis-cli (CPU only)
         run: |
@@ -38,8 +38,9 @@ jobs:
           open(p,'w').write('#include <cstring>\n#include <cstdlib>\n'+s)
           PY
           fi
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DTRELLIS_WEBP=OFF ${{ matrix.cmake }} > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTRELLIS_WEBP=OFF ${{ matrix.cmake || '-DGGML_NATIVE=ON' }} > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
           cmake --build build --target trellis-cli -j 4 2>&1 | tail -2
+          file build/trellis-cli | cut -c1-200; ls -la build/trellis-cli; grep -c . /dev/null; grep -m1 -i "march\|ARM feature\|detected" /tmp/cmake.txt || true
       - name: Weights + cut-out photo
         run: |
           mkdir models

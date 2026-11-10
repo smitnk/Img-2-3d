@@ -1,0 +1,70 @@
+name: TRELLIS.2 A/B (why a flat slab? image vs repack patch vs exact attention)
+
+on:
+  push:
+    paths: [".github/workflows/trellis-ab.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: trellis-ab, cancel-in-progress: true }
+env:
+  TRELLIS_SHA: 6851891d706e2e26a8bb9dd99f28de851d68b64d
+  HF: https://huggingface.co/ilintar/trellis2-gguf/resolve/main/q4
+jobs:
+  ab:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: goblin-phone,     image: goblin,      patch: true,  flags: "--no-fa" }
+          - { name: goblin-plain,     image: goblin,      patch: false, flags: "--no-fa" }
+          - { name: goblin-fa,        image: goblin,      patch: false, flags: "" }
+          - { name: lizard-phone,     image: lizard,      patch: true,  flags: "--no-fa" }
+          - { name: lizardcrop-plain, image: lizard_crop, patch: false, flags: "--no-fa" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build trellis-cli
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q cmake ninja-build >/dev/null
+          git clone -q https://github.com/pwilkin/trellis.cpp trellis.cpp && cd trellis.cpp && git checkout -q $TRELLIS_SHA
+          git submodule update --init --recursive --depth 1 -q
+          if [ "${{ matrix.patch }}" = "true" ]; then
+            python3 $GITHUB_WORKSPACE/tools/trellis/patch_trellis.py .
+            FLAGS="-DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+i8mm+fp16 -DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS=-static"
+          else FLAGS="-DGGML_NATIVE=ON"; fi
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTRELLIS_WEBP=OFF $FLAGS > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
+          cmake --build build --target trellis-cli -j 4 2>&1 | tail -2
+      - name: Weights + images
+        run: |
+          mkdir models out
+          for f in dinov3 ss_flow ss_dec shape_flow_512 shape_dec; do curl -sSL --retry 5 -o models/$f.gguf $HF/$f.gguf; done
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install -q --break-system-packages "rembg[cpu]" pillow numpy
+          python3 -c "
+          from PIL import Image; from rembg import remove
+          cut = remove(Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA'))
+          cut.save('lizard.png')
+          a = cut.split()[3].point(lambda v: 255 if v > 127 else 0); cut.putalpha(a)
+          cut.crop(a.getbbox()).save('lizard_crop.png')
+          g = Image.open('trellis.cpp/assets/goblin.png'); print('goblin', g.mode, g.size); g.save('goblin.png')"
+      - name: Run (8 steps)
+        run: |
+          timeout 220m ./trellis.cpp/build/trellis-cli ${{ matrix.image }}.png out/m.glb --models models --backend CPU --res 512 --no-texture \
+            --steps 8 --threads 4 --faces 200000 --seed 42 --verbose ${{ matrix.flags }} > out/log.txt 2>&1 || echo "EXIT $?" >> out/log.txt
+          grep -E "\[flow\] [0-9]+ steps|active voxels|decoded voxels|mesh V=|shape-only finish|done in [0-9.]+s|EXIT|rror" out/log.txt | cut -c1-150
+          python3 - <<'PY'
+          import numpy as np, re
+          b = open('out/m.ply', 'rb').read(); i = b.index(b'end_header\n') + 11
+          nv = int(re.search(rb'element vertex (\d+)', b[:i]).group(1))
+          P = np.frombuffer(b, np.float32, nv * 3, i).reshape(-1, 3)
+          lo, hi = np.percentile(P, [1, 99], axis=0)
+          print('AB ${{ matrix.name }}: verts', nv, 'extent(1-99%)', (hi - lo).round(3), 'centre', ((hi + lo) / 2).round(3))
+          PY
+      - name: Push the mesh
+        if: always()
+        run: |
+          cd out && rm -f m.glb && git init -q -b ci-logs-trellis-ab-${{ matrix.name }} && git add -A
+          git -c user.name=ci -c user.email=ci@local commit -qm "trellis ab $GITHUB_RUN_ID ${{ matrix.name }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-trellis-ab-${{ matrix.name }}

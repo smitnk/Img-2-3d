@@ -38,7 +38,7 @@ jobs:
           from PIL import Image; from rembg import remove
           im = Image.open('/tmp/forge/assets/reference/lizard-warrior/front.png').convert('RGBA')
           remove(im).save('cut.png'); print('cut-out', im.size)"
-      - name: Run A — 2 steps, end to end (per-forward time, peak RAM, does it finish)
+      - name: Full run (real quality, real time, peak RAM)
         run: |
           push() {
             rm -rf /tmp/cilog && mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-trellis
@@ -51,7 +51,7 @@ jobs:
             ( while sleep 60; do r=$(ps -C trellis-cli -o rss= | head -1); echo "MON $(date +%T) rss_mb=$(( ${r:-0} / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/$1.txt 2>/dev/null &
             MON=$!
             timeout ${3}m /usr/bin/time -v -o out/time_$1.txt ./trellis.cpp/build/trellis-cli cut.png out/$1.glb --models models --backend CPU \
-              --res 512 --no-texture --steps $2 --threads 4 --faces 50000 --box-uv --seed 42 --verbose >> out/$1.txt 2>&1
+              --res 512 --no-texture --steps $2 --threads 4 --faces 50000 --box-uv --seed 42 --verbose --no-fa >> out/$1.txt 2>&1  # --no-fa: exact attention, 3.3x faster on CPU than FlashAttention
             echo "EXIT $? ($1, $2 steps)" | tee -a out/$1.txt
             kill $MON 2>/dev/null || true
             grep -E "Maximum resident|Elapsed" out/time_$1.txt || true
@@ -59,12 +59,4 @@ jobs:
             ls -la out
             push $1
           }
-          declare -f push run > /tmp/fn.sh
-          run a_2steps 2 120
-      - name: Run B — full steps (real quality and real time)
-        run: |
-          source /tmp/fn.sh
-          run b_full "${{ inputs.steps || '12' }}" 200
-      - name: Push results to ci-logs-trellis
-        if: always()
-        run: source /tmp/fn.sh 2>/dev/null && push final || true
+          run full "${{ inputs.steps || '12' }}" 300

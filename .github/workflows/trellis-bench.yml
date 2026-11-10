@@ -40,7 +40,7 @@ jobs:
           fi
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTRELLIS_WEBP=OFF ${{ matrix.cmake || '-DGGML_NATIVE=ON' }} > /tmp/cmake.txt 2>&1 || { tail -40 /tmp/cmake.txt; exit 1; }
           cmake --build build --target trellis-cli -j 4 2>&1 | tail -2
-          file build/trellis-cli | cut -c1-200; ls -la build/trellis-cli; grep -c . /dev/null; grep -m1 -i "march\|ARM feature\|detected" /tmp/cmake.txt || true
+          file build/trellis-cli | cut -c1-200; ls -la build/trellis-cli;
       - name: Weights + cut-out photo
         run: |
           mkdir models

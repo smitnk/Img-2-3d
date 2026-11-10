@@ -16,10 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: rp-dims2,    q: q4/, flags: "--no-fa --f32", repack: true }
-          - { name: rp-mlp,      q: q4/, flags: "--no-fa --f32", repack: true, only: ".mlp." }
-          - { name: rp-attn,     q: q4/, flags: "--no-fa --f32", repack: true, only: "attn" }
-          - { name: rp-noblocks, q: q4/, flags: "--no-fa --f32", repack: true, skip: "blocks." }
+          - { name: rp-weight,   q: q4/, flags: "--no-fa --f32", repack: true, only: ".weight" }
+          - { name: rp-weight16, q: q4/, flags: "--no-fa",       repack: true, only: ".weight" }
     steps:
       - name: Build trellis-cli (CPU only)
         run: |

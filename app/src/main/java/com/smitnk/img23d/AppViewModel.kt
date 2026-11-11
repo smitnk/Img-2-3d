@@ -611,7 +611,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
         launchJob("Smart Mesh", "Blender", 1) { report ->
             if (!curioPack.isReady()) {
-                report.stage("Downloading CurioMesh (~10 MB, once)", null)
+                report.stage("Downloading CurioMesh (~5 MB, once)", null)
                 curioPack.install { }
             }
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)

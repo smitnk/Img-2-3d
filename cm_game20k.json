@@ -1,0 +1,211 @@
+{
+  "input": "/w/in.glb",
+  "use": "GAME",
+  "detail_asked": null,
+  "reduce_to": "20000",
+  "source_faces": 228332,
+  "blender": "4.2.3 LTS",
+  "addon": "curiomesh",
+  "ok": true,
+  "detail": 6.0,
+  "output": "QUADS",
+  "out_file": "/w/cm_game20k.glb",
+  "out_object": "in_Retopo",
+  "view_changed_pct": 2.39,
+  "parts": 15,
+  "notes": [],
+  "seconds": 15.4,
+  "issues": {
+    "totals": {
+      "sliver": 234,
+      "pole": 378,
+      "pinched": 19
+    },
+    "spots": 124,
+    "per_part": {
+      "1": {
+        "sliver": 219,
+        "pole": 371,
+        "pinched": 15
+      },
+      "8": {
+        "sliver": 4,
+        "pinched": 2
+      },
+      "14": {
+        "sliver": 4,
+        "pinched": 2
+      },
+      "7": {
+        "sliver": 4,
+        "pole": 7
+      },
+      "3": {
+        "sliver": 3
+      }
+    },
+    "worst": [
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 9,
+          "pole": 38
+        },
+        "face_count": 45,
+        "score": 7.294,
+        "center": [
+          -0.297631,
+          0.158863,
+          0.282665
+        ],
+        "radius": 0.194289
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 7,
+          "pole": 24
+        },
+        "face_count": 28,
+        "score": 6.6,
+        "center": [
+          0.297551,
+          0.052935,
+          0.278307
+        ],
+        "radius": 0.144142
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 12,
+          "pole": 7
+        },
+        "face_count": 15,
+        "score": 6.489,
+        "center": [
+          -0.473889,
+          -0.404859,
+          0.278597
+        ],
+        "radius": 0.05741
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 5,
+          "pinched": 1,
+          "pole": 7
+        },
+        "face_count": 11,
+        "score": 6.226,
+        "center": [
+          0.171354,
+          0.293181,
+          0.969754
+        ],
+        "radius": 0.075255
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 6,
+          "pole": 16
+        },
+        "face_count": 20,
+        "score": 6.085,
+        "center": [
+          0.511648,
+          -0.410332,
+          0.292548
+        ],
+        "radius": 0.111608
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 2,
+          "pinched": 2,
+          "pole": 7
+        },
+        "face_count": 11,
+        "score": 5.904,
+        "center": [
+          -0.175141,
+          -0.22642,
+          0.282714
+        ],
+        "radius": 0.076909
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 6,
+          "pole": 7
+        },
+        "face_count": 13,
+        "score": 5.489,
+        "center": [
+          0.268714,
+          0.272104,
+          0.271839
+        ],
+        "radius": 0.107019
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 5,
+          "pole": 7
+        },
+        "face_count": 11,
+        "score": 5.226,
+        "center": [
+          -0.497369,
+          -0.285042,
+          0.273983
+        ],
+        "radius": 0.073532
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 3,
+          "pinched": 3
+        },
+        "face_count": 3,
+        "score": 5.17,
+        "center": [
+          -0.05942,
+          0.031835,
+          0.081048
+        ],
+        "radius": 0.027849
+      },
+      {
+        "part": 1,
+        "kinds": {
+          "sliver": 3,
+          "pole": 15
+        },
+        "face_count": 18,
+        "score": 5.038,
+        "center": [
+          0.295709,
+          0.037833,
+          0.756276
+        ],
+        "radius": 0.063633
+      }
+    ]
+  },
+  "faces": 21214,
+  "quads": 21214,
+  "tris": 0,
+  "ngons": 0,
+  "quad_pct": 100.0,
+  "verdict": {
+    "ok": true,
+    "problems": []
+  }
+}

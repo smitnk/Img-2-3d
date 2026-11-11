@@ -1,0 +1,44 @@
+18:21:39 | INFO: Data are loaded, start creating Blender stuff
+18:21:39 | INFO: Blender create Mesh node Mesh_0
+18:21:40 | INFO: glTF import finished in 0.21s
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Error: QuadriFlow: Remeshing failed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Error: QuadriFlow: Remeshing failed
+Warning: QuadriFlow: The mesh needs to be manifold and have face normals that point in a consistent direction
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Error: QuadriFlow: Remeshing failed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Info: QuadriFlow: Remeshing completed
+Error: QuadriFlow: Remeshing failed
+Error: QuadriFlow: Remeshing failed
+Warning: QuadriFlow: The mesh needs to be manifold and have face normals that point in a consistent direction
+MON 18:22:39 rss_mb=772 free_mb=14136
+18:22:39 | INFO: Starting glTF 2.0 export
+18:22:39 | INFO: Extracting primitive: in_Retopo
+18:22:39 | INFO: Primitives created: 1
+18:22:39 | INFO: Finished glTF 2.0 export in 0.014803171157836914 s
+Info: 8,045 faces written to in_Retopo, Multires Detail up to 128,376 faces at level 2
+ERROR Draco mesh compression is not available because library could not be found at /opt/blender/4.2/python/lib/python3.12/site-packages/libextern_draco.so
+
+CURIOMESH_REPORT {"input": "/w/in.glb", "use": "ANIMATION", "detail_asked": null, "reduce_to": "8000", "source_faces": 228332, "blender": "4.2.3 LTS", "addon": "curiomesh", "ok": true, "detail": 1.5, "output": "QUADS", "out_file": "/w/cm_anim8k.glb", "out_object": "in_Retopo", "view_changed_pct": 12.44, "parts": 15, "notes": ["Repair stopped at its 30 s limit: 3 part(s) with crossings are selected on Apply. Time Limits: Longer or No Limit keeps going"], "seconds": 60.0, "issues": {"totals": {"inward": 11, "crossing": 26, "folded_over": 18, "bent": 212, "overlap": 6, "sliver": 34, "pinched": 10, "concave": 24, "pole": 7, "sunk": 1, "flat": 4}, "spots": 57, "per_part": {"0": {"inward": 10, "crossing": 26, "folded_over": 16, "bent": 109, "overlap": 6, "sliver": 13, "pinched": 5, "concave": 16, "pole": 7}, "1": {"inward": 1, "folded_over": 2, "bent": 99, "pinched": 1, "concave": 8, "sunk": 1, "sliver": 1}, "3": {"bent": 4}, "14": {"flat": 4, "pinched": 4, "sliver": 8}, "8": {"sliver": 12}}, "worst": [{"part": 0, "kinds": {"inward": 1, "crossing": 23, "folded_over": 7, "bent": 17, "overlap": 6, "sliver": 5, "pinched": 2, "concave": 4}, "face_count": 42, "score": 147.818, "center": [0.458016, -0.324328, 0.296279], "radius": 0.228981}, {"part": 0, "kinds": {"inward": 7, "crossing": 3, "folded_over": 6, "bent": 16, "sliver": 4, "pinched": 3, "pole": 2, "concave": 4}, "face_count": 27, "score": 127.358, "center": [-0.385464, -0.308036, 0.302372], "radius": 0.190743}, {"part": 0, "kinds": {"inward": 2, "folded_over": 3, "bent": 6, "sliver": 1, "concave": 5}, "face_count": 8, "score": 64.248, "center": [-0.229171, 0.348646, 0.277889], "radius": 0.12245}, {"part": 1, "kinds": {"inward": 1, "folded_over": 2, "bent": 1, "pinched": 1, "concave": 1}, "face_count": 3, "score": 36.0, "center": [0.289243, 0.076097, 0.270184], "radius": 0.045056}, {"part": 1, "kinds": {"bent": 29, "concave": 1}, "face_count": 29, "score": 19.574, "center": [0.079509, 0.221245, 0.135073], "radius": 0.204281}, {"part": 1, "kinds": {"bent": 11, "concave": 3}, "face_count": 11, "score": 18.548, "center": [-0.286932, 0.145737, -0.319968], "radius": 0.103902}, {"part": 0, "kinds": {"bent": 18}, "face_count": 18, "score": 15.51, "center": [0.296065, 0.004997, 0.790533], "radius": 0.147272}, {"part": 1, "kinds": {"bent": 10}, "face_count": 10, "score": 12.966, "center": [-0.263306, 0.301944, -0.477778], "radius": 0.078929}, {"part": 0, "kinds": {"bent": 8}, "face_count": 8, "score": 12.0, "center": [-0.365547, -0.329483, 0.488625], "radius": 0.136351}, {"part": 1, "kinds": {"bent": 8}, "face_count": 8, "score": 12.0, "center": [0.151065, 0.338838, -0.786258], "radius": 0.079839}]}, "faces": 8045, "quads": 7959, "tris": 86, "ngons": 0, "quad_pct": 98.9, "verdict": {"ok": false, "problems": ["view changed 12.4% is well above the Detail asked (1.5%)", "278 defect faces is more than 0.5% of 8045"]}}
+EXIT 0 (cm_anim8k)

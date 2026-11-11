@@ -19,14 +19,16 @@ import time
 import numpy as np
 import torch
 
-SUB = "hunyuan3d-dit-v2-mini-turbo"
+MV = os.environ.get("HY_VARIANT", "mini") == "mv"  # Hunyuan3D-2mv Turbo: same pipeline, DiT twice as deep, 1-4 views
+REPO, SUB = ("tencent/Hunyuan3D-2mv", "hunyuan3d-dit-v2-mv-turbo") if MV else ("tencent/Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-turbo")
+VIEWS = ("front", "left", "back", "right")  # MVImageProcessorV2's view index order
 STEPS = 5
 QUANT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "skintokens", "quant_llm.py")
 
 
 def load():
     from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
-    p = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained("tencent/Hunyuan3D-2mini", subfolder=SUB, use_safetensors=True,
+    p = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(REPO, subfolder=SUB, use_safetensors=True,
                                                          device="cpu", dtype=torch.float32)
     for m in (p.model, p.vae, p.conditioner):
         m.float().eval().requires_grad_(False)
@@ -59,7 +61,9 @@ def part(name, out):
     sf = float(p.vae.scale_factor)
     ge = guidance_free(p)
     with torch.no_grad():
-        cond = p.conditioner(image=torch.zeros(1, 3, int(p.image_processor.size), int(p.image_processor.size)))["main"]
+        z = torch.zeros(1, 3, int(p.image_processor.size), int(p.image_processor.size))
+        # mv: trace the DiT with two views; cond's token axis is dynamic, the check runs three
+        cond = p.conditioner(image=z[None].repeat(1, 2, 1, 1, 1), view_idxs=[[0, 2]])["main"] if MV else p.conditioner(image=z)["main"]
     T, D = cond.shape[1:]
     print(f"part {name}: latents {L}x{C}, cond {T}x{D}, guidance_embed {guidance_free(p)}, rss {rss_mb()} MB", flush=True)
     keep = {"cond": p.conditioner, "dit": p.model, "vae": p.vae, "geo": p.vae}[name]
@@ -93,8 +97,11 @@ def part(name, out):
             x = torch.nn.functional.interpolate((im + 1) / 2, size=(S, S), mode="bilinear", align_corners=False)
             h = m.model((x - mean) / std).last_hidden_state
             return h if m.use_cls_token else h[:, 1:]
+
+        def fn_mv(m, im, view):  # one view per call; the app concatenates the views in index order
+            return fn(m, im) + m.view_embed[0][view]
         sz = int(p.image_processor.size)
-        mod, args = Wrap(enc, fn), (torch.rand(1, 3, sz, sz) * 2 - 1,)
+        mod, args = Wrap(enc, fn_mv if MV else fn), (torch.rand(1, 3, sz, sz) * 2 - 1,) + ((torch.tensor([2]),) if MV else ())
         print("encoder attention class:", type(enc.model.encoder.layer[0].attention.attention).__name__, flush=True)
         with torch.no_grad():
             before = mod(*args)
@@ -106,7 +113,7 @@ def part(name, out):
         d = float((before - after).abs().max())
         print(f"chunked attention vs original: max diff {d:.2e}", flush=True)
         assert d < 1e-3, d
-        names, outs, dyn = ["image"], ["cond"], None
+        names, outs, dyn = ["image", "view"][:len(args)], ["cond"], None
     elif name == "dit":
         # Joint attention over latents + image tokens (~8.4k) builds a 16-head score table of ~4.5 GB at once; on the
         # phone that set the peak. Trace it 2 heads at a time (same maths, ~0.56 GB each, freed between groups).
@@ -121,7 +128,7 @@ def part(name, out):
             (lambda m, x, t, c: m(x, t, {"main": c}, guidance=None))
         b = 1 if ge else 2  # guidance-distilled turbo: one pass per step
         mod, args = Wrap(p.model, fn), (torch.randn(b, L, C), torch.full((b,), 0.5), cond.repeat(b, 1, 1))
-        names, outs, dyn = ["x", "t", "cond"], ["v"], {"x": {0: "b"}, "t": {0: "b"}, "cond": {0: "b"}, "v": {0: "b"}}
+        names, outs, dyn = ["x", "t", "cond"], ["v"], {"x": {0: "b"}, "t": {0: "b"}, "cond": {0: "b", 1: "tokens"} if MV else {0: "b"}, "v": {0: "b"}}
     elif name == "vae":
         mod, args = Wrap(p.vae, lambda m, z: m(z)), (torch.randn(1, L, C),)
         names, outs, dyn = ["latents"], ["kv"], None
@@ -197,14 +204,22 @@ def check(out, image):
     info = {**json.load(open(f"{out}/dit_info.json")), **{k: v for k, v in json.load(open(f"{out}/cond_info.json")).items()
                                                         if k not in ("part", "fp32_maxdiff", "int8_rel_maxdiff")}}
     from hy3dgen.rembg import BackgroundRemover
-    im = Image.open(image).convert("RGBA")
-    if im.getextrema()[3][0] == 255:
-        im = BackgroundRemover()(im.convert("RGB"))
+    def cut(f):
+        im = Image.open(f).convert("RGBA")
+        return BackgroundRemover()(im.convert("RGB")) if im.getextrema()[3][0] == 255 else im
     p.vae.enable_flashvdm_decoder(mc_algo="mc")  # dense decode took 65 min here
-    im.save(f"{out}/ref_cutout.png")  # the Java CLI's input
-    img = p.prepare_image(im)["image"]
-    print("image tensor", tuple(img.shape), flush=True)
-    img = img.reshape(1, *img.shape[-3:])
+    if MV:  # IMAGE is a folder of front.png / left.png / back.png / right.png
+        im = {v: cut(f"{image}/{v}.png") for v in VIEWS if os.path.exists(f"{image}/{v}.png")}
+        for v, c in im.items():
+            c.save(f"{out}/ref_cutout_{v}.png")  # the Java CLI's inputs
+        prep = p.prepare_image(im)
+        img, views = prep["image"][0], list(prep["view_idxs"][0])
+    else:
+        im = cut(image)
+        im.save(f"{out}/ref_cutout.png")  # the Java CLI's input
+        img = p.prepare_image(im)["image"]
+        img, views = img.reshape(1, *img.shape[-3:]), None
+    print("image tensor", tuple(img.shape), "views", views, flush=True)
     np.save(f"{out}/ref_image.npy", img.numpy())
     L, C = info["L"], info["C"]
     noise = torch.from_numpy(np.random.default_rng(7).standard_normal((1, L, C)).astype(np.float32))
@@ -221,7 +236,8 @@ def check(out, image):
     p.model = p.conditioner = None  # the torch pipeline (~12 GB) plus ONNX sessions got the runner killed; keep only the VAE
     gc.collect()
     c = sess("cond")
-    cond = c.run(None, {"image": img.numpy()})[0]
+    cond = c.run(None, {"image": img.numpy()})[0] if not MV else np.concatenate(
+        [c.run(None, {"image": img[i:i + 1].numpy(), "view": np.array([v], np.int64)})[0] for i, v in enumerate(views)], axis=1)
     del c
     ge = info["guidance_embed"]
     c_in = cond if ge else np.concatenate([cond, np.zeros_like(cond)])

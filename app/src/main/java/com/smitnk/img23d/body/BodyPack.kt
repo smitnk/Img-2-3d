@@ -80,13 +80,6 @@ class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")
 
-/**
- * TRELLIS.2 shape generator: trellis.cpp (ggml, CPU) as a Linux program plus 4-bit GGUF weights, release trellis-v1.
- * Runs inside the Blender engine's Linux runtime. Weights: MIT (Microsoft TRELLIS.2), DINOv3 under Meta's DINOv3 License.
- */
-class TrellisPack(context: Context) : AssetPack(File(context.filesDir, "trellis"), BuildConfig.TRELLIS_BASE_URL, "trellis_info.json",
-    1, "trellis-cli")
-
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */
 data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)
 

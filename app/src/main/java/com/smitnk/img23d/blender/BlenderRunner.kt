@@ -90,33 +90,6 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
         return pb
     }
 
-    /**
-     * Runs a Linux program from [dir] (bound at /opt/tool) inside the runtime, e.g. the TRELLIS.2 generator. proot is
-     * what lets a glibc binary run on Android at all (it answers the syscalls Android's sandbox refuses).
-     */
-    suspend fun tool(dir: File, cmd: List<String>, onLine: (String) -> Unit): Unit = withContext(Dispatchers.IO) {
-        check(runtime.isReady()) { "Blender engine is not installed" }
-        val log = ArrayDeque<String>()
-        val p = guest(proot("-b", "${dir.path}:/opt/tool", "-w", "/opt/job") + cmd).start().also { process = it }
-        try {
-            p.inputStream.bufferedReader().useLines { lines ->
-                for (line in lines) {
-                    coroutineContext.ensureActive()
-                    if (log.size >= 200) log.removeFirst()
-                    log.addLast(line)
-                    onLine(line)
-                }
-            }
-            p.waitFor(30, TimeUnit.SECONDS)
-            coroutineContext.ensureActive()
-            val code = if (p.isAlive) -1 else p.exitValue()
-            if (code != 0) throw BlenderException("${cmd.first().substringAfterLast('/')} exited with code $code\n" + log.takeLast(25).joinToString("\n"), log.toList())
-        } finally {
-            if (p.isAlive) p.destroyForcibly()
-            if (process === p) process = null
-        }
-    }
-
     private suspend fun exec(
         script: String, args: List<String>, threads: Int, outExt: String, onLine: (String) -> Unit, clearOut: Boolean = true,
     ): BlenderResult = withContext(Dispatchers.IO) {

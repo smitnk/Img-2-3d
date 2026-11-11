@@ -123,27 +123,25 @@ internal fun EngineWarning(text: String, onFix: () -> Unit) {
 fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppViewModel, cb: AppCallbacks) {
     val character = mode == PhotoMode.CHARACTER
     val packReady = com.smitnk.img23d.body.PackStatus.Ready
-    val trellis = settings.trellis && state.trellisPack == packReady
     // the chosen engine must be installed; nothing falls back to another engine silently
     val tripoReady = when (settings.engine) {
         "hunyuan" -> state.hunyuanPack == packReady
         "hunyuanmv" -> state.hunyuanMvPack == packReady
-        "trellis" -> state.trellisPack == packReady
         else -> state.modelStatus == ModelStatus.Ready
     }
     val blenderReady = state.runtime == RuntimeStatus.Ready
-    val ready = tripoReady && (!(character || trellis) || blenderReady) // TRELLIS.2 runs inside the Blender runtime
+    val ready = tripoReady && (!character || blenderReady)
     FormWithAction(if (character) "Make character" else "Generate 3D", Icons.Rounded.AutoAwesome, ready && state.image != null, { vm.runPhoto(mode) }) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Engine", style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("triposr" to "TripoSR · fast", "hunyuan" to "Hunyuan 2mini", "hunyuanmv" to "Hunyuan 2mv · multi-view", "trellis" to "TRELLIS.2 · slow").forEach { (e, label) ->
+                listOf("triposr" to "TripoSR · fast", "hunyuan" to "Hunyuan 2mini", "hunyuanmv" to "Hunyuan 2mv · multi-view").forEach { (e, label) ->
                     FilterChip(selected = settings.engine == e, onClick = { vm.updateSettings { it.copy(engine = e) } }, label = { Text(label) })
                 }
             }
         }
         if (!tripoReady) EngineWarning("This engine is not installed (or needs an update). Tap to open Settings → Engines and tap Install.") { vm.tab(Dest.Settings) }
-        if ((character || trellis) && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
+        if (character && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
         val img = state.image
         Box(
             Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.extraLarge).background(MaterialTheme.colorScheme.surfaceContainer),

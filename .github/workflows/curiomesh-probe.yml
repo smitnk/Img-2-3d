@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [python, native]
+        core: [native]
     steps:
       - name: Runtime, add-on, input mesh
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -51,8 +51,33 @@ jobs:
             grep -vE "^MON" out/$n.txt | tail -25
             cp w/$n.glb w/$n.json w/*.png out/ 2>/dev/null || true; cat w/$n.json 2>/dev/null | head -60
           }
-          run game20k GAME 20000
-          run anim10k ANIMATION 10000 --bake normal --bake-size 1024
+          # The raw Hunyuan mesh is noisy: CurioMesh split it into 540 parts and the result was a patchwork with holes.
+          # Clean it first the way Refine in Blender does (voxel remesh + smooth), then compare CurioMesh with plain QuadriFlow.
+          cat > w/prep.py <<'PY'
+          import bpy, sys
+          a = sys.argv[sys.argv.index("--") + 1:]
+          bpy.ops.wm.read_factory_settings(use_empty=True)
+          bpy.ops.import_scene.gltf(filepath=a[0])
+          o = [x for x in bpy.context.scene.objects if x.type == "MESH"][0]
+          bpy.context.view_layer.objects.active = o; o.select_set(True)
+          if a[2] == "clean":
+              m = o.modifiers.new("r", "REMESH"); m.mode = "VOXEL"; m.voxel_size = max(o.dimensions) / 220; m.use_smooth_shade = True
+              bpy.ops.object.modifier_apply(modifier="r")
+              s = o.modifiers.new("s", "CORRECTIVE_SMOOTH"); s.iterations = 8; s.factor = 0.6
+              bpy.ops.object.modifier_apply(modifier="s")
+          else:
+              print("QUADRIFLOW", bpy.ops.object.quadriflow_remesh(mode="FACES", target_faces=int(a[2]), use_mesh_symmetry=False))
+          print("FACES", len(o.data.polygons), "quads", sum(len(p.vertices) == 4 for p in o.data.polygons))
+          bpy.ops.export_scene.gltf(filepath=a[1], export_format="GLB")
+          PY
+          bl() { /usr/bin/time -v -o out/time_$1.txt sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/prep.py -- "${@:2}" 2>&1 | grep -E "FACES|QUADRIFLOW|Error|Traceback" | tee -a out/$1.txt; grep -E "Maximum resident|Elapsed" out/time_$1.txt; }
+          bl clean /w/in.glb /w/clean.glb clean
+          bl qf20k /w/clean.glb /w/qf20k.glb 20000
+          bl qf8k /w/clean.glb /w/qf8k.glb 8000
+          cp w/clean.glb w/qf20k.glb w/qf8k.glb out/ || true
+          cp w/clean.glb w/in.glb
+          run cm_game20k GAME 20000
+          run cm_anim8k ANIMATION 8000
           ls -la out
       - name: Push results to ci-logs-curiomesh-${{ matrix.core }}
         if: always()

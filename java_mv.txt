@@ -1,0 +1,6 @@
+stage Reading the photo
+stage Shaping
+stage Carving the surface
+stage Building the mesh
+stage Done
+HUNYUAN_JAVA faces=337433 vertices=176435 total=764218ms timings={surface=229440, shape_steps=479194, decoder=9766, encoder=44899, marching_cubes=851} bbox=[-0.673 -0.998 -0.574]..[0.671 0.996 0.564] heapMB=89

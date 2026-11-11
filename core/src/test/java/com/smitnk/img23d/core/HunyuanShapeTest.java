@@ -90,4 +90,9 @@ public class HunyuanShapeTest {
         float[] o = HunyuanShape.fewerSteps(new float[]{0f, .2f, .4f, .6f, .8f, 1f});
         org.junit.Assert.assertArrayEquals(new float[]{0f, .4f, .8f, 1f}, o, 0f);
     }
+
+    @Test
+    public void concatKeepsViewOrder() {
+        org.junit.Assert.assertArrayEquals(new float[]{1f, 2f, 3f}, HunyuanShape.concat(new float[][]{{1f}, {2f, 3f}}), 0f);
+    }
 }

@@ -171,8 +171,8 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             onSave = { cb.pickFolder { vm.backupOne("hunyuan", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuan", it) } },
             extra = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Use for Photo → 3D (off: TripoSR)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(hunyuan = on) } })
+                    Text("Use for Photo → 3D (also selectable on the photo screen)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuan, { on -> vm.updateSettings { it.copy(engine = if (on) "hunyuan" else "triposr") } })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Detail: ${s.hunyuanOctree}³ — on = 256 (detailed), off = 128 (faster)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -181,6 +181,24 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Fast mode — fewer surface checks, 4 threads (off = current quality path)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(s.hunyuanFast, { on -> vm.updateSettings { it.copy(hunyuanFast = on) } })
+                }
+            },
+        )
+
+        EngineCard(
+            title = "Hunyuan3D-2mv · several photos → 3D", sub = "Tencent Hunyuan3D-2mv Turbo on ONNX Runtime · ≈3.6 GB download. " +
+                "Give it a front photo plus back / left / right views of the same pose, so the hidden sides are real instead of guessed. " +
+                "Twice the shape work of 2mini (expect 45–60 min with Fast mode). Uses the Detail and Fast mode switches of the 2mini card. " +
+                "No colours: use Paint texture after. Licence: Tencent Hunyuan 3D 2.0 Community License (not for the EU, UK or South Korea).",
+            ready = state.hunyuanMvPack == com.smitnk.img23d.body.PackStatus.Ready,
+            progress = (state.hunyuanMvPack as? com.smitnk.img23d.body.PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+            error = (state.hunyuanMvPack as? com.smitnk.img23d.body.PackStatus.Failed)?.message,
+            onInstall = vm::installHunyuanMvPack, onRemove = vm::uninstallHunyuanMvPack,
+            onSave = { cb.pickFolder { vm.backupOne("hunyuanmv", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuanmv", it) } },
+            extra = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Use for Photo → 3D (also selectable on the photo screen)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.hunyuanMv, { on -> vm.updateSettings { it.copy(engine = if (on) "hunyuanmv" else "triposr") } })
                 }
             },
         )
@@ -196,8 +214,8 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
             onSave = { cb.pickFolder { vm.backupOne("trellis", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("trellis", it) } },
             extra = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Use for Photo → 3D (wins over Hunyuan3D)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(s.trellis, { on -> vm.updateSettings { it.copy(trellis = on) } })
+                    Text("Use for Photo → 3D (also selectable on the photo screen)", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(s.trellis, { on -> vm.updateSettings { it.copy(engine = if (on) "trellis" else "triposr") } })
                 }
             },
         )

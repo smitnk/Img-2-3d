@@ -17,6 +17,7 @@ import com.smitnk.img23d.blender.BuilderSpec
 import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
+import com.smitnk.img23d.body.HunyuanMvPack
 import com.smitnk.img23d.body.HunyuanPack
 import com.smitnk.img23d.body.TrellisPack
 import com.smitnk.img23d.core.HunyuanShape
@@ -103,6 +104,7 @@ data class UiState(
     val modelStatus: ModelStatus = ModelStatus.Checking,
     val runtime: RuntimeStatus = RuntimeStatus.NotInstalled,
     val image: Bitmap? = null,
+    val views: Map<Int, Bitmap> = emptyMap(), // Hunyuan3D-2mv extra views: 1 left, 2 back, 3 right
     val builder: BuilderSpec = BuilderSpec(),
     val presetName: String = "",
     val presetColors: Map<String, String> = emptyMap(),
@@ -126,6 +128,7 @@ data class UiState(
     val texPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
     val trellisPack: PackStatus = PackStatus.NotInstalled,
+    val hunyuanMvPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -260,9 +263,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // ---------- inputs ----------
+    /** The next picked image goes to this Hunyuan3D-2mv view slot (1 left, 2 back, 3 right); 0 = the main photo. */
+    fun pickView(view: Int) { pendingView = view }
+    private var pendingView = 0
+    fun clearViews() = _state.update { it.copy(views = emptyMap()) }
+
     fun pickImage(uri: Uri, mode: PhotoMode) = viewModelScope.launch {
+        val view = pendingView
+        pendingView = 0
         runCatching { withContext(Dispatchers.IO) { decode(uri) } }
-            .onSuccess { bmp -> _state.update { it.copy(image = bmp) }; if (_state.value.dest !is Dest.Photo) go(Dest.Photo(mode)) }
+            .onSuccess { bmp -> _state.update { if (view == 0) it.copy(image = bmp) else it.copy(views = it.views + (view to bmp)) }; if (_state.value.dest !is Dest.Photo) go(Dest.Photo(mode)) }
             .onFailure { e -> fail("Could not open image", e.message ?: e.toString()) }
     }
 
@@ -278,6 +288,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val texPack = TexPack(app)
     val hunyuanPack = HunyuanPack(app)
     val trellisPack = TrellisPack(app)
+    val hunyuanMvPack = HunyuanMvPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -287,10 +298,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
         if (trellisPack.isReady()) _state.update { it.copy(trellisPack = PackStatus.Ready) }
+        if (hunyuanMvPack.isReady()) _state.update { it.copy(hunyuanMvPack = PackStatus.Ready) }
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, trellisPack)
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack, trellisPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         runCatching {
@@ -316,9 +328,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
+                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 trellisPack = if (trellisPack.isReady()) PackStatus.Ready else it.trellisPack)
         }
-        if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / trellis).")
+        if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / hunyuanmv / trellis).")
     }
 
     /** One engine's pack to / from a folder: key = its folder name (models, texgen, hunyuan, trellis, bodypack). */
@@ -348,6 +361,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
+                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 trellisPack = if (trellisPack.isReady()) PackStatus.Ready else it.trellisPack)
         }
     }
@@ -355,6 +369,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }
 
     fun uninstallTrellisPack() { trellisPack.uninstall(); _state.update { it.copy(trellisPack = PackStatus.NotInstalled) } }
+
+    fun uninstallHunyuanMvPack() { hunyuanMvPack.uninstall(); _state.update { it.copy(hunyuanMvPack = PackStatus.NotInstalled) } }
+
+    fun installHunyuanMvPack() = viewModelScope.launch {
+        runCatching { hunyuanMvPack.install { st -> _state.update { it.copy(hunyuanMvPack = st) } } }
+            .onFailure { e -> _state.update { it.copy(hunyuanMvPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
 
     fun installTrellisPack() = viewModelScope.launch {
         runCatching { trellisPack.install { st -> _state.update { it.copy(trellisPack = st) } } }
@@ -559,15 +580,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun runPhoto(mode: PhotoMode) {
         val bmp = _state.value.image ?: return
         val useTrellis = s.trellis && trellisPack.isReady()
-        val useHunyuan = !useTrellis && s.hunyuan && hunyuanPack.isReady()
+        val useMv = s.hunyuanMv && hunyuanMvPack.isReady()
+        val useHunyuan = useMv || (s.hunyuan && hunyuanPack.isReady())
+        val views = if (useMv) _state.value.views else emptyMap()
         if (!useTrellis && !useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
         // TRELLIS.2 is a Linux program: it runs inside the Blender engine's runtime
         if ((mode == PhotoMode.CHARACTER || useTrellis) && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
         launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D",
             if (useTrellis) "TRELLIS.2" else if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
-            val (res, opt) = if (useTrellis) trellis3d(bmp, report) else if (useHunyuan) hunyuan3d(bmp, report) else tripoSR(bmp, report)
+            val (res, opt) = if (useTrellis) trellis3d(bmp, report) else if (useHunyuan) hunyuan3d(bmp, report, useMv, views) else tripoSR(bmp, report)
             val engine = if (useTrellis) "TRELLIS.2 512 · $TRELLIS_STEPS steps"
+                else if (useMv) "Hunyuan3D-2mv ${s.hunyuanOctree}³ · ${views.size + 1} view${if (views.isEmpty()) "" else "s"}${if (s.hunyuanFast) " fast" else ""}"
                 else if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³${if (s.hunyuanFast) " fast" else ""}" else "TripoSR ${opt.resolution}³"
             val thumb = previewBitmap(res.preprocessed)
             if (mode == PhotoMode.MESH) {
@@ -751,14 +775,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Photo → shape with Hunyuan3D-2mini; background removal reuses TripoSR's u2net code with the pack's own u2net.onnx. */
-    private fun hunyuan3d(bmp: Bitmap, report: Report): Pair<TripoSR.Result, TripoSR.Options> {
+    private fun hunyuan3d(bmp: Bitmap, report: Report, mv: Boolean = false, views: Map<Int, Bitmap> = emptyMap()): Pair<TripoSR.Result, TripoSR.Options> {
+        val pack = if (mv) hunyuanMvPack else hunyuanPack
         val w = bmp.width
         val h = bmp.height
         var rgba = rgbaOf(bmp)
         // fast: 4 threads, the phone's big cores; 8 threads made the fast cores wait for the little ones
         val opt = TripoSR.Options().apply { threads = if (s.hunyuanFast) s.threadCount().coerceAtMost(4) else s.threadCount(); resolution = s.hunyuanOctree }
         val res = TripoSR.Result()
-        val tp = TripoSR(hunyuanPack.dir).also { tripo = it } // only its u2net background removal, shipped in the Hunyuan pack
+        val tp = TripoSR(pack.dir).also { tripo = it } // only its u2net background removal, shipped in the Hunyuan pack
         if (s.removeBackground && (3 until rgba.size step 4).none { rgba[it] < 255 }) {
             report.stage("Removing background", null)
             rgba = tp.removeBackground(rgba, w, h, opt.threads)
@@ -769,8 +794,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         res.preprocessed = com.smitnk.img23d.core.ImageOps.resize(
             com.smitnk.img23d.core.ImageOps.compositeGray(res.foreground, size[0] * size[0]), size[0], size[0], 3, TripoSR.IMAGE_SIZE, TripoSR.IMAGE_SIZE)
         System.setProperty("hunyuan.arena", "false") // the ORT memory pool force-closed an 8 GB phone even for the shape steps only
-        val hs = HunyuanShape.fromInfo(hunyuanPack.dir, File(hunyuanPack.dir, "hunyuan_info.json").readText(), opt.threads).also { it.fast = s.hunyuanFast; hunyuan = it }
-        res.mesh = hs.run(rgba, w, h, s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
+        val hs = HunyuanShape.fromInfo(pack.dir, File(pack.dir, "hunyuan_info.json").readText(), opt.threads).also { it.fast = s.hunyuanFast; hunyuan = it }
+        // extra views (2mv): each gets the same background removal; the engine wants them in view order, front first
+        val extra = views.toSortedMap().map { (v, b) ->
+            var px = rgbaOf(b)
+            if (s.removeBackground && (3 until px.size step 4).none { px[it] < 255 }) {
+                report.stage("Removing background", null)
+                px = tp.removeBackground(px, b.width, b.height, opt.threads)
+            }
+            Triple(v, px, b)
+        }
+        res.mesh = hs.run((listOf(rgba) + extra.map { it.second }).toTypedArray(), (listOf(w) + extra.map { it.third.width }).toIntArray(),
+            (listOf(h) + extra.map { it.third.height }).toIntArray(), (listOf(0) + extra.map { it.first }).toIntArray(), s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)
         return res to opt
     }

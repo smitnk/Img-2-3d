@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
     private var pendingPhotoMode = PhotoMode.MESH
 
     private val picker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { vm.pickImage(it, pendingPhotoMode) }
+        if (uri == null) vm.pickView(0) else vm.pickImage(uri, pendingPhotoMode)
     }
 
     private var pendingFolder: ((android.net.Uri) -> Unit)? = null

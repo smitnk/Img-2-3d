@@ -76,6 +76,10 @@ class TexPack(context: Context) : AssetPack(File(context.filesDir, "texgen"), Bu
 class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"), BuildConfig.HUNYUAN_BASE_URL, "hunyuan_info.json",
     3, "u2net.onnx") // v2: own u2net (no TripoSR pack needed), v3: encoder attention 4 heads at a time (phone RAM)
 
+/** Hunyuan3D-2mv Turbo: the multi-view model (front + optional left / back / right), same parts as 2mini, release hunyuanmv-v1. */
+class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
+    1, "u2net.onnx")
+
 /**
  * TRELLIS.2 shape generator: trellis.cpp (ggml, CPU) as a Linux program plus 4-bit GGUF weights, release trellis-v1.
  * Runs inside the Blender engine's Linux runtime. Weights: MIT (Microsoft TRELLIS.2), DINOv3 under Meta's DINOv3 License.

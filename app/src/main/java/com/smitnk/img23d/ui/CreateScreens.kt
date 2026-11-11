@@ -118,17 +118,31 @@ internal fun EngineWarning(text: String, onFix: () -> Unit) {
 
 // ---------------------------------------------------------------- Photo (System B, optionally + A)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppViewModel, cb: AppCallbacks) {
     val character = mode == PhotoMode.CHARACTER
-    val trellis = settings.trellis && state.trellisPack == com.smitnk.img23d.body.PackStatus.Ready
-    val tripoReady = state.modelStatus == ModelStatus.Ready || trellis ||
-        (settings.hunyuan && state.hunyuanPack == com.smitnk.img23d.body.PackStatus.Ready) // both bring their own u2net
+    val packReady = com.smitnk.img23d.body.PackStatus.Ready
+    val trellis = settings.trellis && state.trellisPack == packReady
+    // the chosen engine must be installed; nothing falls back to another engine silently
+    val tripoReady = when (settings.engine) {
+        "hunyuan" -> state.hunyuanPack == packReady
+        "hunyuanmv" -> state.hunyuanMvPack == packReady
+        "trellis" -> state.trellisPack == packReady
+        else -> state.modelStatus == ModelStatus.Ready
+    }
     val blenderReady = state.runtime == RuntimeStatus.Ready
     val ready = tripoReady && (!(character || trellis) || blenderReady) // TRELLIS.2 runs inside the Blender runtime
     FormWithAction(if (character) "Make character" else "Generate 3D", Icons.Rounded.AutoAwesome, ready && state.image != null, { vm.runPhoto(mode) }) {
-        if (!tripoReady) EngineWarning(if (settings.hunyuan) "Hunyuan3D needs an update (adds background removal). Tap to open Settings → Engines and tap Install."
-            else "TripoSR model is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Engine", style = MaterialTheme.typography.titleSmall)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("triposr" to "TripoSR · fast", "hunyuan" to "Hunyuan 2mini", "hunyuanmv" to "Hunyuan 2mv · multi-view", "trellis" to "TRELLIS.2 · slow").forEach { (e, label) ->
+                    FilterChip(selected = settings.engine == e, onClick = { vm.updateSettings { it.copy(engine = e) } }, label = { Text(label) })
+                }
+            }
+        }
+        if (!tripoReady) EngineWarning("This engine is not installed (or needs an update). Tap to open Settings → Engines and tap Install.") { vm.tab(Dest.Settings) }
         if ((character || trellis) && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
         val img = state.image
         Box(
@@ -140,6 +154,22 @@ fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppView
         }
         OutlinedButton(onClick = { cb.pickImage(mode) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Icon(Icons.Rounded.PhotoLibrary, null); Spacer(Modifier.width(8.dp)); Text(if (img == null) "Choose photo" else "Change photo")
+        }
+        if (settings.hunyuanMv) Panel {
+            SectionHeader("More views (optional)")
+            Text("Same character, same pose. Left = a side photo where the character faces the left edge of the picture; Right = facing the right edge.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(2 to "Back", 1 to "Left", 3 to "Right").forEach { (v, label) ->
+                    val b = state.views[v]
+                    OutlinedButton(onClick = { vm.pickView(v); cb.pickImage(mode) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
+                        if (b != null) Image(b.asImageBitmap(), "$label view", Modifier.size(40.dp), contentScale = ContentScale.Fit)
+                        Spacer(Modifier.width(4.dp)); Text(if (b == null) "+ $label" else label)
+                    }
+                }
+            }
+            if (state.views.isNotEmpty()) androidx.compose.material3.TextButton(onClick = { vm.clearViews() }) { Text("Clear extra views") }
         }
         PipelineSteps(character)
         Panel {

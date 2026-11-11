@@ -18,8 +18,7 @@ data class Settings(
     val refineVoxel: Float = 0.008f,
     val refineSmooth: Int = 4,
     val paintAi: Boolean = false, // AI-painted sides: slow and often worse than TripoSR's colours
-    val hunyuan: Boolean = false, // Photo → 3D with Hunyuan3D-2mini instead of TripoSR (when its pack is installed)
-    val trellis: Boolean = false, // Photo → 3D with TRELLIS.2 (wins over Hunyuan when both are on)
+    val engine: String = "triposr", // Photo → 3D engine: triposr | hunyuan (2mini) | hunyuanmv (2mv, multi-view) | trellis
     val hunyuanOctree: Int = 256,
     val hunyuanFast: Boolean = false, // fewer surface queries + big cores only
     val refineDecimate: Float = 1.0f,
@@ -35,6 +34,9 @@ data class Settings(
     val autoRotate: Boolean = true,
     val reduceMotion: Boolean = false,
 ) {
+    val hunyuan get() = engine == "hunyuan"
+    val hunyuanMv get() = engine == "hunyuanmv"
+    val trellis get() = engine == "trellis"
     fun threadCount() = if (threads > 0) threads else Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
 }
 
@@ -54,7 +56,7 @@ class SettingsStore(context: Context) {
             .putBoolean("vertexColors", s.vertexColors).putFloat("foregroundRatio", s.foregroundRatio)
             .putBoolean("rig", s.rig).putBoolean("saveBlend", s.saveBlend)
             .putFloat("refineHeight", s.refineHeight).putFloat("refineVoxel", s.refineVoxel)
-            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putBoolean("hunyuan", s.hunyuan).putBoolean("trellis", s.trellis).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putFloat("refineDecimate", s.refineDecimate)
+            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putString("engine", s.engine).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putFloat("refineDecimate", s.refineDecimate)
             .putBoolean("refineRig", s.refineRig).putInt("threads", s.threads).putBoolean("keepScreenOn", s.keepScreenOn)
             .putString("apiKey", s.apiKey).putString("apiModel", s.apiModel)
             .putBoolean("dynamicColor", s.dynamicColor).putBoolean("autoRotate", s.autoRotate)
@@ -76,8 +78,8 @@ class SettingsStore(context: Context) {
             refineVoxel = prefs.getFloat("refineVoxel", d.refineVoxel),
             refineSmooth = prefs.getInt("refineSmooth", d.refineSmooth),
             paintAi = prefs.getBoolean("paintAi", d.paintAi),
-            hunyuan = prefs.getBoolean("hunyuan", d.hunyuan),
-            trellis = prefs.getBoolean("trellis", d.trellis),
+            // older builds stored two switches
+            engine = prefs.getString("engine", null) ?: if (prefs.getBoolean("trellis", false)) "trellis" else if (prefs.getBoolean("hunyuan", false)) "hunyuan" else d.engine,
             hunyuanOctree = prefs.getInt("hunyuanOctree", d.hunyuanOctree),
             hunyuanFast = prefs.getBoolean("hunyuanFast", d.hunyuanFast),
             refineDecimate = prefs.getFloat("refineDecimate", d.refineDecimate),

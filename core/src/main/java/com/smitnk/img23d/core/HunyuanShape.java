@@ -117,20 +117,35 @@ public final class HunyuanShape {
      * @return mesh in the app's TripoSR frame (Mesh.writeGlb maps it to Y-up)
      */
     public Mesh run(int[] rgba, int w, int h, int octree, long seed, Listener l) throws OrtException {
+        return run(new int[][]{rgba}, new int[]{w}, new int[]{h}, new int[]{0}, octree, seed, l);
+    }
+
+    /**
+     * Multi-view (Hunyuan3D-2mv pack): one cut-out per view, view = 0 front, 1 left, 2 back, 3 right, in ascending order.
+     * The 2mini pack has no "view" input and takes exactly one image.
+     */
+    public Mesh run(int[][] rgba, int[] w, int[] h, int[] view, int octree, long seed, Listener l) throws OrtException {
         long t0 = System.nanoTime();
         float[] cond;
         int[] condShape = new int[2];
         try (OrtSession s = open("cond.onnx")) {
             long[] shape = ((TensorInfo) s.getInputInfo().get("image").getInfo()).getShape();
             int size = (int) shape[2];
-            l.onProgress("Reading the photo", 0f);
-            Map<String, OnnxTensor> in = new HashMap<>();
-            in.put("image", t(preprocess(rgba, w, h, size), 1, 3, size, size));
-            cond = run1(s, in);
+            boolean mv = s.getInputInfo().containsKey("view");
+            if (!mv && rgba.length != 1) throw new IllegalArgumentException("This Hunyuan3D pack takes one photo");
+            float[][] parts = new float[rgba.length][];
+            for (int i = 0; i < rgba.length; i++) {
+                l.onProgress("Reading the photo", (float) i / rgba.length);
+                Map<String, OnnxTensor> in = new HashMap<>();
+                in.put("image", t(preprocess(rgba[i], w[i], h[i], size), 1, 3, size, size));
+                if (mv) in.put("view", OnnxTensor.createTensor(env, java.nio.LongBuffer.wrap(new long[]{view[i]}), new long[]{1}));
+                parts[i] = run1(s, in);
+                check();
+            }
+            cond = concat(parts);
             long[] os = ((TensorInfo) s.getOutputInfo().get("cond").getInfo()).getShape();
-            condShape[0] = (int) os[1];
-            condShape[1] = (int) os[2];
-            if (condShape[0] <= 0) { condShape[1] = 1536; condShape[0] = cond.length / condShape[1]; }
+            condShape[1] = os[2] > 0 ? (int) os[2] : 1536;
+            condShape[0] = cond.length / condShape[1];
         }
         timingsMs.put("encoder", ms(t0)); t0 = System.nanoTime();
         check();
@@ -188,6 +203,16 @@ public final class HunyuanShape {
         timingsMs.put("marching_cubes", ms(t0));
         l.onProgress("Done", 1f);
         return out;
+    }
+
+    static float[] concat(float[][] parts) {
+        if (parts.length == 1) return parts[0];
+        int n = 0;
+        for (float[] p : parts) n += p.length;
+        float[] o = new float[n];
+        int at = 0;
+        for (float[] p : parts) { System.arraycopy(p, 0, o, at, p.length); at += p.length; }
+        return o;
     }
 
     static final class Volume { float[] values; int size; }

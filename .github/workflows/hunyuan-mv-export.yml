@@ -1,0 +1,105 @@
+name: Hunyuan3D-2mv Turbo (multi-view) - ONNX int8 export for the phone
+
+on:
+  push:
+    paths: ["tools/hunyuan/export_hunyuan.py", ".github/workflows/hunyuan-mv-export.yml"]
+  workflow_dispatch:
+    inputs:
+      publish: { description: Publish hunyuanmv-v1, type: boolean, default: true }
+      parts_run: { description: "Reuse the exported parts of this run id (skips export)", type: string, default: "" }
+permissions:
+  contents: write
+concurrency: { group: hunyuan-mv-export, cancel-in-progress: true }
+env: { HY_VARIANT: mv }
+jobs:
+  part:
+    if: github.event_name != 'workflow_dispatch' || inputs.parts_run == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: { part: [cond, dit, vae, geo] }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 24G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install (CPU)
+        run: |
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r /tmp/hy/requirements.txt || true
+          pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers<0.33" onnx==1.17.0 onnxruntime==1.20.0
+          cd /tmp/hy && pip install -e . --no-deps
+      - name: Export ${{ matrix.part }}
+        run: |
+          set -o pipefail
+          mkdir -p hy
+          (while sleep 60; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ')"; done) &
+          /usr/bin/time -v python -u tools/hunyuan/export_hunyuan.py part ${{ matrix.part }} hy 2>&1 | grep --line-buffered -vE "it/s|^\s+(Command|User|System|Percent|Average|Exit|Socket|Signals|Swaps|File|Page|Major|Minor|Voluntary|Involuntary)"
+          rm -f hy/${{ matrix.part }}_fp32.onnx*; find hy -maxdepth 1 -type f ! -name "*.onnx*" ! -name "*.json" -delete; ls -la hy
+      - uses: actions/upload-artifact@v4
+        with: { name: "hy-${{ matrix.part }}", path: hy/, retention-days: 3 }
+  check:
+    needs: part
+    if: always() && (needs.part.result == 'success' || needs.part.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 24G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install (CPU)
+        run: |
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+          git clone -q --depth 1 https://github.com/smitnk/android-3d-model-forge /tmp/forge
+          pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r /tmp/hy/requirements.txt || true
+          pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers<0.33" onnx==1.17.0 onnxruntime==1.20.0
+          cd /tmp/hy && pip install -e . --no-deps
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "hy-*"
+          path: hy
+          merge-multiple: true
+          run-id: ${{ inputs.parts_run || github.run_id }}
+          github-token: ${{ github.token }}
+      - name: Check int8 parts against the original pipeline
+        run: |
+          set -o pipefail
+          mkdir -p out; ls -la hy; cat hy/*_info.json
+          python -u tools/hunyuan/export_hunyuan.py check hy /tmp/hy/assets/example_mv_images/1 2>&1 | grep --line-buffered -v "it/s" | tee out/check.log
+          cp hy/*_info.json hy/check_*.glb hy/ref_cutout_*.png out/
+      - name: Push results to ci-logs-hunyuan-mv
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-hunyuan-mv
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || true
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "hunyuan mv export $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-hunyuan-mv
+      - name: Publish hunyuanmv-v1
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd hy
+          rm -f check_*.glb ref_*.npy ref_*.png
+          gh release download models-v1 -p u2net.onnx  # background removal, so Hunyuan works without the TripoSR pack
+          python - <<'PY'
+          import hashlib, json, os
+          parts = {p: json.load(open(f"{p}_info.json")) for p in ("cond", "dit", "vae", "geo")}
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()}
+                   for f in sorted(os.listdir(".")) if os.path.isfile(f) and not f.endswith("_info.json")}
+          json.dump({"version": 1, "parts": parts, "files": files}, open("hunyuan_info.json", "w"), indent=1)
+          PY
+          gh release view hunyuanmv-v1 >/dev/null 2>&1 || gh release create hunyuanmv-v1 --title "Hunyuan3D-2mv Turbo int8 v1" \
+            --notes "tencent/Hunyuan3D-2mv (Tencent Hunyuan 3D 2.0 Community License; not licensed in the EU, UK or South Korea) exported to ONNX int8 for on-device multi-view shape generation."
+          gh release upload hunyuanmv-v1 --clobber $(find . -maxdepth 1 -type f ! -name hunyuan_info.json ! -name "*_info.json")
+          gh release upload hunyuanmv-v1 --clobber hunyuan_info.json

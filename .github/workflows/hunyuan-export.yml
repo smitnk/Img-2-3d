@@ -2,7 +2,7 @@ name: Hunyuan3D-2mini - ONNX int8 export for the phone
 
 on:
   push:
-    paths: ["tools/hunyuan/export_hunyuan.py", ".github/workflows/hunyuan-export.yml", "tools/skintokens/quant_llm.py"]
+    paths: ["tools/skintokens/quant_llm.py"]
   workflow_dispatch:
     inputs:
       publish: { description: Publish hunyuan-v1, type: boolean, default: true }

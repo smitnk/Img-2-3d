@@ -1,0 +1,13 @@
+stage Reading the photo
+stage Shaping
+stage Carving the surface
+stage Building the mesh
+stage Done
+HUNYUAN_JAVA faces=372384 vertices=187727 total=1031841ms timings={surface=274349, shape_steps=653577, decoder=9188, encoder=93728, marching_cubes=900} bbox=[-0.503 -1.001 -0.385]..[0.486 1.001 0.339] heapMB=141
+stage Reading the photo
+stage Shaping
+stage Carving the surface
+stage Building the mesh
+stage Done
+HUNYUAN_JAVA faces=421471 vertices=212292 total=781611ms timings={surface=286723, shape_steps=392302, decoder=8599, encoder=92892, marching_cubes=1003} bbox=[-0.504 -1.002 -0.416]..[0.485 0.998 0.346] heapMB=92
+FAST_VS_NORMAL chamfer mean 0.0040H, 95% 0.0146H, max 0.0836H

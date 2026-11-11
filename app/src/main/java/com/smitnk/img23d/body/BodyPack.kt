@@ -77,6 +77,10 @@ class HunyuanPack(context: Context) : AssetPack(File(context.filesDir, "hunyuan"
     3, "u2net.onnx") // v2: own u2net (no TripoSR pack needed), v3: encoder attention 4 heads at a time (phone RAM)
 
 /** Hunyuan3D-2mv Turbo: the multi-view model (front + optional left / back / right), same parts as 2mini, release hunyuanmv-v1. */
+/** CurioMesh quad retopology add-on (GPL-3) with its linux-aarch64 core, for Smart Mesh; release curiomesh-v1. */
+class CurioPack(context: Context) : AssetPack(File(context.filesDir, "curiomesh"), BuildConfig.CURIO_BASE_URL, "curiomesh_info.json",
+    1, "curiomesh.zip")
+
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")
 

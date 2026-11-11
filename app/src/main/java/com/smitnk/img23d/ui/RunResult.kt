@@ -221,6 +221,18 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER) OutlinedButton(onClick = { vm.refine(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Refine in Blender")
             }
+            if (m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED) Column {
+                var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+                OutlinedButton(onClick = { open = true }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Smart Mesh: clean quads for games / animation")
+                }
+                androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    listOf(Triple("GAME", 20000, "Game · 20k quads (~1 min)"), Triple("LOW_POLY", 5000, "Low poly · 5k quads (mobile games)"),
+                        Triple("ANIMATION", 10000, "Animation · 10k quads (check joints after)")).forEach { (use, faces, label) ->
+                        androidx.compose.material3.DropdownMenuItem(text = { Text(label) }, onClick = { open = false; vm.smartMesh(m, use, faces) })
+                    }
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (m.blend != null) OutlinedButton(onClick = { cb.export(m, true) }, Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Save .blend") }
                 if (m.script != null) OutlinedButton(onClick = { showScript = true }, Modifier.weight(1f).heightIn(min = 48.dp)) {

@@ -1,0 +1,34 @@
+name: CurioMesh phone pack (add-on + linux-aarch64 Rust core) -> release curiomesh-v1
+
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: curiomesh-pack, cancel-in-progress: true }
+env:
+  CURIO_SHA: bf0d12e
+jobs:
+  pack:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - name: Build and publish
+        env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}" }
+        run: |
+          git clone -q https://github.com/CurioCrafter/CurioMesh curiomesh && git -C curiomesh checkout -q $CURIO_SHA
+          pip install -q --break-system-packages "maturin[zig]"
+          (cd curiomesh/native && maturin build --release --zig --compatibility manylinux_2_28 2>&1 | tail -3)
+          mkdir -p curiomesh/_native/linux_aarch64 && unzip -o -j curiomesh/native/target/wheels/*.whl '*.so' -d curiomesh/_native/linux_aarch64
+          rm -rf curiomesh/.git curiomesh/.github curiomesh/docs curiomesh/tests curiomesh/native/target
+          echo "CurioMesh $CURIO_SHA from https://github.com/CurioCrafter/CurioMesh (GPL-3.0-or-later). Full source: that repository at this commit." > curiomesh/SOURCE.txt
+          mkdir pack && zip -qr pack/curiomesh.zip curiomesh && cp curiomesh/LICENSE pack/LICENSE-CurioMesh.txt && cp curiomesh/SOURCE.txt pack/
+          cd pack && python3 - <<'PY'
+          import hashlib, json, os
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir("."))}
+          json.dump({"version": 1, "curiomesh": os.environ["CURIO_SHA"], "files": files}, open("curiomesh_info.json", "w"), indent=1)
+          print(files)
+          PY
+          gh release view curiomesh-v1 -R $R >/dev/null 2>&1 || gh release create curiomesh-v1 -R $R --title "CurioMesh for phones v1" \
+            --notes "CurioMesh (CurioCrafter/CurioMesh, GPL-3.0-or-later) at $CURIO_SHA with its Rust core built for linux-aarch64. Used by Smart Mesh."
+          gh release upload curiomesh-v1 -R $R --clobber curiomesh.zip LICENSE-CurioMesh.txt SOURCE.txt
+          gh release upload curiomesh-v1 -R $R --clobber curiomesh_info.json

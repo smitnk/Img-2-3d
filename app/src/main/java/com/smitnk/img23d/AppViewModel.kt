@@ -17,6 +17,7 @@ import com.smitnk.img23d.blender.BuilderSpec
 import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
+import com.smitnk.img23d.body.CurioPack
 import com.smitnk.img23d.body.HunyuanMvPack
 import com.smitnk.img23d.body.HunyuanPack
 import com.smitnk.img23d.core.HunyuanShape
@@ -286,6 +287,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val texPack = TexPack(app)
     val hunyuanPack = HunyuanPack(app)
     val hunyuanMvPack = HunyuanMvPack(app)
+    val curioPack = CurioPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -600,6 +602,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("refine_mesh.py", refineArgs("${m.name} refined"), report)
             saveBlender(b, "${m.name} refined", Source.REFINED, thumbFile = m.thumbnail, detail = "Blender refine of ${m.name}")
+                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+        }
+    }
+
+    /** Smart Mesh: clean + CurioMesh quad retopology to a game / animation face target. Downloads its small pack on first use. */
+    fun smartMesh(m: Model, use: String, faces: Int) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        launchJob("Smart Mesh", "Blender", 1) { report ->
+            if (!curioPack.isReady()) {
+                report.stage("Downloading CurioMesh (~10 MB, once)", null)
+                curioPack.install { }
+            }
+            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
+            val label = when (use) { "LOW_POLY" -> "low poly"; "ANIMATION" -> "animation"; else -> "game" }
+            val b = blender("smart_mesh.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} $label", "--use", use, "--faces", faces.toString()), report)
+            saveBlender(b, "${m.name} $label", Source.REFINED, thumbFile = m.thumbnail, detail = "Smart Mesh ($label, ${faces / 1000}k quads, CurioMesh) of ${m.name}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }
     }

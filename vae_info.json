@@ -1,0 +1,1 @@
+{"part": "vae", "fp32_maxdiff": 0.00299072265625, "int8_rel_maxdiff": 0.38695308566093445, "quant": "4-bit weight-only", "rels": {"a": 0.9632076025009155, "b": 0.38695308566093445}, "L": 3072, "C": 64, "T": 2740, "D": 1536, "guidance_embed": true, "scale_factor": 0.9990943042622529}

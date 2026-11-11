@@ -1,0 +1,1 @@
+{"part": "cond", "fp32_maxdiff": 0.009926795959472656, "int8_rel_maxdiff": 0.23653973639011383, "quant": "4-bit weight-only", "rels": {"a": 0.9900640845298767, "b": 0.23653973639011383}, "L": 3072, "C": 64, "T": 2740, "D": 1536, "guidance_embed": true, "scale_factor": 0.9990943042622529}

@@ -86,7 +86,7 @@ jobs:
           mkdir -p out
           (while sleep 20; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') java_rss $(ps -C java -o rss= | sort -n | tail -1)"; done) &
           JAVA_OPTS="-Dhunyuan.arena=false -Dhunyuan.fast=true" /usr/bin/time -v cli/build/install/cli/bin/cli hunyuan hy hy/hunyuan_info.json views out/java_mv_fast.glb ${{ inputs.octree || '256' }} \
-            2> >(grep -E "Maximum resident|Elapsed" >&2) | tee -a out/java_mv.txt
+            2> >(grep -E "Maximum resident|Elapsed|Exception|Error|^\s+at " >&2) | tee -a out/java_mv.txt
       - name: Push results to ci-logs-hunyuan-java-mv
         if: always()
         run: |

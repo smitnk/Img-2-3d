@@ -4,8 +4,11 @@ usage (inside the CPU-patched UniRig checkout, instead of `python run.py <args>`
     SKIN_NAME=<mesh> SKIN_OUT=<dir> python export_skin.py capture <run.py args>
 
 It runs the stock skin pipeline; on the first UniRigSkin._get_predict call it
-  1. hooks every spconv SubMConv3d and compares it with GatherConv (below) on the real sparse tensor
-     (picks tie policy / kernel orientation on the stem conv, prints one SPCONV line per conv),
+  1. hooks every spconv SubMConv3d. For the first conv of each kernel size it PROBES spconv itself (probe_table): a
+     copy of the layer with a one-hot weight per kernel index and the input-row id as feature reveals, per output
+     row and flat weight index k, which input row spconv sums in. From that: the offset vector of every k, the duplicate
+     voxel policy and whether the centre is the row itself. build_nbr must reproduce the probed table exactly
+     (SPCONV TABLE ... PASS/FAIL). Then every conv is compared with GatherConv on its real tensor (SPCONV ... PASS/FAIL),
   2. runs the stock forward (reference outputs),
   3. runs SkinONNX (the dense-ops re-implementation) in torch and prints WRAPDIFF lines vs the stock forward,
   4. exports <SKIN_OUT>/skin.onnx (first mesh only, or SKIN_EXPORT=1) and saves inputs_<name>.npz / ref_<name>.npz.
@@ -31,23 +34,68 @@ import onnx_skin as O  # noqa: E402
 CONV_BUDGET = 1 << 24  # elements of gathered features per matmul (64 MB fp32)
 
 
-class GatherConv(nn.Module):
-    """spconv SubMConv3d as gathers + matmuls over a precomputed neighbour table."""
+def native_w(conv):
+    """(K3, I, O) conv weight in spconv's own flat kernel index order (weight (O, K, K, K, I) -> index (a*K+b)*K+c)."""
+    w = conv.weight.detach()
+    I, Oc = conv.in_channels, conv.out_channels
+    if w.shape[0] == Oc and w.shape[-1] == I:  # spconv 2.x
+        return w.reshape(Oc, -1, I).permute(1, 2, 0).contiguous()
+    assert w.shape[-2:] == (I, Oc), tuple(w.shape)
+    return w.reshape(-1, I, Oc)
 
-    def __init__(self, conv, kperm, n):
+
+def probe_table(mod, x):
+    """spconv's own neighbour table for layer `mod` on its real input `x` (SparseConvTensor): tab[i, k] = input row that
+    spconv adds to output row i through flat weight index k (N = none). Feature = row id + 1 in channel 0, weight =
+    one-hot (k -> out channel k mod O), zero bias, so out[i, k mod O] is exactly the id of the contributing row."""
+    import collections
+    import copy
+    import spconv.pytorch as spconv
+    p = copy.deepcopy(mod)
+    p._forward_hooks, p._forward_pre_hooks = collections.OrderedDict(), collections.OrderedDict()
+    N, I, Oc = x.features.shape[0], mod.in_channels, mod.out_channels
+    K3 = native_w(mod).shape[0]
+    tab = torch.full((N, K3), N, dtype=torch.long)
+    feat = torch.zeros(N, I)
+    feat[:, 0] = torch.arange(1, N + 1)  # exact in fp32 up to 2^24
+    xin = spconv.SparseConvTensor(feat, x.indices, x.spatial_shape, x.batch_size)
+    with torch.no_grad():
+        if p.bias is not None:
+            p.bias.zero_()
+        for base in range(0, K3, Oc):
+            m = min(Oc, K3 - base)
+            wk = torch.zeros(K3, I, Oc)
+            wk[base + torch.arange(m), 0, torch.arange(m)] = 1
+            p.weight.copy_(wk.permute(2, 0, 1).reshape(p.weight.shape) if p.weight.shape[0] == Oc and p.weight.shape[-1] == I
+                           else wk.reshape(p.weight.shape))
+            y = p(xin).features[:, :m]
+            tab[:, base:base + m] = torch.where(y > 0.5, y.round().long() - 1, torch.full_like(y, N, dtype=torch.long))
+    return tab.numpy()
+
+
+def derive_offsets(tab, coords):
+    """Per flat weight index k the offset vector coords[src] - coords[dst] (must be one vector for every pair) -> ((K3, 3), n_inconsistent)."""
+    N, K3 = tab.shape
+    offs, bad = np.zeros((K3, 3), np.int64), 0
+    for k in range(K3):
+        dst = np.nonzero(tab[:, k] < N)[0]
+        assert len(dst), f"weight index {k} never used"
+        u, c = np.unique(coords[tab[dst, k]] - coords[dst], axis=0, return_counts=True)
+        offs[k] = u[c.argmax()]
+        bad += int(c.sum() - c.max())
+    return offs, bad
+
+
+class GatherConv(nn.Module):
+    """spconv SubMConv3d as gathers + matmuls over a neighbour table whose column k is spconv's flat weight index k.
+    One gather (<= CONV_BUDGET elements = 64 MB) + one matmul per chunk of offsets, accumulated in place of an (N, K3, I) tensor."""
+
+    def __init__(self, conv, n):
         super().__init__()
-        w = conv.weight.detach()
-        I, Oc = conv.in_channels, conv.out_channels
-        if w.shape[0] == Oc and w.shape[-1] == I:  # spconv 2.x: (O, kx, ky, kz, I)
-            w = w.reshape(Oc, -1, I)
-        else:  # (kx, ky, kz, I, O)
-            assert w.shape[-2:] == (I, Oc), tuple(w.shape)
-            w = w.reshape(-1, I, Oc).permute(2, 0, 1)
-        w = w[:, torch.as_tensor(np.ascontiguousarray(kperm))]  # (O, K3, I)
-        self.register_buffer("w", w.permute(1, 2, 0).contiguous())  # (K3, I, O)
+        self.register_buffer("w", native_w(conv))  # (K3, I, O)
         self.register_buffer("b", None if conv.bias is None else conv.bias.detach().clone())
-        self.K3, self.I, self.O, self.n = self.w.shape[0], I, Oc, n
-        self.g = max(1, min(self.K3, CONV_BUDGET // (n * I)))
+        self.K3, self.I, self.O, self.n = self.w.shape[0], conv.in_channels, conv.out_channels, n
+        self.g = max(1, min(self.K3, CONV_BUDGET // (n * self.I)))
 
     def forward(self, f, nbr):
         fp = torch.cat([f, f.new_zeros(1, self.I)])
@@ -80,12 +128,12 @@ def merge(t):  # (1, h, S, d) -> (1, S, h*d)
 class SkinONNX(nn.Module):
     """Dense re-implementation of UniRigSkin._get_predict (eval, B=1) sharing the stock modules' weights."""
 
-    def __init__(self, m, kp3, kp5, n):
+    def __init__(self, m, n):
         super().__init__()
         assert not m.training
         self.m, self.n = m, n
         enc = m.mesh_encoder
-        self.stem = GatherConv(enc.embedding.stem.conv, kp5, n)
+        self.stem = GatherConv(enc.embedding.stem.conv, n)
         self.stages = []  # per stage: list of (kind, idx) over the stage's modules
         self.convs = nn.ModuleList()
         for stage in enc.enc._modules.values():
@@ -96,7 +144,7 @@ class SkinONNX(nn.Module):
                 else:
                     assert mod.pre_norm and not mod.attn.enable_rpe and not mod.attn.enable_flash
                     plan.append(("blk", len(self.convs)))
-                    self.convs.append(GatherConv(mod.cpe[0], kp3, n))
+                    self.convs.append(GatherConv(mod.cpe[0], n))
             self.stages.append(plan)
         self.blocks = [mod for stage in enc.enc._modules.values() for mod in stage._modules.values() if not isinstance(mod, nn.Linear)]
 
@@ -215,7 +263,7 @@ def run_capture(model, batch, orig):
     out_dir, name = os.environ["SKIN_OUT"], os.environ["SKIN_NAME"]
     os.makedirs(out_dir, exist_ok=True)
     enc = model.mesh_encoder
-    st = {"rows": [], "tie": None}
+    st = {"rows": [], "tab": {}, "offs": {}, "tie": 0, "sc": True, "table_fail": 0}
     ref = {}
     hooks = []
 
@@ -226,32 +274,59 @@ def run_capture(model, batch, orig):
         key = (grid[:, 0].astype(np.int64) * S + grid[:, 1]) * S + grid[:, 2]
         _, inv, cnt = np.unique(key, return_inverse=True, return_counts=True)
         st["dup"] = torch.from_numpy(cnt[inv] > 1)
+        st["grid"] = grid
         print(f"SPCONV points={len(grid)} unique_voxels={int((cnt > 0).sum())} points_in_shared_voxels={int(st['dup'].sum())}", flush=True)
-        st["tab"] = {(K, t): torch.from_numpy(O.build_nbr(grid, K, t)) for K in (3, 5) for t in (0, 1)}
         st["pt"] = {k: p[k].cpu().numpy() for k in ("serialized_order", "serialized_inverse", "serialized_code")}
+
+    def learn(cname, mod, x, K):
+        """First conv of kernel size K: read spconv's neighbour table, derive offsets / tie / centre, check build_nbr == table."""
+        import spconv
+        coords = x.indices[:, 1:].cpu().numpy().astype(np.int64)
+        N = len(coords)
+        tab = probe_table(mod, x)
+        offs, bad = derive_offsets(tab, coords)
+        print(f"SPCONV PROBE {cname} K={K} spconv={getattr(spconv, '__version__', '?')} weight={tuple(mod.weight.shape)} "
+              f"indices={tuple(x.indices.shape)} spatial_shape={list(x.spatial_shape)} batch={x.batch_size} "
+              f"padding={getattr(mod, 'padding', None)} inconsistent_pairs={bad} missing_pairs={int((tab == N).sum())}", flush=True)
+        print("SPCONV PROBE offsets by weight index (k: dx,dy,dz): " + " ".join(f"{k}:{o[0]},{o[1]},{o[2]}" for k, o in enumerate(offs)), flush=True)
+        print(f"SPCONV PROBE offsets == natural order: {bool((offs == O.natural_offsets(K)).all())}, "
+              f"== reversed: {bool((offs == -O.natural_offsets(K)).all())}, coords == serialize grid: "
+              f"{bool(coords.shape == st['grid'].shape and (coords == st['grid']).all())}", flush=True)
+        best = None
+        for t in (0, 1):
+            for sc in (True, False):
+                mism = int((O.build_nbr(coords, K, t, offs, sc) != tab).sum())
+                print(f"SPCONV PROBE build_nbr tie={t} self_center={sc}: {mism} of {tab.size} entries differ", flush=True)
+                if best is None or mism < best[0]:
+                    best = (mism, t, sc)
+        if not st["offs"]:  # the first (stem) probe decides the policy for all
+            st["tie"], st["sc"] = best[1], best[2]
+        mism = int((O.build_nbr(coords, K, st["tie"], offs, st["sc"]) != tab).sum())
+        ok = bad == 0 and mism == 0
+        st["table_fail"] += not ok
+        print(f"SPCONV TABLE K={K} tie={st['tie']} self_center={st['sc']} differing_entries={mism} {'PASS' if ok else 'FAIL'}", flush=True)
+        if mism:  # which rows disagree: shared voxels (policy) or any (offsets)?
+            r = np.nonzero((O.build_nbr(coords, K, st["tie"], offs, st["sc"]) != tab).any(1))[0]
+            print(f"SPCONV TABLE K={K} rows differing={len(r)} of which in shared voxels={int(st['dup'][r].sum())} first rows={r[:5].tolist()}", flush=True)
+        st["offs"][K], st["coords"] = offs, coords
+        st["tab"][K] = torch.from_numpy(O.build_nbr(coords, K, st["tie"], offs, st["sc"]))
 
     def conv_hook(cname):
         def h(mod, args, out):
-            f, o = args[0].features.detach(), out.features.detach()
-            K = mod.weight.shape[1]
-            if st["tie"] is None:  # first conv = the k=5 stem: pick the variant that reproduces spconv
-                assert K == 5
-                best = None
-                for t in (0, 1):
-                    for kp in range(4):
-                        d = float((GatherConv(mod, O.kperms(5)[kp], f.shape[0])(f, st["tab"][(5, t)]) - o).abs().max())
-                        print(f"SPCONV variant stem tie={t} kperm={kp}: max={d:.3e}", flush=True)
-                        if best is None or d < best[0] - 1e-7:
-                            best = (d, t, kp)
-                st["tie"], st["kp"] = best[1], best[2]
-                print(f"SPCONV chosen tie={st['tie']} kperm={st['kp']}", flush=True)
-            y = GatherConv(mod, O.kperms(K)[st["kp"]], f.shape[0])(f, st["tab"][(K, st["tie"])])
+            x = args[0]
+            f, o = x.features.detach(), out.features.detach()
+            K = int(mod.kernel_size[0])
+            if K not in st["tab"]:
+                learn(cname, mod, x, K)
+            y = GatherConv(mod, f.shape[0])(f, st["tab"][K])
             d = (y - o).abs().amax(1)
             dup = st["dup"]
+            rel = float(d[~dup].max() if (~dup).any() else 0.0) / max(float(o.abs().max()), 1e-12)
             r = (cname, K, f.shape[1], o.shape[1], float(d.max()), float(o.abs().max()),
-                 float(d[dup].max()) if dup.any() else 0.0, float(d[~dup].max()) if (~dup).any() else 0.0)
+                 float(d[dup].max()) if dup.any() else 0.0, float(d[~dup].max()) if (~dup).any() else 0.0, rel,
+                 "PASS" if rel < 1e-3 else "FAIL")
             st["rows"].append(r)
-            print("SPCONV %s K=%d in=%d out=%d max=%.3e refmax=%.3e dup_rows=%.3e unique_rows=%.3e" % r, flush=True)
+            print("SPCONV %s K=%d in=%d out=%d max=%.3e refmax=%.3e dup_rows=%.3e unique_rows=%.3e rel_unique=%.2e %s" % r, flush=True)
         return h
 
     hooks.append(enc.embedding.register_forward_pre_hook(pre_emb))
@@ -269,6 +344,9 @@ def run_capture(model, batch, orig):
     print(f"SPCONV SUMMARY convs={len(rows)} worst max abs diff {max(r[4] for r in rows):.3e} "
           f"(dup rows {max(r[6] for r in rows):.3e}, unique rows {max(r[7] for r in rows):.3e}) "
           f"worst relative {max(r[4] / max(r[5], 1e-12) for r in rows):.3e}", flush=True)
+    nfail = sum(r[9] == "FAIL" for r in rows)
+    print(f"SPCONV RESULT {'PASS' if rows and not nfail and not st['table_fail'] else 'FAIL'} "
+          f"(convs failing={nfail} of {len(rows)}, neighbour tables failing={st['table_fail']})", flush=True)
 
     with torch.inference_mode(False), torch.no_grad():
         g = lambda k: batch[k][0].detach().cpu().numpy()
@@ -280,7 +358,7 @@ def run_capture(model, batch, orig):
         perm = np.array([[bool((ser["code"][j] == pt["serialized_code"][r]).all()) for j in range(4)].index(True) for r in range(4)])
         print(f"PREP shuffle perm={perm.tolist()}", flush=True)
         inp = O.prepare(g("vertices").astype(np.float32), g("normals").astype(np.float32), g("joints")[:J].astype(np.float32),
-                        g("voxel_skin")[:, :J].astype(np.float32), g("parents")[:J], perm=perm, tie=st["tie"])
+                        g("voxel_skin")[:, :J].astype(np.float32), g("parents")[:J], perm=perm, tie=st["tie"], offs=st["offs"], sc=st["sc"])
         for k, kk in (("order", "serialized_order"), ("inverse", "serialized_inverse")):
             print(f"PREP {k} equals the real run's: {bool((inp[k] == pt[kk]).all())}", flush=True)
         try:  # does the numpy FPS reproduce torch_cluster?
@@ -294,12 +372,13 @@ def run_capture(model, batch, orig):
         except Exception as e:
             print("PREP fps check skipped:", repr(e), flush=True)
 
-        net = SkinONNX(model, O.kperms(3)[st["kp"]], O.kperms(5)[st["kp"]], N).eval()
+        net = SkinONNX(model, N).eval()
         args = tuple(_t(inp[k]) for k in O.INPUT_NAMES)
         outs = net(*args)
         for nm, o in zip(O.OUT_NAMES, outs):
             _line("WRAPDIFF", nm, o, ref[nm])
-        np.savez_compressed(f"{out_dir}/inputs_{name}.npz", **inp, perm=perm, tie=st["tie"], kp=st["kp"])
+        np.savez_compressed(f"{out_dir}/inputs_{name}.npz", **inp, perm=perm, tie=st["tie"], sc=st["sc"],
+                            offs3=st["offs"][3], offs5=st["offs"][5])
         np.savez_compressed(f"{out_dir}/ref_{name}.npz", **{k: v.cpu().numpy() for k, v in ref.items()})
         path = f"{out_dir}/skin.onnx"
         if not os.path.exists(path) or os.environ.get("SKIN_EXPORT") == "1":

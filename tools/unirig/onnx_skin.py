@@ -152,7 +152,7 @@ def externalize(src, dst):
     for old in (dst, dst + ".data"):
         if os.path.exists(old):
             os.remove(old)
-    onnx.save_model(m, dst, save_as_external_data=True, all_tensors_to_one_file=True, location=os.path.basename(dst) + ".data",
+    onnx.save_model(m, dst, save_as_external_data=True, all_tensors_to_one_file=True, location=os.path.basename(dst) + ".data", convert_attribute=True,
                     size_threshold=1024)
     assert os.path.isfile(dst + ".data"), f"externalize wrote no {dst}.data"
 

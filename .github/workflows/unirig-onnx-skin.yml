@@ -99,6 +99,14 @@ jobs:
           ls -la torch_res ort_res $SKIN_OUT
           cp res/skel_*.fbx torch_res/; cp res/skel_*.fbx ort_res/   # ab_check wants skel_<n>.fbx next to skin_<n>.fbx
           cp torch_res/*.fbx ort_res/*.fbx ../out/ 2>/dev/null || true
+          # rigged GLBs from the ORT skin, for testing in Poseme-3D (same merge as the reference run)
+          git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/${{ github.repository }} /tmp/m1
+          git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/${{ github.repository }} /tmp/m2
+          cp /tmp/m1/java_mv_fast.glb /tmp/m2/cm_game20k.glb res/
+          for n in java_mv_fast cm_game20k; do
+            [ -s ort_res/skin_$n.fbx ] && bash launch/inference/merge.sh --source ort_res/skin_$n.fbx --target res/$n.glb --output ../out/unirig_onnx_$n.glb > ../out/log_${n}_merge.txt 2>&1 || echo "MERGE FAILED $n"
+          done
+          ls -la ../out/*.glb || true
       - name: Fresh-process ORT check (no torch, no UniRig) + A/B on the final skin FBX
         if: always()
         run: |

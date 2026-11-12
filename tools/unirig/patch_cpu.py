@@ -119,13 +119,13 @@ def tsizes(label, obj, name='batch'):
 
 
 def _nb(o):
-    if hasattr(o, 'numel'):
+    if type(o).__name__ in ('Tensor', 'Parameter'):
         return o.numel() * o.element_size()
-    if isinstance(o, dict):
+    if type(o) is dict:
         return sum(_nb(v) for v in o.values())
-    if isinstance(o, (list, tuple)):
+    if type(o) in (list, tuple):
         return sum(_nb(v) for v in o)
-    return 0
+    return 0  # Box etc: a Box unpickled from the ckpt has no state and raises on any attribute access
 
 
 def ckpt_report(ck, system=None):
@@ -178,7 +178,10 @@ patch("run.py",
        "    try:\n"
        "        mem('before ckpt torch.load')\n"
        "        _ck = torch.load(resume_from_checkpoint, map_location='cpu', mmap=True, weights_only=False)\n"
-       "        ckpt_report(_ck, system)\n"
+       "        try:\n"
+       "            ckpt_report(_ck, system)\n"
+       "        except Exception as e:\n"
+       "            print('ckpt report skipped:', repr(e))\n"
        "        mem('after ckpt torch.load (mmap)')\n"
        "        if _ck.get('optimizer_states') and system is not None:\n"
        "            system.load_state_dict(_ck['state_dict'], strict=True)\n"
@@ -191,7 +194,8 @@ patch("run.py",
        "        ctypes.CDLL('libc.so.6').malloc_trim(0)\n"
        "        mem('after ckpt freed')\n"
        "    except Exception as e:\n"
-       "        print('ckpt preload skipped:', e)\n"),
+       "        import traceback\n        traceback.print_exc()\n"
+       "        print('ckpt preload skipped:', repr(e))\n"),
       ("    if mode == 'train':\n        trainer.fit(",
        "    mem('after Trainer creation')\n    if mode == 'train':\n        trainer.fit("),
       ("trainer.predict(system, datamodule=data, ckpt_path=resume_from_checkpoint, return_predictions=False)\n",
@@ -288,11 +292,55 @@ class SubMConv3dCPU(spconv.SubMConv3d):
             sparse_unique_name=self._sparse_unique_name, act_type=self.act_type,
             act_alpha=self.act_alpha, act_beta=self.act_beta)
 '''
+# Why the PTv3 encoder peaked at +6 GB: stride=() means no pooling, so all 5 stages attend over all 32,768
+# points in patches of K=1024 (32 patches). The stock non-flash path builds the whole (32, H, 1024, 1024) fp32
+# score tensor (H=24 in the last stages: 3.2 GB) and softmax allocates a second one. Patches are independent,
+# so the same matmul/softmax/matmul a few patches at a time gives the same numbers (each (patch, head) slice
+# is computed identically) with ~200 MB of scores live instead of 2 x H x 134 MB.
+CHUNKED_ATTN = """            outs = []
+            step = max(1, 48 // H)  # <= ~200 MB of scores per chunk
+            assert not self.enable_rpe
+            for s in range(0, q.shape[0], step):
+                attn = (q[s:s + step] * self.scale) @ k[s:s + step].transpose(-2, -1)  # (n, H, K, K)
+                if self.upcast_softmax:
+                    attn = attn.float()
+                attn = self.softmax(attn)
+                attn = self.attn_drop(attn).to(qkv.dtype)
+                outs.append((attn @ v[s:s + step]).transpose(1, 2).reshape(-1, C))
+                del attn
+            feat = torch.cat(outs)
+            del outs
+"""
+OLD_ATTN = """            attn = (q * self.scale) @ k.transpose(-2, -1)  # (N', H, K, K)
+            if self.enable_rpe:
+                attn = attn + self.rpe(self.get_rel_pos(point, order))
+            if self.upcast_softmax:
+                attn = attn.float()
+            attn = self.softmax(attn)
+            attn = self.attn_drop(attn).to(qkv.dtype)
+            feat = (attn @ v).transpose(1, 2).reshape(-1, C)
+"""
 patch("src/model/pointcept/models/PTv3Object.py",
+      (OLD_ATTN, CHUNKED_ATTN),
+      ("        # point.sparse_conv_feat.replace_feature(point.feat)\n",
+       "        mem(f'ptv3 block C={self.channels} H={self.attn.num_heads} N={point.feat.shape[0]} K={self.attn.patch_size}')\n"
+       "        # point.sparse_conv_feat.replace_feature(point.feat)\n"),
+      ("        point = self.embedding(point)\n        point = self.enc(point)\n",
+       "        mem(f'ptv3 serialized+sparsified N={point.feat.shape[0]}')\n"
+       "        point = self.embedding(point)\n        mem('ptv3 after embedding (stem conv k=5)')\n        point = self.enc(point)\n"),
       ("        enable_flash=True,\n", "        enable_flash=False,\n", 3),
       ("from .modules import PointModule, PointSequential\n",
-       "from .modules import PointModule, PointSequential\n" + CONV_CPU),
+       "from .modules import PointModule, PointSequential\nfrom src.memlog import mem\n" + CONV_CPU),
       ("spconv.SubMConv3d(\n", "SubMConv3dCPU(\n", 2))
+
+# The 4.4 GB skin checkpoint download adds ~1.2 GB transient RSS to the process that does it (28 s,
+# between model construction and torch.load). Do it in a child process; the in-process call is then a cache hit.
+patch("src/inference/download.py",
+      ("        return hf_hub_download(\n",
+       "        import subprocess, sys\n"
+       "        subprocess.run([sys.executable, '-c', 'import sys; from huggingface_hub import hf_hub_download as d; "
+       "d(repo_id=\"VAST-AI/UniRig\", filename=sys.argv[1])', MAP[ckpt_name]])\n"
+       "        return hf_hub_download(\n"))
 
 # Michelangelo shape encoder (skeleton model): drop the CUDA-only sdp_kernel context
 patch("src/model/michelangelo/models/modules/transformer_blocks.py",

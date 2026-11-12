@@ -53,6 +53,9 @@ open class AssetPack(val dir: File, private val baseUrl: String, val infoName: S
             }
             before += meta.getLong("bytes")
         }
+        // drop leftovers of an older pack version (old model files, unpacked script folders) so they don't waste space or go stale
+        val keep = files.keys().asSequence().toSet() + setOf(info.name, ready.name)
+        dir.listFiles()?.filter { it.name !in keep }?.forEach { it.deleteRecursively() }
         ready.writeText(info.readText())
         onStatus(PackStatus.Ready)
     }

@@ -1,0 +1,101 @@
+name: UniRig CPU probe (skeleton -> skin -> merge on two chibi-girl meshes)
+
+on:
+  push:
+    paths: ["tools/unirig/**", ".github/workflows/unirig-probe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: unirig-probe, cancel-in-progress: true }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: System libs (bpy runtime, OSMesa for pyrender)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 libglu1-mesa libosmesa6
+      - name: Clone UniRig + the two meshes
+        run: |
+          mkdir out
+          git clone -q --depth 1 https://github.com/VAST-AI-Research/UniRig unirig
+          git -C unirig rev-parse HEAD | tee out/unirig_commit.txt
+          git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/${{ github.repository }} m1
+          git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/${{ github.repository }} m2
+          mkdir unirig/in unirig/res
+          cp m1/java_mv_fast.glb m2/cm_game20k.glb unirig/in/ && ls -la unirig/in
+      - name: Python deps (CPU torch 2.5.1, PyG CPU wheels, spconv CPU, bpy)
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --only-binary=:all: --no-cache-dir torch_scatter torch_cluster -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+          # flash_attn is CUDA-only; patched out below. bpy==4.2 (py3.11 wheel) is in requirements.txt.
+          grep -v '^flash_attn' unirig/requirements.txt > /tmp/req.txt
+          pip install -q -r /tmp/req.txt spconv psutil "numpy==1.26.4"
+          pip install -q "pyopengl==3.1.7"   # pyrender pins 3.1.0, which lacks OSMesa context creation
+          pip list 2>/dev/null | grep -iE "^(torch|torch[-_]scatter|torch[-_]cluster|spconv|cumm|bpy|numpy|transformers|open3d|pyrender|pyopengl|lightning) " | tee out/pip_versions.txt
+      - name: Smoke tests (CUDA-free deps; picks the voxel backend)
+        id: smoke
+        run: |
+          set +e
+          python - > out/smoke_deps.txt 2>&1 <<'PY'
+          import numpy as np, torch
+          print("torch", torch.__version__, "cuda", torch.cuda.is_available())
+          import torch_scatter, torch_cluster
+          print("scatter", torch_scatter.segment_csr(torch.arange(6.).view(6, 1), torch.tensor([0, 2, 6]), reduce="min").flatten().tolist())
+          print("fps", torch_cluster.fps(torch.rand(64, 3), torch.zeros(64, dtype=torch.long), ratio=0.25).shape)
+          import spconv.pytorch as spconv
+          g = np.stack(np.meshgrid(*[np.arange(8)] * 3), -1).reshape(-1, 3)[::3]
+          x = spconv.SparseConvTensor(torch.randn(len(g), 9), torch.cat([torch.zeros(len(g), 1), torch.tensor(g)], 1).int().contiguous(), [24, 24, 24], 1)
+          for k in (5, 3):
+              y = spconv.SubMConv3d(9, 16, kernel_size=k, padding=1, bias=False, indice_key=f"k{k}")(x)
+              print("spconv cpu SubMConv3d k", k, y.features.shape, float(y.features.abs().mean()))
+          import bpy; print("bpy", bpy.app.version_string)
+          PY
+          echo "smoke_deps exit $?"; cat out/smoke_deps.txt
+          PYOPENGL_PLATFORM=osmesa python - > out/smoke_pyrender.txt 2>&1 <<'PY'
+          import numpy as np, pyrender
+          s = pyrender.Scene(bg_color=[0, 0, 0, 0])
+          s.add(pyrender.Mesh(primitives=[pyrender.Primitive(positions=np.array([[-.5, -.5, 0], [.5, -.5, 0], [0, .5, 0]], np.float32), mode=pyrender.GLTF.TRIANGLES)]))
+          pose = np.eye(4, dtype=np.float32); pose[2, 3] = 2
+          s.add(pyrender.OrthographicCamera(xmag=1, ymag=1, znear=0.05, zfar=4.0), pose=pose)
+          d = pyrender.OffscreenRenderer(64, 64).render(s, flags=pyrender.constants.RenderFlags.DEPTH_ONLY | pyrender.constants.RenderFlags.OFFSCREEN)
+          print("pyrender depth", d.shape, float(d.max()))
+          PY
+          if [ $? -eq 0 ]; then echo "voxel=pyrender" >> $GITHUB_OUTPUT; else echo "voxel=open3d" >> $GITHUB_OUTPUT; fi
+          cat out/smoke_pyrender.txt; tail -1 $GITHUB_OUTPUT
+      - name: Patch UniRig for CPU
+        run: python tools/unirig/patch_cpu.py unirig ${{ steps.smoke.outputs.voxel }} | tee out/patch.txt
+      - name: Run UniRig (skeleton -> skin -> merge, per input)
+        run: |
+          cd unirig
+          export PYTHONUNBUFFERED=1 PYOPENGL_PLATFORM=osmesa WANDB_MODE=disabled
+          (while sleep 30; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') py_rss $(ps -C python -o rss= | sort -n | tail -1)"; done) &
+          # stage <input> <name> <cmd...>: timed, logged; a failure never stops the loop
+          stage() { local n=$1 s=$2; shift 2; echo "== $n $s"
+            /usr/bin/time -v -o ../out/time_${n}_$s.txt timeout 90m "$@" > ../out/log_${n}_$s.txt 2>&1 || echo "FAILED $n $s (exit $?)"
+            grep -E "Elapsed|Maximum resident" ../out/time_${n}_$s.txt || true; }
+          for n in java_mv_fast cm_game20k; do
+            stage $n skeleton bash launch/inference/generate_skeleton.sh --input in/$n.glb --output res/skel_$n.fbx
+            # the skeleton writer swallows exceptions, so check for the file
+            [ -s res/skel_$n.fbx ] || { echo "NO SKELETON for $n"; continue; }
+            stage $n skin bash launch/inference/generate_skin.sh --input res/skel_$n.fbx --output res/skin_$n.fbx
+            if [ -s res/skin_$n.fbx ]; then src=res/skin_$n.fbx; out=res/unirig_$n.glb
+            else echo "NO SKIN for $n; merging the skeleton only"; src=res/skel_$n.fbx; out=res/unirig_${n}_skeleton_only.glb; fi
+            stage $n merge bash launch/inference/merge.sh --source $src --target in/$n.glb --output $out
+          done
+          ls -la res
+          cp res/* ../out/ 2>/dev/null || true
+      - name: Push results to ci-logs-unirig
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig probe $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig

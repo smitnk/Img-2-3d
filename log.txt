@@ -1,0 +1,80 @@
+builder_default OK 2s Blender quit
+builder_variant OK 1s Blender quit
+builder_variant2 OK 1s Blender quit
+builder_crown OK 1s Blender quit
+custom_robot OK 0s Blender quit
+refine_lizard OK 1s Blender quit
+refine_rig OK 3s Blender quit
+refine_texture OK 4s Blender quit
+texproject OK 2s Blender quit
+texproject: view front 172x338
+texproject: view back 190x338
+texproject: 60.2% of corners covered by views
+texrender OK 2s Blender quit
+texproject: rendered back
+texproject: rendered left
+texproject: rendered right
+rigify_humanoid OK 4s Blender quit
+baked 1024px texture, islands cover 38%
+rigify rig: 35 deform bones, route auto
+rigify rig: 35 deform bones, route auto
+post_b1 OK 1s Blender quit
+post_b2 OK 3s Blender quit
+post_b3 OK 2s Blender quit
+post_b4 OK 1s Blender quit
+post_c1 OK 1s Blender quit
+post_r1 OK 2s Blender quit
+post_r2 OK 1s Blender quit
+post_r3 OK 2s Blender quit
+post_r4 OK 1s Blender quit
+post_t1 OK 3s Blender quit
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=20 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=0 thumb=thumb.png
+POSTPROCESS pass=True errors=0 warnings=1 thumb=thumb.png
+POSTPROCESS pass=False errors=2 warnings=2 thumb=thumb.png
+export_unity OK 1s Blender quit
+export_unreal_skeletal OK 1s Blender quit
+export_roblox OK 0s Blender quit
+export_godot OK 1s Blender quit
+export_web OK 0s Blender quit
+export_print OK 1s Blender quit
+EXPORT {"file": "Hero.glb", "preset": "godot", "bytes": 595984, "objects": 1}
+EXPORT {"file": "Hero.stl", "preset": "print", "bytes": 1645484, "objects": 1}
+EXPORT {"file": "Hero.fbx", "preset": "roblox", "bytes": 1055292, "objects": 2}
+EXPORT {"file": "Hero.fbx", "preset": "unity", "bytes": 763644, "objects": 1}
+EXPORT {"file": "Hero.fbx", "preset": "unreal_skeletal", "bytes": 1055452, "objects": 2}
+EXPORT {"file": "Hero.glb", "preset": "web", "bytes": 595984, "objects": 1}
+rootfs/tmp/o/b1/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Ear.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.R: no UV map (fine for flat colors; textures and lightmaps need one)", "Eye.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Eye.R: no UV map (fine for flat colors; textures and lightmaps need one)", "Forearm.L: no UV map (
+rootfs/tmp/o/b2/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["BootShaft.L: no UV map (fine for flat colors; textures and lightmaps need one)", "BootShaft.R: no UV map (fine for flat colors; textures and lightmaps need one)", "Bridge: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.R: no
+rootfs/tmp/o/b3/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Belly: no UV map (fine for flat colors; textures and lightmaps need one)", "Cape: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.R: no UV map (fine for flat colors; textures and lightmaps need one)", "EyeWhite.L: no UV map (
+rootfs/tmp/o/b4/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Head: no UV map (fine for flat colors; textures and lightmaps need one)", "Eye.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Eye.R: no UV map (fine for flat colors; textures and lightmaps need one)", "Mouth: no UV map (fine for flat colors; textures and lightmaps need one)", "Ear.L: no UV map (fine 
+rootfs/tmp/o/c1/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Antenna: no UV map (fine for flat colors; textures and lightmaps need one)", "Foot.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Foot.R: no UV map (fine for flat colors; textures and lightmaps need one)", "Forearm.L: no UV map (fine for flat colors; textures and lightmaps need one)", "Forearm.R: no 
+rootfs/tmp/o/r1/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Refined Model: no UV map (fine for flat colors; textures and lightmaps need one)"], "triangles": 48456, "parts": 1}, "thumbnail": "thumb.png"}
+rootfs/tmp/o/r2/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Refined Model: no UV map (fine for flat colors; textures and lightmaps need one)"], "triangles": 14536, "parts": 1}, "thumbnail": "thumb.png"}
+rootfs/tmp/o/r3/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": [], "triangles": 14536, "parts": 1}, "thumbnail": "thumb.png"}
+rootfs/tmp/o/r4/ {"quality": {"pass": true, "profile": "game", "errors": [], "warnings": ["Refined Model: no UV map (fine for flat colors; textures and lightmaps need one)"], "triangles": 32908, "parts": 1}, "thumbnail": "thumb.png"}
+rootfs/tmp/o/t1/ {"quality": {"pass": false, "profile": "game", "errors": ["geometry_0: 1 closed part with normals pointing inward", "geometry_0: 1 floating fragment (0.033% of its faces), nearest 0.0245 from the rest"], "warnings": ["geometry_0: 3 zero-area faces", "geometry_0: 3 parts enclosed inside another part (hidden geometry)"], "triangles": 71730, "parts": 1}, "thumbnail": "thumb.png"}
+export {'file': 'Hero.glb', 'preset': 'godot', 'bytes': 595984, 'objects': 1}
+export {'file': 'Hero.stl', 'preset': 'print', 'bytes': 1645484, 'objects': 1}
+export {'file': 'Hero.fbx', 'preset': 'roblox', 'bytes': 1055292, 'objects': 2}
+export {'file': 'Hero.fbx', 'preset': 'unity', 'bytes': 763644, 'objects': 1}
+export {'file': 'Hero.fbx', 'preset': 'unreal_skeletal', 'bytes': 1055452, 'objects': 2}
+export {'file': 'Hero.glb', 'preset': 'web', 'bytes': 595984, 'objects': 1}
+r3 {"texture": {"size": 1024, "coverage": 0.376}, "rig": {"bones": 35, "skinning": "Rigify, bone heat (auto)", "route": "auto"}}
+r4 {"texture": null, "rig": {"bones": 35, "skinning": "Rigify, bone heat (auto)", "route": "auto"}}
+b1/custom-hero.glb meshes 25 faces 19652 extents [1.112 1.14  0.259]
+b2/spikecat.glb meshes 48 faces 85610 extents [1.112 1.228 0.589]
+b3/biglizard.glb meshes 34 faces 29882 extents [1.827 1.749 1.209]
+b4/custom-hero.glb meshes 29 faces 10856 extents [1.114 1.198 0.281]
+c1/robot.glb meshes 18 faces 2424 extents [1.28  1.16  0.235]
+r1/refined-model.glb meshes 1 faces 48456 extents [0.784 1.589 0.665]
+r2/refined-model.glb meshes 1 faces 14536 extents [0.49  0.993 0.416]
+r3/refined-model.glb meshes 1 faces 14536 extents [0.49  0.993 0.416]
+r4/refined-model.glb meshes 1 faces 32908 extents [1.575 1.697 0.393]
+t1/textured.glb meshes 1 faces 71736 extents [0.893 1.8   0.759]

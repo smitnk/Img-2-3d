@@ -1,0 +1,40 @@
+  0%|          | 0/1 [00:00<?, ?it/s]Info: Deleted 1 data-block(s)
+[32mNow processing res/skel_cm_game20k.fbx...[0m
+Now processing res/skel_cm_game20k.fbx...
+FBX version: 7400
+save to: tmp/res/skel_cm_game20k
+100%|██████████| 1/1 [00:01<00:00,  1.47s/it]100%|██████████| 1/1 [00:01<00:00,  1.47s/it]
+1 models processed
+done
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Seed set to 12345
+[92mload task config: configs/task/quick_inference_unirig_skin.yaml[0m
+[92mload data config: configs/data/quick_inference.yaml[0m
+[92mload transform config: configs/transform/inference_skin_transform.yaml[0m
+[92mload model config: configs/model/unirig_skin.yaml[0m
+WARNING: use BatchNorm in ptv3obj !!!
+[92mload system config: configs/system/skin.yaml[0m
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `lightning.pytorch` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+Restoring states from the checkpoint path at /home/runner/.cache/huggingface/hub/models--VAST-AI--UniRig/snapshots/36842e2b5947e9e60f89275b83208c8e74071c63/skin/articulation-xl/model.ckpt
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss_sum', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
+Loaded model weights from the checkpoint at /home/runner/.cache/huggingface/hub/models--VAST-AI--UniRig/snapshots/36842e2b5947e9e60f89275b83208c8e74071c63/skin/articulation-xl/model.ckpt
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting: |          | 0/? [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:379: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  'offset': torch.tensor(batch['offset']),
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/amp/autocast_mode.py:283: UserWarning: In CPU autocast, but the target dtype is not supported. Disabling autocast.
+CPU Autocast only supports dtype of torch.bfloat16, torch.float16 currently.
+  warnings.warn(error_message)
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:448: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  skin_pred[i, :, :num_bones[i]] = F.softmax(pred)
+
+FBX export starting... 'res/skin_cm_game20k.fbx'
+(bpy.data.armatures['Armature'], 'POSE')
+export finished in 0.1121 sec.
+Predicting DataLoader 0: 100%|██████████| 1/1 [02:12<00:00,  0.01it/s]Predicting DataLoader 0: 100%|██████████| 1/1 [02:12<00:00,  0.01it/s]
+done

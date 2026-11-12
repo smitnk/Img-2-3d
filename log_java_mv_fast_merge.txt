@@ -1,0 +1,12 @@
+FBX version: 7400
+07:36:31 | INFO: Data are loaded, start creating Blender stuff
+07:36:31 | INFO: Blender create Mesh node 0
+07:36:31 | INFO: glTF import finished in 0.34s
+  0%|          | 0/176435 [00:00<?, ?it/s]  7%|▋         | 12971/176435 [00:00<00:01, 129691.88it/s] 15%|█▍        | 25941/176435 [00:00<00:01, 124955.39it/s] 22%|██▏       | 38449/176435 [00:00<00:01, 117273.09it/s] 28%|██▊       | 50223/176435 [00:00<00:01, 116525.00it/s] 35%|███▌      | 61997/176435 [00:00<00:00, 116943.57it/s] 42%|████▏     | 73756/176435 [00:00<00:00, 117154.12it/s] 48%|████▊     | 85484/176435 [00:00<00:00, 116315.81it/s] 56%|█████▌    | 97957/176435 [00:00<00:00, 118944.46it/s] 62%|██████▏   | 109985/176435 [00:00<00:00, 119354.04it/s] 69%|██████▉   | 122183/176435 [00:01<00:00, 120157.20it/s] 76%|███████▌  | 134304/176435 [00:01<00:00, 120474.91it/s] 83%|████████▎ | 146356/176435 [00:01<00:00, 120056.25it/s] 90%|████████▉ | 158585/176435 [00:01<00:00, 120726.54it/s] 97%|█████████▋| 171400/176435 [00:01<00:00, 122959.29it/s]100%|██████████| 176435/176435 [00:01<00:00, 120239.49it/s]
+ERROR Draco mesh compression is not available because library could not be found at /home/runner/work/Img-2-3d/Img-2-3d/unirig/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+07:36:52 | INFO: Starting glTF 2.0 export
+07:36:52 | INFO: Extracting primitive: Mesh_0
+07:36:53 | INFO: Primitives created: 1
+07:36:53 | INFO: Finished glTF 2.0 export in 1.0412874221801758 s
+
+done

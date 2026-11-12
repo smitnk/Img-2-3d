@@ -1,0 +1,6 @@
+torch 2.5.1+cpu cuda False
+scatter [0.0, 2.0]
+fps torch.Size([16])
+spconv cpu SubMConv3d k 5 torch.Size([171, 16]) 0.20886854827404022
+spconv cpu SubMConv3d k 3 torch.Size([171, 16]) 0.2313067764043808
+bpy 4.2.0

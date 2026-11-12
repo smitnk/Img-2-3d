@@ -145,11 +145,16 @@ def externalize(src, dst):
     Needs the onnx package. A .data file must stay under GitHub's 2 GB asset limit and match [A-Za-z0-9_.-]+."""
     import onnx
     m = onnx.load(src, load_external_data=True)
+    from onnx.external_data_helper import _get_all_tensors
+    for t in _get_all_tensors(m):  # forget old external locations so every big tensor is written to dst.data
+        del t.external_data[:]
+        t.data_location = onnx.TensorProto.DEFAULT
     for old in (dst, dst + ".data"):
         if os.path.exists(old):
             os.remove(old)
     onnx.save_model(m, dst, save_as_external_data=True, all_tensors_to_one_file=True, location=os.path.basename(dst) + ".data",
                     size_threshold=1024)
+    assert os.path.isfile(dst + ".data"), f"externalize wrote no {dst}.data"
 
 
 PARTS = ("skin_a", "skin_pt", "skin_head")  # export_skin.export_parts

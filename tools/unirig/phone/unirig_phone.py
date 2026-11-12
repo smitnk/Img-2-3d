@@ -275,7 +275,10 @@ def main():
     elif a.phase == "skeleton":
         return skeleton_phase(a, skel_file)
     else:
-        spawn_skeleton(a, skel_file)
+        # in this process: Android's phantom-process limit killed a second Blender process mid-beam on the phone.
+        # Each ONNX session is freed before the next, so the peak stays the same; skel.npz still allows resume.
+        skeleton_phase(a, skel_file)
+        gc.collect()
     if a.phase == "skeleton":
         return
     np, S, K, P, Z, T = mods()

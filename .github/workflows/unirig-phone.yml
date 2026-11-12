@@ -97,7 +97,7 @@ jobs:
         run: |
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skel.yml onnx-skel skel "${{ inputs.skel_run }}"
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin "${{ inputs.skin_run }}"
-          python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
+          pip install -q --break-system-packages numpy && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
           cat w/models/info.json | tr -d '\n ' ; echo; ls -la w/models | head -8
       - name: Rig both meshes in the phone's Blender (time, peak RSS)
         run: |

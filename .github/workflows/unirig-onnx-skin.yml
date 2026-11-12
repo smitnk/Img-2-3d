@@ -1,0 +1,157 @@
+name: UniRig SKIN -> ONNX (fp32), ORT vs PyTorch
+
+on:
+  push:
+    paths: [".github/workflows/unirig-onnx-skin.yml", "tools/unirig/export_skin.py", "tools/unirig/onnx_skin.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: unirig-onnx-skin, cancel-in-progress: true }
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: System libs (bpy runtime, OSMesa for pyrender)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 libglu1-mesa libosmesa6
+      - name: Clone UniRig (6793c66) + the reference run (skeletons, skins)
+        run: |
+          mkdir out
+          git clone -q https://github.com/VAST-AI-Research/UniRig unirig
+          git -C unirig checkout -q 6793c66
+          git -C unirig rev-parse HEAD | tee out/unirig_commit.txt
+          git clone -q --depth 1 -b ci-logs-unirig https://github.com/${{ github.repository }} ref   # reference outputs (read-only)
+          ls -la ref | head -40
+      - name: Python deps (CPU torch 2.5.1, PyG CPU wheels, spconv CPU, bpy, onnx, onnxruntime)
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --only-binary=:all: --no-cache-dir torch_scatter torch_cluster -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+          grep -v '^flash_attn' unirig/requirements.txt > /tmp/req.txt
+          pip install -q -r /tmp/req.txt spconv psutil "numpy==1.26.4" onnx==1.17.0 onnxruntime==1.20.1
+          pip install -q "pyopengl==3.1.7"   # pyrender pins 3.1.0, which lacks OSMesa context creation
+          pip list 2>/dev/null | grep -iE "^(torch|torch[-_]scatter|torch[-_]cluster|spconv|cumm|bpy|numpy|onnx|onnxruntime|transformers|open3d|pyrender|pyopengl|lightning) " | tee out/pip_versions.txt
+      - name: Numpy unit test (gather-based sparse conv vs dense conv)
+        run: python tools/unirig/onnx_skin.py selftest | tee out/selftest.txt
+      - name: Smoke tests (CUDA-free deps; picks the voxel backend)
+        id: smoke
+        run: |
+          set +e
+          python - > out/smoke_deps.txt 2>&1 <<'PY'
+          import numpy as np, torch
+          print("torch", torch.__version__, "cuda", torch.cuda.is_available())
+          import torch_scatter, torch_cluster
+          print("scatter", torch_scatter.segment_csr(torch.arange(6.).view(6, 1), torch.tensor([0, 2, 6]), reduce="min").flatten().tolist())
+          print("fps", torch_cluster.fps(torch.rand(64, 3), torch.zeros(64, dtype=torch.long), ratio=0.25).shape)
+          import spconv.pytorch as spconv
+          g = np.stack(np.meshgrid(*[np.arange(8)] * 3), -1).reshape(-1, 3)[::3]
+          x = spconv.SparseConvTensor(torch.randn(len(g), 9), torch.cat([torch.zeros(len(g), 1), torch.tensor(g)], 1).int().contiguous(), [24, 24, 24], 1)
+          for k in (5, 3):
+              y = spconv.SubMConv3d(9, 16, kernel_size=k, padding=1, bias=False, indice_key=f"k{k}")(x)
+              print("spconv cpu SubMConv3d k", k, y.features.shape, float(y.features.abs().mean()))
+          import bpy; print("bpy", bpy.app.version_string)
+          PY
+          echo "smoke_deps exit $?"; cat out/smoke_deps.txt
+          PYOPENGL_PLATFORM=osmesa python - > out/smoke_pyrender.txt 2>&1 <<'PY'
+          import numpy as np, pyrender
+          s = pyrender.Scene(bg_color=[0, 0, 0, 0])
+          s.add(pyrender.Mesh(primitives=[pyrender.Primitive(positions=np.array([[-.5, -.5, 0], [.5, -.5, 0], [0, .5, 0]], np.float32), mode=pyrender.GLTF.TRIANGLES)]))
+          pose = np.eye(4, dtype=np.float32); pose[2, 3] = 2
+          s.add(pyrender.OrthographicCamera(xmag=1, ymag=1, znear=0.05, zfar=4.0), pose=pose)
+          d = pyrender.OffscreenRenderer(64, 64).render(s, flags=pyrender.constants.RenderFlags.DEPTH_ONLY | pyrender.constants.RenderFlags.OFFSCREEN)
+          print("pyrender depth", d.shape, float(d.max()))
+          PY
+          if [ $? -eq 0 ]; then echo "voxel=pyrender" >> $GITHUB_OUTPUT; else echo "voxel=open3d" >> $GITHUB_OUTPUT; fi
+          cat out/smoke_pyrender.txt; tail -1 $GITHUB_OUTPUT
+      - name: Patch UniRig for CPU (unchanged tools/unirig/patch_cpu.py)
+        run: python tools/unirig/patch_cpu.py unirig ${{ steps.smoke.outputs.voxel }} | tee out/patch.txt
+      - name: Skin on the reference skeletons - torch (capture + export) then ORT in the same pipeline
+        run: |
+          WS=$GITHUB_WORKSPACE
+          mkdir -p onnx_out unirig/res unirig/torch_res unirig/ort_res
+          cd unirig
+          export PYTHONUNBUFFERED=1 PYOPENGL_PLATFORM=osmesa WANDB_MODE=disabled
+          export MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576 MALLOC_TRIM_THRESHOLD_=1048576
+          (while sleep 60; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') py_rss $(ps -C python -o rss= | sort -n | tail -1)"; done) &
+          # the stock script, with `python run.py` swapped for our wrappers (same args, same extraction step)
+          sed "s#python run.py#python $WS/tools/unirig/export_skin.py capture#" launch/inference/generate_skin.sh > launch/inference/gen_skin_torch.sh
+          sed "s#python run.py#python $WS/tools/unirig/onnx_skin.py ort-run#" launch/inference/generate_skin.sh > launch/inference/gen_skin_ort.sh
+          stage() { local n=$1 s=$2; shift 2; echo "== $n $s"
+            /usr/bin/time -v -o ../out/time_${n}_$s.txt timeout 120m "$@" > ../out/log_${n}_$s.txt 2>&1 || echo "FAILED $n $s (exit $?)"
+            grep -E "Elapsed|Maximum resident" ../out/time_${n}_$s.txt || true; }
+          export SKIN_OUT=$WS/onnx_out
+          for n in java_mv_fast cm_game20k; do
+            [ -s ../ref/skel_$n.fbx ] || { echo "no reference skeleton for $n"; continue; }
+            cp ../ref/skel_$n.fbx res/
+            export SKIN_NAME=$n
+            stage $n torch bash launch/inference/gen_skin_torch.sh --input res/skel_$n.fbx --output torch_res/skin_$n.fbx
+            [ -s $SKIN_OUT/inputs_$n.npz ] && [ -s $SKIN_OUT/skin.onnx ] || { echo "NO CAPTURE/EXPORT for $n"; continue; }
+            export SKIN_ONNX=$SKIN_OUT/skin.onnx SKIN_INPUTS=$SKIN_OUT/inputs_$n.npz
+            stage $n ort bash launch/inference/gen_skin_ort.sh --input res/skel_$n.fbx --output ort_res/skin_$n.fbx
+          done
+          ls -la torch_res ort_res $SKIN_OUT
+          cp res/skel_*.fbx torch_res/; cp res/skel_*.fbx ort_res/   # ab_check wants skel_<n>.fbx next to skin_<n>.fbx
+          cp torch_res/*.fbx ort_res/*.fbx ../out/ 2>/dev/null || true
+      - name: Fresh-process ORT check (no torch, no UniRig) + A/B on the final skin FBX
+        if: always()
+        run: |
+          for n in java_mv_fast cm_game20k; do
+            [ -s onnx_out/inputs_$n.npz ] && python tools/unirig/onnx_skin.py check --onnx onnx_out/skin.onnx --inputs onnx_out/inputs_$n.npz --ref onnx_out/ref_$n.npz --label x86_$n 2>&1 | tee out/check_$n.txt
+          done
+          names="java_mv_fast cm_game20k"
+          echo "== final skin weights from FBX, max/mean abs diff over (vertices x joints)"
+          { echo "torch vs reference (ci-logs-unirig):"; python tools/unirig/ab_check.py ref unirig/torch_res $names 2>&1 | grep -E "^AB skin"
+            echo "ORT vs reference:";                   python tools/unirig/ab_check.py ref unirig/ort_res $names 2>&1 | grep -E "^AB skin"
+            echo "ORT vs torch (ref=torch):";           python tools/unirig/ab_check.py unirig/torch_res unirig/ort_res $names 2>&1 | grep -E "^AB skin"; } | tee out/ab_skin.txt
+          grep -hE "^(SPCONV|WRAPDIFF|EXPORT|PREP|ORT |ONNXDIFF|ONNXPEAK|MEM fwd|Traceback|CAPTURE FAILED)" out/log_*.txt | tee out/summary.txt || true
+          for f in out/time_*.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f) wall=$(awk '/Elapsed/{print $NF}' $f)"; done | tee out/peak_rss.txt
+          ls -la onnx_out | tee out/onnx_files.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: unirig-skin-onnx, path: onnx_out, retention-days: 7, compression-level: 1 }
+      - name: Push logs to ci-logs-unirig-onnx-skin
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-onnx-skin
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
+          rm -f *.fbx   # skins stay out of the log branch (ab numbers are in ab_skin.txt)
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig onnx skin x86 $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-onnx-skin
+
+  arm:
+    needs: export
+    if: always()
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/download-artifact@v4
+        with: { name: unirig-skin-onnx, path: onnx_out }
+      - name: "ORT only (aarch64), parity with the x86 torch outputs, time, peak RSS"
+        run: |
+          mkdir out; uname -m | tee out/arch.txt; free -g | tee -a out/arch.txt; ls -la onnx_out | tee out/onnx_files.txt
+          pip install -q numpy==1.26.4 onnxruntime==1.20.1
+          for n in java_mv_fast cm_game20k; do
+            [ -s onnx_out/inputs_$n.npz ] || continue
+            /usr/bin/time -v -o out/time_arm_$n.txt python tools/unirig/onnx_skin.py check --onnx onnx_out/skin.onnx --inputs onnx_out/inputs_$n.npz --ref onnx_out/ref_$n.npz --label arm_$n --repeat 2 > out/check_arm_$n.txt 2>&1 || echo "FAILED arm $n"
+            cat out/check_arm_$n.txt
+            echo "arm_$n peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' out/time_arm_$n.txt) wall=$(awk '/Elapsed/{print $NF}' out/time_arm_$n.txt)" | tee -a out/peak_rss_arm.txt
+          done
+      - name: Push logs to ci-logs-unirig-onnx-skin (arm/)
+        if: always()
+        run: |
+          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          mkdir /tmp/cilog && cd /tmp/cilog
+          git clone -q --depth 1 -b ci-logs-unirig-onnx-skin "$URL" . || git init -q -b ci-logs-unirig-onnx-skin
+          mkdir -p arm && cp -r $GITHUB_WORKSPACE/out/* arm/ 2>/dev/null || echo none > arm/none.txt
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig onnx skin arm $GITHUB_RUN_ID"
+          git push -f "$URL" HEAD:refs/heads/ci-logs-unirig-onnx-skin

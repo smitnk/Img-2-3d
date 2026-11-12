@@ -24,6 +24,29 @@ def rss_gb():
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1048576
 
 
+def log_rss(tag):
+    """Current (VmRSS) and peak (VmHWM) resident memory from /proc, one line per call, to find where memory goes."""
+    try:
+        v = dict(l.split(":", 1) for l in open("/proc/self/status") if l.startswith(("VmRSS", "VmHWM")))
+        print(f"MEM {tag}: rss {int(v['VmRSS'].split()[0]) / 1048576:.2f}GB peak {int(v['VmHWM'].split()[0]) / 1048576:.2f}GB", flush=True)
+    except Exception:  # not Linux
+        print(f"MEM {tag}: peak {rss_gb():.2f}GB", flush=True)
+
+
+def session(path, threads=0):
+    """ORT session tuned for low peak RSS: no arena (it keeps the largest block ever requested and rounds up to powers of two),
+    no memory pattern (dynamic shapes), initializers straight from the system allocator instead of the arena."""
+    import onnxruntime as ort
+    o = ort.SessionOptions()
+    o.intra_op_num_threads = threads
+    o.enable_cpu_mem_arena = False
+    o.enable_mem_pattern = False
+    o.add_session_config_entry("session.use_device_allocator_for_initializers", "1")
+    s = ort.InferenceSession(path, o, providers=["CPUExecutionProvider"])
+    log_rss(f"session {os.path.basename(path)}")
+    return s
+
+
 # ---------- encoder inputs: what Michelangelo's CrossAttentionEncoder does before its first matmul ----------
 def fps_np(pts, k):
     """torch_cluster.fps(ratio, random_start=False) on one cloud: start at 0, strict '>' so the first max wins, float32 sums x,y,z in order."""
@@ -49,10 +72,7 @@ def sample_queries(vertices, normals, token_num=1024):
 # ---------- decoder ----------
 class Decoder:
     def __init__(self, path, layers, threads=0):
-        import onnxruntime as ort
-        o = ort.SessionOptions()
-        o.intra_op_num_threads = threads
-        self.s = ort.InferenceSession(path, o, providers=["CPUExecutionProvider"])
+        self.s = session(path, threads)
         self.n = 2 * layers
 
     def run(self, emb, pos, pre, gen):
@@ -72,7 +92,9 @@ def prefill(dec, prompt, heads, hd):
     pre0, gen = empty_kv(dec, 1, heads, hd), empty_kv(dec, 1, heads, hd)
     for t in range(len(prompt)):
         logits, new = dec.run(prompt[t][None, None], [[t]], pre0, gen)
-        gen = [np.concatenate([g, n], 2) for g, n in zip(gen, new)]
+        for i, n in enumerate(new):
+            gen[i] = np.concatenate([gen[i], n], 2)
+    log_rss("prefill done")
     return gen, logits[0]
 
 
@@ -113,7 +135,8 @@ def greedy(dec, embed, prompt, tok, start, cfg, forced=None):
             break
         logits, new = dec.run(embed[nxt][None, None], [[P + len(fed) - 1]], pre, gen)
         logits = logits[0]
-        gen = [np.concatenate([g, n], 2) for g, n in zip(gen, new)]
+        for i, n in enumerate(new):
+            gen[i] = np.concatenate([gen[i], n], 2)
     return np.array(own, np.int64), np.stack(raw)
 
 
@@ -157,7 +180,8 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
             logits = np.repeat(l0[None], nb, 0)
         else:
             logits, new = dec.run(embed[run_seq[:, c - 1]][:, None], np.full((nb, 1), P + c - 1), pre, gen)
-            gen = [np.concatenate([g, n], 2) for g, n in zip(gen, new)]
+            for i, n in enumerate(new):  # in place per tensor: one transient copy instead of a second whole cache
+                gen[i] = np.concatenate([gen[i], n], 2)
         x = logits.astype(np.float32)
         lp = x - x.max(-1, keepdims=True)
         lp = lp - np.log(np.exp(lp).sum(-1, keepdims=True))
@@ -196,7 +220,8 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
         is_fin = np.concatenate([is_fin, did])[m_top]
         fin_sc = m_sc[m_top]
         if c > 0:
-            gen = [g[parent] for g in gen]
+            for i in range(len(gen)):
+                gen[i] = gen[i][parent]
         else:  # first step: all beams share the prompt, the generated part is still empty
             gen = empty_kv(dec, nb, H, Dh)
         c += 1
@@ -204,8 +229,9 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
         worst = np.where(is_fin, fin_sc.min(), -1e9)
         if not (np.any(run_sc[0] / np.float32(c) > worst) and not hits.all()):
             break
-        if c % 50 == 0:
-            print(f"beam step {c} best {run_sc[0]:.2f} rss {rss_gb():.2f}GB", flush=True)
+        if c == 1 or c % 50 == 0:
+            print(f"beam step {c} best {run_sc[0]:.2f}", flush=True)
+            log_rss(f"beam step {c}")
     assert lens[0] > 0, "no finished beam"
     return np.array(list(start) + seqs[0, :lens[0]].tolist(), np.int64)
 
@@ -234,13 +260,13 @@ def load(d, name, unirig, threads=0):
 
 
 def encode(d, inp, threads=0):
-    import onnxruntime as ort
-    o = ort.SessionOptions()
-    o.intra_op_num_threads = threads
-    s = ort.InferenceSession(f"{d}/skel_encoder.onnx", o, providers=["CPUExecutionProvider"])
+    s = session(f"{d}/skel_encoder.onnx", threads)
     V, N = inp["vertices"].astype(np.float32), inp["normals"].astype(np.float32)
     spc, sf = sample_queries(V, N)
-    return s.run(None, {"pc": V[None], "feats": N[None], "spc": spc[None], "sfeats": sf[None]})[0][0]
+    cond = s.run(None, {"pc": V[None], "feats": N[None], "spc": spc[None], "sfeats": sf[None]})[0][0]
+    log_rss("encoder run done")
+    del s  # frees the encoder weights/activations before any decoder session is built in this process
+    return cond
 
 
 def prompt_of(cond, embed, start):
@@ -255,7 +281,9 @@ def main():
     ap.add_argument("--unirig", required=True)
     ap.add_argument("--threads", type=int, default=0)
     a = ap.parse_args()
+    log_rss("start")
     d, info, embed, inp, tok, th = load(a.dir, a.name, a.unirig, a.threads)
+    log_rss("inputs + tokenizer loaded")
     start = [int(x) for x in inp["start"]]
     out = {"phase": a.phase, "name": a.name}
     t0 = time.time()
@@ -282,6 +310,7 @@ def main():
             if len(res.joints) and len(ref.joints):
                 dist = lambda x, y: np.sqrt(((x[:, None] - y[None]) ** 2).sum(-1)).min(1)
                 out["joint_chamfer_normalized"] = float((dist(res.joints, ref.joints).mean() + dist(ref.joints, res.joints).mean()) / 2)
+    log_rss("end")
     out.update(seconds=round(time.time() - t0, 1), self_peak_rss_gb=round(rss_gb(), 2))
     print("RESULT", json.dumps(out), flush=True)
 

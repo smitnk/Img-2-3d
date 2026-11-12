@@ -30,6 +30,29 @@ OUT = os.environ.get("SKEL_OUT", "onnx")
 NAME = os.environ.get("SKEL_NAME", "mesh")
 
 
+def chunked_cross_attention(torch, chunk=64):
+    """Replacement forward for Michelangelo's QKVMultiheadCrossAttention (non-flash path), same maths, lower peak memory.
+    The original builds the full [heads, Q, N] score tensor (8 x 1024 x 65536 fp32 = 2 GB) plus a softmax copy. Softmax is per
+    query row, so processing `chunk` query rows at a time gives the same rows (only matmul tiling may differ in the last bit).
+    Q is unrolled at trace time (it is the fixed token_num=1024); N stays dynamic."""
+    import math
+
+    def forward(self, q, kv):
+        bs, n_ctx, _ = q.shape
+        n_data, width = kv.shape[1], kv.shape[2]
+        attn_ch = width // self.heads // 2
+        scale = 1 / math.sqrt(math.sqrt(attn_ch))
+        q = q.view(bs, n_ctx, self.heads, -1)
+        k, v = torch.split(kv.view(bs, n_data, self.heads, -1), attn_ch, dim=-1)
+        qh = (q * scale).transpose(1, 2)  # [b,h,t,c]
+        kh = (k * scale).permute(0, 2, 3, 1)  # [b,h,c,s]
+        vh = v.transpose(1, 2)  # [b,h,s,c]
+        outs = [torch.softmax(a @ kh, dim=-1) @ vh for a in torch.split(qh, chunk, dim=2)]  # each [b,h,chunk,c]
+        return torch.cat(outs, 2).transpose(1, 2).reshape(bs, n_ctx, -1)
+
+    return forward
+
+
 def export_encoder(model, V, Nn, torch):
     class Enc(torch.nn.Module):  # CrossAttentionEncoder._forward after the (outside, numpy) sampling of the queries
         def forward(self, pc, feats, spc, sfeats):
@@ -44,27 +67,47 @@ def export_encoder(model, V, Nn, torch):
 
     spc, sf = R.sample_queries(V, Nn)
     t = lambda a: torch.from_numpy(np.ascontiguousarray(a))[None]
-    torch.onnx.export(Enc().eval(), (t(V), t(Nn), t(spc), t(sf)), f"{OUT}/skel_encoder.onnx", opset_version=17,
-                      input_names=["pc", "feats", "spc", "sfeats"], output_names=["cond"],
-                      dynamic_axes={"pc": {1: "n"}, "feats": {1: "n"}, "spc": {1: "q"}, "sfeats": {1: "q"}, "cond": {1: "q"}})
+    # patch only for the export: the torch reference (encode_mesh_cond) must keep the original attention
+    import types
+    mods = [m for m in model.mesh_encoder.encoder.modules() if type(m).__name__ == "QKVMultiheadCrossAttention"]
+    assert mods, "cross attention module not found"
+    for m in mods:
+        m.forward = types.MethodType(chunked_cross_attention(torch), m)
+    try:
+        torch.onnx.export(Enc().eval(), (t(V), t(Nn), t(spc), t(sf)), f"{OUT}/skel_encoder.onnx", opset_version=17,
+                          input_names=["pc", "feats", "spc", "sfeats"], output_names=["cond"],
+                          dynamic_axes={"pc": {1: "n"}, "feats": {1: "n"}, "spc": {1: "q"}, "sfeats": {1: "q"}, "cond": {1: "q"}})
+    finally:
+        for m in mods:
+            del m.forward
 
 
 def export_decoder(lm, L, Hh, Dh, D, torch):
     from transformers import DynamicCache
 
+    class LazyCache(DynamicCache):
+        """Prompt K/V (batch 1) + generated K/V (per beam) are joined one layer at a time, inside that layer's attention, so only
+        one layer's expanded [b,H,p+g+1,Dh] K and V exist at once (the eager version built all 24 layers x 15 beams up front: ~3 GB)."""
+        def __init__(self, pk, gk):
+            super().__init__()
+            self.pk, self.gk, self.new = pk, gk, {}
+
+        def update(self, k, v, i, cache_kwargs=None):
+            self.new[i] = (k, v)
+            b = k.shape[0]
+            return (torch.cat([self.pk[2 * i].expand(b, -1, -1, -1), self.gk[2 * i], k], 2),
+                    torch.cat([self.pk[2 * i + 1].expand(b, -1, -1, -1), self.gk[2 * i + 1], v], 2))
+
+        def get_seq_length(self, layer_idx=0):
+            return self.pk[0].shape[2] + self.gk[0].shape[2]
+
     class Step(torch.nn.Module):
         def forward(self, embeds, position, *kv):
-            pk, gk = kv[:2 * L], kv[2 * L:]
-            b = embeds.shape[0]
-            cache = DynamicCache()
-            for i in range(L):  # prompt K/V (batch 1) expanded to the b beams + generated K/V per beam
-                cache.update(torch.cat([pk[2 * i].expand(b, -1, -1, -1), gk[2 * i]], 2),
-                             torch.cat([pk[2 * i + 1].expand(b, -1, -1, -1), gk[2 * i + 1]], 2), i)
+            cache = LazyCache(kv[:2 * L], kv[2 * L:])
             r = lm(inputs_embeds=embeds, position_ids=position, past_key_values=cache, use_cache=True)
-            pkv, new = r.past_key_values, []
+            new = []
             for i in range(L):
-                k, v = (pkv.key_cache[i], pkv.value_cache[i]) if hasattr(pkv, "key_cache") else (pkv.layers[i].keys, pkv.layers[i].values)
-                new += [k[:, :, -1:], v[:, :, -1:]]
+                new += list(cache.new[i])
             return (r.logits[:, 0],) + tuple(new)
 
     n = 2 * L

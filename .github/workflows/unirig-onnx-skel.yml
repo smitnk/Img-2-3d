@@ -105,7 +105,7 @@ jobs:
           for n in java_mv_fast cm_game20k; do
             for ph in encode greedy beam; do
               /usr/bin/time -v -o out/time_arm_${n}_$ph.txt python tools/unirig/onnx_skeleton.py $ph --dir onnx --name $n --unirig unirig > out/arm_${n}_$ph.txt 2>&1 || echo "FAILED $n $ph"
-              echo "$n $ph: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_arm_${n}_$ph.txt)"; grep RESULT out/arm_${n}_$ph.txt | cut -c1-700 | grep . || tail -5 out/arm_${n}_$ph.txt
+              echo "$n $ph: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_arm_${n}_$ph.txt)"; grep "^MEM" out/arm_${n}_$ph.txt | sed "s/^/  /"; grep RESULT out/arm_${n}_$ph.txt | cut -c1-700 | grep . || tail -5 out/arm_${n}_$ph.txt
             done
           done 2>&1 | tee out/arm_summary.txt
       - uses: actions/upload-artifact@v4

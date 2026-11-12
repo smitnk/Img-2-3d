@@ -93,6 +93,15 @@ def serialization(unirig, skin_art):
         check(f"serialization {name}: codes (bit exact)", (s["code"] == code).all(), f"depth {int(g.max()).bit_length()}")
         check(f"serialization {name}: order/inverse", (s["order"] == order).all() and (s["inverse"] == inv).all(),
               f"order differs in {int((s['order'] != order).sum())} slots (ties of equal codes)")
+        # which tie rule is torch's? (the default `std` = libstdc++ std::sort emulation)
+        cj = torch.from_numpy(code)
+        cands = {"std_sort emulation": Z.std_argsort, "np stable": lambda c: np.argsort(c, kind="stable"),
+                 "np reverse of stable(-code)": lambda c: np.argsort(-c, kind="stable")[::-1],
+                 "torch.sort stable=True": lambda c: torch.sort(torch.from_numpy(c), stable=True)[1].numpy(),
+                 "torch.argsort 1-D row": lambda c: torch.argsort(torch.from_numpy(np.ascontiguousarray(c))).numpy()}
+        for cn, fn in cands.items():
+            bad = sum(int((fn(code[k]) != order[k]).sum()) for k in range(len(code)))
+            print(f"INFO   tie rule '{cn}' vs torch.argsort(2-D): {bad} slots differ", flush=True)
 
 
 # ---------------------------------------------------------------- tokenizer vs UniRig
@@ -155,11 +164,18 @@ def mesh_vs_trimesh(meshes):
         key = lambda v: np.lexsort(np.round(v.astype(np.float64) * 1e6).T[::-1])
         a, b = key(V), key(np.asarray(m.vertices))
         dv = np.abs(V[a] - np.asarray(m.vertices, np.float32)[b]).max()
-        dn = np.abs(vn[a] - np.asarray(m.vertex_normals, np.float32)[b])
-        fa, fb = key(V[F].mean(1)), key(np.asarray(m.vertices)[m.faces].mean(1))
-        dfn = np.abs(fn[fa] - np.asarray(m.face_normals, np.float32)[fb])
-        check(f"mesh {name}: vertices / vertex normals / face normals", dv < 1e-6 and dn.max() < 1e-3 and dfn.max() < 1e-3,
-              f"max diff {dv:.1e} / {dn.max():.1e} (mean {dn.mean():.1e}) / {dfn.max():.1e}", False)
+        check(f"mesh {name}: merged vertices equal trimesh's", dv < 1e-6, f"max diff {dv:.1e}", False)
+        # normals on trimesh's own arrays (no matching of reordered vertices / faces, which is ambiguous for duplicate faces)
+        tv, tf = np.asarray(m.vertices, np.float32), np.asarray(m.faces)
+        vn, fn = P.mesh_normals(tv, tf)
+        dn = np.abs(vn - np.asarray(m.vertex_normals, np.float32))
+        df = np.abs(fn - np.asarray(m.face_normals, np.float32))
+        t = tv.astype(np.float64)[tf]
+        area = np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1)
+        bad = df.max(1) > 1e-3
+        check(f"mesh {name}: vertex / face normals on trimesh's arrays", dn.max() < 1e-3 and df.max() < 1e-3,
+              f"max diff {dn.max():.1e} (mean {dn.mean():.1e}) / {df.max():.1e}; {int(bad.sum())} bad faces, smallest-area bad {area[bad].min() if bad.any() else 0:.1e}, "
+              f"zero-area faces {int((area < 1e-12).sum())}, bad vertices {int((dn.max(1) > 1e-3).sum())}", False)
 
 
 def sampler_affine(unirig, meshes):
@@ -206,7 +222,7 @@ def voxel_stuff(unirig, meshes):
     import unirig_phone as U
     vg = funcs(f"{unirig}/src/data/vertex_group.py", {"voxelization", "voxel_skin"})
     rk = funcs(f"{unirig}/src/system/skin.py", {"reskin"})
-    names = [n for n in meshes if "cm_game20k" in n] or list(meshes)[:1]
+    names = [n for n in meshes if "cm_game20k" in n or "java_mv_fast" in n] or list(meshes)[:1]
     key = lambda c, g: set(map(tuple, np.round((c + 1 - 1 / g) * g / 2).astype(np.int32).tolist()))
     for name in names:
         V0, F0 = meshes[name]
@@ -214,12 +230,36 @@ def voxel_stuff(unirig, meshes):
         lo, hi = V.min(0), V.max(0)
         nv = ((V - (lo + hi) / 2) / (np.max(hi - lo) / 2)).astype(np.float32)
         for g in (64, 196):
-            ref = vg["voxelization"](vertices=nv, faces=F, grid=g, backend="pyrender")
+            import pyrender
+            raw = []  # the depth buffers pyrender hands back, in UniRig's camera order (+z -z +y -y +x -x as added to the scene)
+            orig = pyrender.OffscreenRenderer.render
+
+            def spy(self, *aa, **kk):
+                r = orig(self, *aa, **kk)
+                raw.append(np.array(r, copy=True))
+                return r
+            pyrender.OffscreenRenderer.render = spy
+            try:
+                ref = vg["voxelization"](vertices=nv, faces=F, grid=g, backend="pyrender")
+            finally:
+                pyrender.OffscreenRenderer.render = orig
             mine = P.voxelization(g, U.bvh_cast_factory(nv, F))
             a, b = key(ref, g), key(mine, g)
             iou = len(a & b) / max(len(a | b), 1)
-            check(f"voxelization {name} grid {g} vs pyrender", iou > 0.98, f"IoU {iou:.4f}, pyrender {len(a)} voxels, ray cast {len(b)}", False)
-            if iou <= 0.98:  # diagnostics: is it a flipped axis?
+            check(f"voxelization {name} grid {g} vs pyrender", iou > 0.98, f"IoU {iou:.4f}, pyrender {len(a)} voxels, ray cast {len(b)}"
+                  + (" (pyrender reference is degenerate: the whole grid)" if len(a) == g ** 3 else ""), False)
+            # depth-image level: what the renderer returned vs the ray caster, for all 8 symmetries of the square (finds a flipped / transposed convention)
+            mdep = P.depth_images(g, U.bvh_cast_factory(nv, F))
+            for (cam, mine_d), r in zip(mdep.items(), raw):
+                lin = np.where(r < 0.05, 4.0, r)
+                lin = 0.05 + 4.0 - 0.05 * 4.0 / lin
+                hit_r, hit_m = lin < 3.99, mine_d < 3.99
+                best = max(((hit_r == (np.rot90(hit_m, k)[:, ::-1] if f else np.rot90(hit_m, k))).mean(), k, f) for k in range(4) for f in (0, 1))
+                print(f"INFO   grid {g} cam {cam}: raw min/max {r.min():.4g}/{r.max():.4g}, hit pixels pyrender {hit_r.mean():.3f} mine {hit_m.mean():.3f}, "
+                      f"identity agreement {(hit_r == hit_m).mean():.4f}, best symmetry (agreement, rot90 k, flip) {best[0]:.4f} {best[1]} {best[2]}", flush=True)
+            if g == 196 and "java_mv_fast" in name:
+                print(f"INFO   java_mv_fast grid 196 voxels: pyrender {len(a)}, ray cast {len(b)}, the real (50k face simplified) run had 608738", flush=True)
+            if iou <= 0.98:
                 for ax in range(3):
                     fl = mine.copy()
                     fl[:, ax] *= -1

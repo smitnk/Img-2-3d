@@ -4,6 +4,7 @@
 The comparisons against the real torch / UniRig code are in parity_x86.py.
 """
 import os
+import shutil
 import sys
 
 import numpy as np
@@ -65,6 +66,24 @@ def serialization():
     inv_ok = all((s["order"][k][s["inverse"][k]] == np.arange(len(pts))).all() for k in range(4))
     sorted_ok = all((np.diff(s["code"][k][s["order"][k]]) >= 0).all() for k in range(4))
     check("serialization order/inverse", inv_ok and sorted_ok, f"depth {int(s['grid'].max()).bit_length()}")
+
+
+def std_sort():
+    """std_argsort == the real libstdc++ std::sort on (key, index) pairs (torch.argsort's CPU tie order); needs g++, else skipped."""
+    import subprocess
+    import tempfile
+    if not shutil.which("g++"):
+        return print("SELFTEST std_argsort vs g++: skipped (no g++)")
+    src = '#include <algorithm>\n#include <cstdio>\n#include <vector>\n#include <utility>\nint main(){long long n;while(scanf("%lld",&n)==1){std::vector<std::pair<long long,long long>> v(n);' \
+          'for(long long i=0;i<n;i++){if(scanf("%lld",&v[i].first)!=1)return 1;v[i].second=i;}std::sort(v.begin(),v.end(),[](auto&a,auto&b){return a.first<b.first;});' \
+          'for(auto&p:v)printf("%lld ",p.second);printf("\\n");}}'
+    with tempfile.TemporaryDirectory() as d:
+        open(f"{d}/s.cpp", "w").write(src)
+        subprocess.run(["g++", "-O2", "-std=c++14", "-o", f"{d}/s", f"{d}/s.cpp"], check=True)
+        rng = np.random.default_rng(0)
+        cases = [rng.integers(0, k, n) for n, k in ((5, 3), (17, 4), (1000, 50), (8192, 300), (32768, 5000), (2000, 2))]
+        out = subprocess.run([f"{d}/s"], input="".join(f"{len(c)} " + " ".join(map(str, c)) + "\n" for c in cases), capture_output=True, text=True).stdout.splitlines()
+    check("std_argsort == libstdc++ std::sort", all((Z.std_argsort(c) == np.array(o.split(), int)).all() for c, o in zip(cases, out)))
 
 
 def stream(rng, tok, max_tokens=300):
@@ -148,6 +167,12 @@ def voxels():
     ideal = 4 / 3 * np.pi * r ** 3 / (2 / g) ** 3
     check("voxelization of a centred sphere", len(vox) > 0 and abs(len(vox) / ideal - 1) < 0.15 and np.abs(vox.mean(0)).max() < 0.05,
           f"{len(vox)} voxels, ideal {ideal:.0f}, centroid {vox.mean(0).round(3).tolist() if len(vox) else None}")
+    # off-centre sphere: every axis must land where the sphere is (catches mirrored / transposed camera index maths)
+    c0 = np.array([.3, -.2, .15], np.float32)
+    V2, F2 = icosphere(c0, .4)
+    vox2 = P.voxelization(g, brute_cast(V2, F2))
+    check("voxelization of an off-centre sphere", len(vox2) > 0 and np.abs(vox2.mean(0) - c0).max() < .03,
+          f"centroid {vox2.mean(0).round(3).tolist() if len(vox2) else None} vs {c0.tolist()}")
     # the end-to-end skin on the same mesh: weights are a distribution per vertex, closer joint = more weight
     nv = V / r
     joints = np.array([[0, 0, -.5], [0, 0, .5]], np.float32)
@@ -176,6 +201,6 @@ def mesh():
 
 
 if __name__ == "__main__":
-    for f in (serialization, tokenizer, voxels, mesh):
+    for f in (serialization, std_sort, tokenizer, voxels, mesh):
         f()
     sys.exit(1 if bad else 0)

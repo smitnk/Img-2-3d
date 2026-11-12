@@ -79,7 +79,7 @@ jobs:
           cp m1/java_mv_fast.glb m2/cm_game20k.glb w/in/ && mkdir w/ref && cp ref/unirig_*.glb w/ref/
           mkdir w/phone && cp tools/unirig/phone/*.py tools/unirig/onnx_skeleton.py tools/unirig/onnx_skin.py w/phone/   # the phone's asset layout
           ls -la w/in w/ref; nproc; free -m; df -h / | tail -1
-          sudo mount --bind /proc $R/proc; sudo mount --bind /dev $R/dev; sudo mkdir -p $R/w && sudo mount --bind $PWD/w $R/w
+          sudo mount --bind /proc $R/proc; sudo mount --bind /dev $R/dev; sudo mount --bind /sys $R/sys; sudo mkdir -p $R/w && sudo mount --bind $PWD/w $R/w
           sudo chroot $R /opt/blender/blender -b --factory-startup --python-expr "import sys,numpy; print('BLENDERPY', sys.version.split()[0], 'numpy', numpy.__version__, sys.version_info[:2])" 2>&1 | grep -E "Blender [0-9]|BLENDERPY" | tee out/blender_python.txt
       - name: onnxruntime + scipy wheels for Blender's Python (unpacked, put on sys.path - as the rig pack did)
         run: |
@@ -89,8 +89,9 @@ jobs:
             onnxruntime==$ORT_VERSION scipy==$SCIPY_VERSION -d whl
           ls -la whl | tee out/wheels.txt
           mkdir w/pylibs && for f in whl/*.whl; do unzip -q -o $f -d w/pylibs; done
-          sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-expr \
-            "import sys; sys.path.insert(0, '/w/pylibs'); import numpy, scipy, onnxruntime as o; from scipy.spatial import cKDTree; from scipy.sparse.csgraph import shortest_path; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, o.get_available_providers())" 2>&1 | grep -E "LIBS|Error|error" | tee out/libs.txt
+          sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python-expr \
+            "import sys; sys.path.insert(0, '/w/pylibs'); import numpy, scipy, onnxruntime as o; from scipy.spatial import cKDTree; from scipy.sparse.csgraph import shortest_path; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, o.get_available_providers())" > out/libs_full.txt 2>&1 || echo "libs step exit $?"
+          tail -40 out/libs_full.txt; grep "^LIBS" out/libs_full.txt | tee out/libs.txt
           grep -q "^LIBS" out/libs.txt
       - name: ONNX pack from the artifacts of the export workflows
         run: |

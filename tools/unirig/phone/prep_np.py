@@ -168,7 +168,7 @@ def voxelization(grid, cast, eye_dis=2.0):
     gc = np.stack((gi[:, 0], gi[:, 1], grid - 1 - gi[:, 2]), axis=1).astype(np.float32) * 2 / grid - 1.0 + 1.0 / grid
     mz = -gc[:, 2] + depths["+z"][grid - 1 - gi[:, 1], gi[:, 0]] <= eye_dis
     mz &= gc[:, 2] + depths["-z"][grid - 1 - gi[:, 1], grid - 1 - gi[:, 0]] <= eye_dis
-    mx = -gc[:, 0] + depths["+x"][grid - 1 - gi[:, 1], gi[:, 2]] <= eye_dis
+    mx = -gc[:, 0] + depths["+x"][grid - 1 - gi[:, 1], grid - 1 - gi[:, 2]] <= eye_dis
     mx &= gc[:, 0] + depths["-x"][grid - 1 - gi[:, 1], gi[:, 2]] <= eye_dis
     my = -gc[:, 1] + depths["+y"][gi[:, 2], gi[:, 0]] <= eye_dis
     my &= gc[:, 1] + depths["-y"][grid - 1 - gi[:, 2], gi[:, 0]] <= eye_dis

@@ -112,6 +112,7 @@ jobs:
         run: |
           for n in java_mv_fast cm_game20k; do
             [ -s onnx_out/inputs_$n.npz ] && python tools/unirig/onnx_skin.py check --onnx onnx_out/skin.onnx --inputs onnx_out/inputs_$n.npz --ref onnx_out/ref_$n.npz --label x86_$n 2>&1 | tee out/check_$n.txt
+            [ -s onnx_out/inputs_$n.npz ] && [ -s onnx_out/skin_head.onnx ] && python tools/unirig/onnx_skin.py check-parts onnx_out onnx_out/inputs_$n.npz onnx_out/ref_$n.npz x86parts_$n 2>&1 | tee out/check_parts_$n.txt
           done
           names="java_mv_fast cm_game20k"
           echo "== final skin weights from FBX, max/mean abs diff over (vertices x joints)"
@@ -152,6 +153,8 @@ jobs:
             [ -s onnx_out/inputs_$n.npz ] || continue
             /usr/bin/time -v -o out/time_arm_$n.txt python tools/unirig/onnx_skin.py check --onnx onnx_out/skin.onnx --inputs onnx_out/inputs_$n.npz --ref onnx_out/ref_$n.npz --label arm_$n --repeat 2 > out/check_arm_$n.txt 2>&1 || echo "FAILED arm $n"
             cat out/check_arm_$n.txt
+            [ -s onnx_out/skin_head.onnx ] && /usr/bin/time -v -o out/time_armparts_$n.txt python tools/unirig/onnx_skin.py check-parts onnx_out onnx_out/inputs_$n.npz onnx_out/ref_$n.npz armparts_$n > out/check_armparts_$n.txt 2>&1 \
+              && { cat out/check_armparts_$n.txt; echo "armparts_$n peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' out/time_armparts_$n.txt) wall=$(awk '/Elapsed/{print $NF}' out/time_armparts_$n.txt)" | tee -a out/peak_rss_arm.txt; } || true
             echo "arm_$n peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' out/time_arm_$n.txt) wall=$(awk '/Elapsed/{print $NF}' out/time_arm_$n.txt)" | tee -a out/peak_rss_arm.txt
           done
       - name: Push logs to ci-logs-unirig-onnx-skin (arm/)

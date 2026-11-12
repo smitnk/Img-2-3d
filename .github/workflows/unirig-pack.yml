@@ -29,23 +29,9 @@ jobs:
           for a in "unirig-onnx-skel.yml onnx-skel skel ${{ inputs.skel_run }}" "unirig-onnx-skin.yml unirig-skin-onnx skin ${{ inputs.skin_run }}"; do
             bash tools/unirig/phone/fetch_artifact.sh $a || { echo "::error::UniRig ONNX artifacts expired or missing: re-run unirig-onnx-skel.yml and unirig-onnx-skin.yml, then this workflow"; exit 1; }
           done
-          pip install -q --break-system-packages numpy && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack
-          # the legacy exporter can leave one loose file per tensor (names like onnx::MatMul_12): merge each graph into <graph>.data
-          pip install -q --break-system-packages onnx && python3 - <<'PY'
-          import os, re, onnx
-          keep = {"skel_encoder.onnx", "skel_decoder.onnx", "skin.onnx", "skin.onnx.data", "embed.npy", "info.json", "skin_meta.json"}
-          loose = [f for f in os.listdir("pack") if f not in keep]
-          for g in ("skel_encoder.onnx", "skel_decoder.onnx"):
-              if not loose: break
-              m = onnx.load(f"pack/{g}", load_external_data=True)
-              for x in (g, g + ".data"):
-                  if os.path.exists(f"pack/{x}"): os.remove(f"pack/{x}")
-              onnx.save_model(m, f"pack/{g}", save_as_external_data=True, all_tensors_to_one_file=True, location=g + ".data", size_threshold=1024)
-              del m
-          for f in loose:
-              if not re.fullmatch(r"skel_(encoder|decoder)\.onnx\.data", f): os.remove(f"pack/{f}")
-          print(sorted(os.listdir("pack")))
-          PY
+          # make_pack: weights of every graph -> <graph>.onnx.data (memory-mapped on the phone), skin network as skin_a/skin_pt/skin_head, loose files merged
+          pip install -q --break-system-packages numpy onnx && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack
+          ls -la pack
       - name: Wheels for Blender 4.2's Python 3.12 (cp312 aarch64), unpacked, zipped with the phone scripts
         run: |
           pip download -q --no-deps --only-binary=:all: --implementation cp --python-version 312 --abi cp312 \
@@ -68,7 +54,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir("."))}
-          json.dump({"version": 1, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
+          json.dump({"version": 2, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
           print(sum(f["bytes"] for f in files.values()) / 2**30, "GB total"); print(*files, sep="\n")
           PY
       - name: Publish release unirig-v1
@@ -76,5 +62,6 @@ jobs:
           cd pack
           gh release view unirig-v1 >/dev/null 2>&1 || gh release create unirig-v1 --title "UniRig for phones v1" \
             --notes "UniRig (VAST-AI-Research/UniRig, MIT) at $UNIRIG_COMMIT as ONNX models + onnxruntime/scipy libs for the app's Blender 4.2. Used by Rig with UniRig."
+          for f in $(gh release view unirig-v1 --json assets -q '.assets[].name'); do [ -e "$f" ] || gh release delete-asset unirig-v1 "$f" -y; done  # e.g. the old single skin.onnx
           for f in $(ls | grep -v '^unirig_info.json$'); do gh release upload unirig-v1 --clobber "$f"; done
           gh release upload unirig-v1 --clobber unirig_info.json

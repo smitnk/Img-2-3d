@@ -2,10 +2,13 @@
 
 The UniRig pack (/opt/unirig, release unirig-v1) holds the ONNX models as flat files plus unirig_py.zip (onnxruntime + scipy
 unpacked wheels in pylibs/, and tools/unirig/phone/*.py + onnx_skeleton.py + onnx_skin.py). The pipeline itself is
-unirig_phone.main(); this wrapper unpacks the zip once, runs it, renames the bones to Blender/Rigify names (so Poseme-3D and
-the export presets recognise them) and writes generation.json.
+unirig_phone.main(); this wrapper unpacks the zip (again whenever the pack was updated), runs it, renames the bones to Blender/Rigify
+names (so Poseme-3D and the export presets recognise them) and writes generation.json.
+Phone policy (see unirig_phone.py): the skeleton phase runs in its own Blender process and leaves /opt/unirig/work/<input hash>/skel.npz, which a
+rerun of the same input reuses (so a killed skin phase does not redo the skeleton); the work dir is deleted after a successful run. --threads (default
+2) sets the onnxruntime / BLAS threads, --nice (default 10) lowers the priority of the whole process tree.
 
-usage: blender -b --factory-startup --python unirig_rig.py -- --in in.glb --out DIR [--name N] [--threads 4]
+usage: blender -b --factory-startup --python unirig_rig.py -- --in in.glb --out DIR [--name N] [--threads 2] [--nice 10]
        python unirig_rig.py --selftest        (the bone-naming check; needs no Blender)
 
 Axis convention: the rename runs in Blender's frame (Z up, character faces -Y), where the character's LEFT is +X, as in Rigify
@@ -15,10 +18,13 @@ plus head positions of UniRig's bone_i bones.
 import argparse
 import json
 import os
+import shutil
 import sys
+import time
 import zipfile
 
 PACK = "/opt/unirig"
+WORK = os.path.join(PACK, "work")  # lives in the pack dir (app storage), unlike --out which the app clears for every run
 
 
 def args():
@@ -26,16 +32,21 @@ def args():
     p.add_argument("--in", dest="inp", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--name", default="Rigged")
-    p.add_argument("--threads", type=int, default=4)
+    p.add_argument("--threads", type=int, default=2)
+    p.add_argument("--nice", type=int, default=10)
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
 def unpack():
     """Unpack the python libs + phone scripts once (the pack ships them as one zip; the app's downloader only handles flat files)."""
-    root = os.path.join(PACK, "unirig_py")
-    if not os.path.isfile(os.path.join(root, "unirig_phone.py")):
-        with zipfile.ZipFile(os.path.join(PACK, "unirig_py.zip")) as z:
+    root, zp = os.path.join(PACK, "unirig_py"), os.path.join(PACK, "unirig_py.zip")
+    stamp = os.path.join(root, ".stamp")
+    want = f"{os.path.getsize(zp)}-{int(os.path.getmtime(zp))}"
+    if not (os.path.isfile(os.path.join(root, "unirig_phone.py")) and os.path.isfile(stamp) and open(stamp).read() == want):
+        shutil.rmtree(root, ignore_errors=True)
+        with zipfile.ZipFile(zp) as z:
             z.extractall(root)
+        open(stamp, "w").write(want)
     return root
 
 
@@ -184,8 +195,11 @@ def main():
     sys.path[:0] = [os.path.join(root, "pylibs"), root]
     os.makedirs(a.out, exist_ok=True)
     out = os.path.join(a.out, "rigged.glb")
+    for d in os.listdir(WORK) if os.path.isdir(WORK) else []:  # skeleton files of runs that never finished, a few days old
+        if time.time() - os.path.getmtime(os.path.join(WORK, d)) > 3 * 86400:
+            shutil.rmtree(os.path.join(WORK, d), ignore_errors=True)
     sys.argv = [sys.argv[0], "--", "--in", a.inp, "--out", out, "--models", PACK, "--pylibs", os.path.join(root, "pylibs"),
-                "--threads", str(a.threads)]
+                "--threads", str(a.threads), "--nice", str(a.nice), "--work", WORK]
     import unirig_phone
     unirig_phone.main()  # leaves the rigged scene open in bpy
     import bpy
@@ -207,6 +221,7 @@ def main():
             "triangles": sum(len(p.vertices) - 2 for o in meshes for p in o.data.polygons),
             "rig": {"bones": len(bones), "skinning": "UniRig", "renamed": len(m)}}
     json.dump(info, open(os.path.join(a.out, "generation.json"), "w"), indent=1)
+    shutil.rmtree(WORK, ignore_errors=True)  # done: the skeleton file is not needed any more
 
 
 if "--selftest" in sys.argv:

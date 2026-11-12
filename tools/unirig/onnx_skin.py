@@ -11,6 +11,7 @@ numpy-only core (no torch at import time), so it also runs on the ARM job / a ph
 CLI:
   selftest                                          numpy-only unit test of build_nbr + gather conv vs a dense conv
   check --onnx F --inputs inputs.npz --ref ref.npz  ORT vs the torch outputs saved by `export_skin.py capture`
+  check-parts DIR inputs.npz ref.npz label           the three-graph split (skin_a/skin_pt/skin_head) vs the torch outputs
   ort-run <run.py args>                             (inside the UniRig checkout) UniRig skin pipeline with the model
                                                     replaced by ORT; env SKIN_ONNX, SKIN_INPUTS
 """
@@ -125,15 +126,58 @@ def prepare(vertices, normals, joints, voxel_skin, parents, perm=None, tie=0, se
     }
 
 
-def session(path):
+def session(path, threads=0):
+    """Low-memory CPU session. threads 0 = ORT default (CI); the phone passes 2. Weights saved as external data (<name>.onnx.data, see
+    externalize) are memory-mapped by ORT: clean file pages the OS can drop, not anonymous memory."""
     import onnxruntime as ort
     so = ort.SessionOptions()
     so.log_severity_level = 3
+    so.intra_op_num_threads = threads
+    so.inter_op_num_threads = 1
     so.enable_cpu_mem_arena = False  # free every intermediate at once instead of pooling it
     so.enable_mem_pattern = False
     so.add_session_config_entry("session.disable_prepacking", "1")  # MLAS prepacking keeps a 2nd copy of every MatMul weight
-    so.add_session_config_entry("session.use_device_allocator_for_initializers", "1")
     return ort.InferenceSession(path, so, providers=["CPUExecutionProvider"])
+
+
+def externalize(src, dst):
+    """Rewrite graph src (inline weights, or loose per-tensor files of the legacy exporter) as dst + dst.data (one file, tensors > 1 KB).
+    Needs the onnx package. A .data file must stay under GitHub's 2 GB asset limit and match [A-Za-z0-9_.-]+."""
+    import onnx
+    m = onnx.load(src, load_external_data=True)
+    for old in (dst, dst + ".data"):
+        if os.path.exists(old):
+            os.remove(old)
+    onnx.save_model(m, dst, save_as_external_data=True, all_tensors_to_one_file=True, location=os.path.basename(dst) + ".data",
+                    size_threshold=1024)
+
+
+PARTS = ("skin_a", "skin_pt", "skin_head")  # export_skin.export_parts
+
+
+def has_parts(d):
+    return all(os.path.isfile(f"{d}/{p}.onnx") for p in PARTS)
+
+
+def run_parts(d, inp, threads=0, log=None):
+    """The skin network as three graphs in sequence (A: global latents + bone encoder, PT: point transformer, HEAD: mesh-bone attention
+    + weights), one session each and freed before the next: the weights and activations of only one part are resident at a time."""
+    import gc
+
+    def part(name, keys, outs, extra=None):
+        s = session(f"{d}/{name}.onnx", threads)
+        if log:
+            log(f"session {name}")
+        r = s.run(outs, {**{k: inp[k] for k in keys}, **(extra or {})})
+        del s
+        gc.collect()
+        if log:
+            log(f"{name} done")
+        return r
+    g, bone = part("skin_a", ("vertices", "normals", "joints", "gsel"), ["g", "bone"])
+    pt, = part("skin_pt", ("vertices", "normals", "nbr3", "nbr5", "order", "inverse"), ["pt"])
+    skin, = part("skin_head", ("voxel_skin", "skin_mask"), ["skin"], {"pt": pt, "g": g, "bone": bone})
+    return skin
 
 
 def run(sess, inp, outs=("skin",)):
@@ -191,6 +235,16 @@ def check(onnx_path, inputs_path, ref_path, label, repeat=1):
         print(f"ORT run {i} {time.time() - t0:.1f}s hwm={_hwm_gb():.2f}GB {rss}", flush=True)
     for name, r in zip(OUT_NAMES, res):
         print(diff_line(label, name, r, ref[name]), flush=True)
+    print(f"ONNXPEAK {label} hwm_gb={_hwm_gb():.2f}", flush=True)
+
+
+def check_parts(d, inputs_path, ref_path, label):
+    """run_parts vs the torch reference outputs (skin, plus its intermediates only through the final result)."""
+    inp, ref = dict(np.load(inputs_path)), dict(np.load(ref_path))
+    t0 = time.time()
+    skin = run_parts(d, inp, 0, lambda t: print(f"MEM {t}: rss {_status_gb('VmRSS:'):.2f}GB hwm {_hwm_gb():.2f}GB", flush=True))
+    print(f"ORT parts run {time.time() - t0:.1f}s", flush=True)
+    print(diff_line(label, "skin", skin, ref["skin"]), flush=True)
     print(f"ONNXPEAK {label} hwm_gb={_hwm_gb():.2f}", flush=True)
 
 
@@ -285,6 +339,8 @@ if __name__ == "__main__":
         ap.add_argument("--repeat", type=int, default=1)
         a = ap.parse_args()
         check(a.onnx, a.inputs, a.ref, a.label, a.repeat)
+    elif cmd == "check-parts":
+        check_parts(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])  # DIR inputs.npz ref.npz label
     elif cmd == "ort-run":
         ort_run(sys.argv[2:])
     else:

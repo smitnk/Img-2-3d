@@ -637,7 +637,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 unirigPack.install { st -> if (st is PackStatus.Downloading) report.stage("Downloading UniRig (~2.5 GB, once)", st.done.toFloat() / maxOf(st.total, 1L)) }
             }
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
-            val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged", "--threads", s.threadCount().coerceAtMost(4).toString()), report)
+            val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged"), report) // 2 threads, nice 10 by default: the phone stays usable
             saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }

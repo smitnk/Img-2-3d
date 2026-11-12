@@ -27,18 +27,22 @@ def rss_gb():
 def log_rss(tag):
     """Current (VmRSS) and peak (VmHWM) resident memory from /proc, one line per call, to find where memory goes."""
     try:
-        v = dict(l.split(":", 1) for l in open("/proc/self/status") if l.startswith(("VmRSS", "VmHWM")))
-        print(f"MEM {tag}: rss {int(v['VmRSS'].split()[0]) / 1048576:.2f}GB peak {int(v['VmHWM'].split()[0]) / 1048576:.2f}GB", flush=True)
+        v = dict(l.split(":", 1) for l in open("/proc/self/status") if l.startswith(("VmRSS", "VmHWM", "RssAnon", "RssFile")))
+        g = lambda k: int(v[k].split()[0]) / 1048576  # anon = heap (what Android's low-memory killer weighs), file = mapped model weights (droppable)
+        print(f"MEM {tag}: rss {g('VmRSS'):.2f}GB (anon {g('RssAnon'):.2f} file {g('RssFile'):.2f}) peak {g('VmHWM'):.2f}GB", flush=True)
     except Exception:  # not Linux
         print(f"MEM {tag}: peak {rss_gb():.2f}GB", flush=True)
 
 
 def session(path, threads=0):
     """ORT session tuned for low peak RSS: no arena (it keeps the largest block ever requested and rounds up to powers of two),
-    no memory pattern (dynamic shapes), initializers straight from the system allocator instead of the arena."""
+    no memory pattern (dynamic shapes), initializers straight from the system allocator instead of the arena. Weights stored as external data
+    (<graph>.onnx.data) are memory-mapped; MLAS prepacking stays on here (the decoder runs ~15 rows per step, 2.4x faster than unpacked):
+    the packed copy is the only resident one, the mapped original is released after packing."""
     import onnxruntime as ort
     o = ort.SessionOptions()
     o.intra_op_num_threads = threads
+    o.inter_op_num_threads = 1
     o.enable_cpu_mem_arena = False
     o.enable_mem_pattern = False
     o.add_session_config_entry("session.use_device_allocator_for_initializers", "1")

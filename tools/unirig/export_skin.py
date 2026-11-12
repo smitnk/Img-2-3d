@@ -219,7 +219,8 @@ class SkinONNX(nn.Module):
                 nb += 1
         return f
 
-    def forward(self, vertices, normals, joints, voxel_skin, skin_mask, gsel, nbr3, nbr5, order, inverse):
+    def global_bone(self, vertices, normals, joints, gsel):
+        """Part A: Michelangelo global latents g (1, 1024, F) and the bone encoder + its cross attention (1, J, F)."""
         m = self.m
         g = self.global_latents(vertices, normals, gsel)
         be = m.bone_encoder
@@ -228,8 +229,11 @@ class SkinONNX(nn.Module):
         lat = torch.cat([x, g], 1)
         for a in be.attn:
             x = self.res_cross(a, x, lat)
-        bone = x
-        pt = self.ptv3(vertices, normals, nbr3, nbr5, order, inverse)  # (N, 384)
+        return g, x
+
+    def head(self, pt, g, bone, voxel_skin, skin_mask):
+        """Part C: mesh <- bone/global cross attention, per-vertex skin weights over vertex chunks."""
+        m = self.m
         mesh = m.feat_map(pt).unsqueeze(0)
         lat = torch.cat([bone, g], 1)
         for blk in m.mesh_bone_attn:
@@ -246,7 +250,47 @@ class SkinONNX(nn.Module):
             p = m.skinweight_pred(m.downscale(torch.cat([a, e], -1))).squeeze(-1)  # (n, J)
             outs.append(torch.softmax(p, -1))
         s = torch.cat(outs, 0) * torch.pow(skin_mask, m.voxel_mask)
-        return s / s.sum(-1, keepdim=True), g, bone, pt
+        return s / s.sum(-1, keepdim=True)
+
+    def forward(self, vertices, normals, joints, voxel_skin, skin_mask, gsel, nbr3, nbr5, order, inverse):
+        g, bone = self.global_bone(vertices, normals, joints, gsel)
+        pt = self.ptv3(vertices, normals, nbr3, nbr5, order, inverse)  # (N, 384)
+        return self.head(pt, g, bone, voxel_skin, skin_mask), g, bone, pt
+
+
+class Part(nn.Module):
+    """One of the three sub-graphs (same maths as SkinONNX.forward, run one after the other by onnx_skin.run_parts)."""
+
+    def __init__(self, net, fn):
+        super().__init__()
+        self.net, self.fn = net, fn
+
+    def forward(self, *a):
+        return getattr(self.net, self.fn)(*a)
+
+
+def export_parts(net, inp, outs, out_dir):
+    """skin_a.onnx (global latents + bone encoder), skin_pt.onnx (PTv3), skin_head.onnx (mesh-bone attention + weights), each with its
+    weights in <name>.onnx.data. outs = net(*args) = (skin, g, bone, pt). Peak memory on the phone = the biggest part, not the sum."""
+    import shutil
+    I = lambda *k: tuple(_t(inp[x]) for x in k)
+    _, g, bone, pt = outs
+    spec = {
+        "skin_a": ("global_bone", I("vertices", "normals", "joints", "gsel"), ["vertices", "normals", "joints", "gsel"], ["g", "bone"],
+                   {"joints": {1: "J"}, "bone": {1: "J"}}),
+        "skin_pt": ("ptv3", I("vertices", "normals", "nbr3", "nbr5", "order", "inverse"),
+                    ["vertices", "normals", "nbr3", "nbr5", "order", "inverse"], ["pt"], {}),
+        "skin_head": ("head", (pt, g, bone) + I("voxel_skin", "skin_mask"), ["pt", "g", "bone", "voxel_skin", "skin_mask"], ["skin"],
+                      {"bone": {1: "J"}, "voxel_skin": {1: "J"}, "skin_mask": {1: "J"}, "skin": {1: "J"}}),
+    }
+    for name, (fn, args, ins, outn, dyn) in spec.items():
+        tmp = f"{out_dir}/_{name}"
+        os.makedirs(tmp, exist_ok=True)
+        torch.onnx.export(Part(net, fn).eval(), args, f"{tmp}/{name}.onnx", input_names=ins, output_names=outn, dynamic_axes=dyn,
+                          opset_version=17, do_constant_folding=True, training=torch.onnx.TrainingMode.EVAL)
+        O.externalize(f"{tmp}/{name}.onnx", f"{out_dir}/{name}.onnx")  # also merges the legacy exporter's loose per-tensor files
+        shutil.rmtree(tmp)
+        print(f"EXPORT part {name}: {os.path.getsize(f'{out_dir}/{name}.onnx.data') / 2 ** 30:.2f} GB weights", flush=True)
 
 
 def _t(a):
@@ -388,6 +432,10 @@ def run_capture(model, batch, orig):
             try:
                 consolidate(path)
             except Exception:
+                traceback.print_exc()
+            try:
+                export_parts(net, inp, outs, out_dir)
+            except Exception:  # the monolithic skin.onnx stays the fallback
                 traceback.print_exc()
             size = sum(os.path.getsize(f"{out_dir}/{f}") for f in os.listdir(out_dir) if not f.endswith(".npz"))
             print(f"EXPORT wrote {path} (+external data), {size / 2 ** 30:.2f} GB", flush=True)

@@ -1,8 +1,9 @@
 name: UniRig phone runner (Blender 4.2 ARM64 + onnxruntime + numpy/scipy, no torch)
 
 # tools/unirig/phone/unirig_phone.py rigs a GLB inside the phone's headless Blender with the ONNX graphs of unirig-onnx-skel.yml /
-# unirig-onnx-skin.yml. arm: the real thing in the blender-runtime-v1 userland (same binary and Python as the phone), time + peak RSS,
-# compared with the torch reference rigs of ci-logs-unirig. parity: the numpy ports against UniRig's own torch / pyrender code (x86).
+# unirig-onnx-skin.yml. arm: the real thing in the blender-runtime-v1 userland (same binary and Python as the phone), under phone-like limits
+# (2 cores via taskset, 3 GB cgroup memory cap via systemd-run when the runner has it; the job fails when any process peaks above 3 GB),
+# per-phase time + peak RSS, compared with the torch reference rigs of ci-logs-unirig; a second run of cm_game20k proves the skeleton-file resume. parity: the numpy ports against UniRig's own torch / pyrender code (x86).
 # Needs a live "onnx-skel" artifact (1 day) and "unirig-skin-onnx" (7 days): re-run those workflows if they expired, or pass run ids.
 on:
   push:
@@ -97,23 +98,50 @@ jobs:
         run: |
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skel.yml onnx-skel skel "${{ inputs.skel_run }}"
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin "${{ inputs.skin_run }}"
-          pip install -q --break-system-packages numpy && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
+          pip install -q --break-system-packages numpy onnx && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
           cat w/models/info.json | tr -d '\n ' ; echo; ls -la w/models | head -8
-      - name: Rig both meshes in the phone's Blender (time, peak RSS)
+      - name: Rig both meshes in the phone's Blender (2 cores, 3 GB cap; per-phase time, peak RSS)
         run: |
-          for n in java_mv_fast cm_game20k; do
-            echo "== $n"
+          # phone-like limits: 2 cores (taskset) and a 3 GB cgroup cap (no swap, like a killed process) where systemd-run works; else only the peak check below
+          if sudo systemd-run --scope -q -p MemoryMax=3G -p MemorySwapMax=0 true 2>/dev/null; then LIM="sudo systemd-run --scope -q -p MemoryMax=3G -p MemorySwapMax=0 taskset -c 0,1"; echo "cgroup cap: yes" | tee out/limits.txt
+          else LIM="sudo taskset -c 0,1"; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
+          rig() {  # name, input glb, output glb, extra args
+            local n=$1 in=$2 o=$3; shift 3
             ( while sleep 45; do echo "MON $(date +%T) rss_mb=$(( $(ps -C blender -o rss= | sort -n | tail -1) / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/mon_$n.txt 2>/dev/null &
             MON=$!
-            timeout 150m /usr/bin/time -v -o out/time_$n.txt sudo chroot $R env HOME=/root OMP_NUM_THREADS=4 \
+            timeout 150m /usr/bin/time -v -o out/time_$n.txt $LIM chroot $R env HOME=/root \
               /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/phone/unirig_phone.py -- \
-              --in /w/in/$n.glb --out /w/out/$n.glb --models /w/models --pylibs /w/pylibs --threads 4 > out/log_$n.txt 2>&1 \
+              --in /w/in/$in.glb --out /w/out/$o.glb --models /w/models --pylibs /w/pylibs --work /w/work --threads 2 "$@" > out/log_$n.txt 2>&1 \
               && echo "OK $n" || echo "FAILED $n (exit $?)"
             kill $MON 2>/dev/null || true
             grep -E "Elapsed|Maximum resident" out/time_$n.txt || true
-            grep -E "^(INPUT|MESH|SKELETON|PHASE|MEM|RESULT)|Traceback|Error" out/log_$n.txt | cut -c1-400 | tail -60
-          done
-          ls -la w/out
+            grep -E "^(INPUT|MESH|SKELETON|RESUME|PHASE|PEAK|MEM|RESULT)|Traceback|Error" out/log_$n.txt | cut -c1-400 | tail -80
+          }
+          for n in java_mv_fast cm_game20k; do echo "== $n"; rig $n $n $n; done
+          echo "== resume: cm_game20k again, skeleton file must be reused"; rig resume_cm_game20k cm_game20k resume_cm_game20k
+          grep -q "^RESUME skeleton file" out/log_resume_cm_game20k.txt || { echo "::error::second run did not reuse the skeleton file"; touch out/FAIL_resume; }
+          ls -la w/out w/work/*
+      - name: Memory budget (every process under 3 GB, per-phase numbers)
+        if: always()
+        run: |
+          python3 - <<'PY' | tee out/budget.txt
+          import json, re, sys
+          bad = 0
+          for n in ("java_mv_fast", "cm_game20k", "resume_cm_game20k"):
+              try:
+                  log = open(f"out/log_{n}.txt").read()
+                  rep = json.loads(re.findall(r"^RESULT (.*)$", log, re.M)[-1])
+              except Exception as e:
+                  print(f"BUDGET {n}: no RESULT ({e!r})"); bad += 1; continue
+              tv = open(f"out/time_{n}.txt").read()
+              mx = int(re.search(r"Maximum resident set size \(kbytes\): (\d+)", tv).group(1)) / 1048576
+              print(f"BUDGET {n}: phases_s={rep['phases']} peak_rss_gb={rep['peak_rss_gb']} max_process_rss_gb={mx:.2f} total_s={rep['total_seconds']} graphs={rep['skin_graphs']}")
+              if mx > 3.0 or max(rep["peak_rss_gb"].values()) > 3.0:
+                  print(f"BUDGET {n}: OVER 3 GB"); bad += 1
+          import os
+          bad += os.path.exists("out/FAIL_resume")
+          sys.exit(1 if bad else 0)
+          PY
       - name: Compare with the torch reference rigs (ci-logs-unirig)
         if: always()
         run: |
@@ -126,10 +154,11 @@ jobs:
         if: always()
         run: |
           cp w/out/*.glb w/out/*.json out/ 2>/dev/null || true
-          { for n in java_mv_fast cm_game20k; do
+          { for n in java_mv_fast cm_game20k resume_cm_game20k; do
               echo "== $n: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_$n.txt 2>/dev/null)"
-              grep -E "^(INPUT|MESH|SKELETON|PHASE|MEM|RESULT)" out/log_$n.txt 2>/dev/null | cut -c1-500
+              grep -E "^(INPUT|MESH|SKELETON|RESUME|PHASE|PEAK|MEM|RESULT)" out/log_$n.txt 2>/dev/null | cut -c1-500
             done
+            echo "== limits / memory budget"; cat out/limits.txt out/budget.txt 2>/dev/null
             echo "== compare with the torch reference rigs"; cat out/compare.txt 2>/dev/null
             echo "== blender / libs"; cat out/blender_python.txt out/libs.txt 2>/dev/null
           } | tee out/SUMMARY_arm.txt

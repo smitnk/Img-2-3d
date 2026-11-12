@@ -1,0 +1,155 @@
+name: UniRig phone runner (Blender 4.2 ARM64 + onnxruntime + numpy/scipy, no torch)
+
+# tools/unirig/phone/unirig_phone.py rigs a GLB inside the phone's headless Blender with the ONNX graphs of unirig-onnx-skel.yml /
+# unirig-onnx-skin.yml. arm: the real thing in the blender-runtime-v1 userland (same binary and Python as the phone), time + peak RSS,
+# compared with the torch reference rigs of ci-logs-unirig. parity: the numpy ports against UniRig's own torch / pyrender code (x86).
+# Needs a live "onnx-skel" artifact (1 day) and "unirig-skin-onnx" (7 days): re-run those workflows if they expired, or pass run ids.
+on:
+  push:
+    paths: [".github/workflows/unirig-phone.yml", "tools/unirig/phone/**"]
+  workflow_dispatch:
+    inputs:
+      skel_run: { description: "run id of unirig-onnx-skel.yml (default: newest with a live artifact)", required: false }
+      skin_run: { description: "run id of unirig-onnx-skin.yml (default: newest with a live artifact)", required: false }
+permissions:
+  contents: write
+  actions: read
+concurrency: { group: unirig-phone, cancel-in-progress: true }
+env:
+  UNIRIG_COMMIT: 6793c6640ff01c8fb389f3993434124bb43d2933
+  ORT_VERSION: 1.20.0
+  SCIPY_VERSION: 1.13.1
+  GH_TOKEN: ${{ github.token }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Inputs (UniRig source, the two meshes) + system libs for bpy / OSMesa
+        run: |
+          mkdir out meshes
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 libglu1-mesa libosmesa6
+          git clone -q https://github.com/VAST-AI-Research/UniRig unirig && git -C unirig checkout -q $UNIRIG_COMMIT
+          git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/$GITHUB_REPOSITORY m1
+          git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/$GITHUB_REPOSITORY m2
+          cp m1/java_mv_fast.glb m2/cm_game20k.glb meshes/
+      - name: Python deps (torch CPU, trimesh, pyrender + OSMesa, bpy)
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q "numpy==1.26.4" torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
+          pip install -q "numpy==1.26.4" scipy pyyaml python-box trimesh pyrender bpy==4.2
+          pip install -q "pyopengl==3.1.7"   # pyrender pins 3.1.0, which lacks OSMesa context creation
+          pip list 2>/dev/null | grep -iE "^(torch|numpy|scipy|trimesh|pyrender|pyopengl|bpy) " | tee out/pip_versions.txt
+      - name: Self test (numpy ports vs pure-python references)
+        run: python tools/unirig/phone/selftest.py 2>&1 | tee out/selftest.txt
+      - name: Captured inputs of the torch runs (real clouds, real token streams)
+        run: |
+          bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin "${{ inputs.skin_run }}" || true
+          bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skel.yml onnx-skel skel "${{ inputs.skel_run }}" || true
+          rm -f skin/skin.onnx skel/*.onnx; ls skin skel | head -20
+      - name: Parity with torch / UniRig
+        run: |
+          export PYOPENGL_PLATFORM=osmesa
+          python tools/unirig/phone/parity_x86.py --unirig unirig --glb-dir meshes --skin-art skin --skel-art skel 2>&1 | tee out/parity.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: logs-x86, path: out, if-no-files-found: warn, retention-days: 3 }
+
+  arm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender runtime (blender-runtime-v1, the phone's userland) + meshes + reference rigs
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get install -y -qq time unzip
+          mkdir out w w/in w/out
+          gh release download blender-runtime-v1 -R $GITHUB_REPOSITORY -p blender-runtime-arm64.tar.gz
+          mkdir x && sudo tar -xzf blender-runtime-arm64.tar.gz -C x && rm blender-runtime-arm64.tar.gz
+          R=$(dirname $(dirname $(dirname $(sudo find x -path '*opt/blender/blender' -type f | head -1)))); echo "R=$PWD/$R" >> $GITHUB_ENV; echo rootfs $R
+          git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/$GITHUB_REPOSITORY m1
+          git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/$GITHUB_REPOSITORY m2
+          git clone -q --depth 1 -b ci-logs-unirig https://github.com/$GITHUB_REPOSITORY ref
+          cp m1/java_mv_fast.glb m2/cm_game20k.glb w/in/ && mkdir w/ref && cp ref/unirig_*.glb w/ref/
+          mkdir w/phone && cp tools/unirig/phone/*.py tools/unirig/onnx_skeleton.py tools/unirig/onnx_skin.py w/phone/   # the phone's asset layout
+          ls -la w/in w/ref; nproc; free -m; df -h / | tail -1
+          sudo mount --bind /proc $R/proc; sudo mount --bind /dev $R/dev; sudo mkdir -p $R/w && sudo mount --bind $PWD/w $R/w
+          sudo chroot $R /opt/blender/blender -b --factory-startup --python-expr "import sys,numpy; print('BLENDERPY', sys.version.split()[0], 'numpy', numpy.__version__, sys.version_info[:2])" 2>&1 | grep -E "Blender [0-9]|BLENDERPY" | tee out/blender_python.txt
+      - name: onnxruntime + scipy wheels for Blender's Python (unpacked, put on sys.path - as the rig pack did)
+        run: |
+          PY=$(grep -o "([0-9]*, [0-9]*)" out/blender_python.txt | tr -d '(), ' | head -1); echo "blender python tag $PY"
+          pip download -q --no-deps --only-binary=:all: --implementation cp --python-version $PY --abi cp$PY \
+            --platform manylinux2014_aarch64 --platform manylinux_2_17_aarch64 --platform manylinux_2_27_aarch64 --platform manylinux_2_28_aarch64 \
+            onnxruntime==$ORT_VERSION scipy==$SCIPY_VERSION -d whl
+          ls -la whl | tee out/wheels.txt
+          mkdir w/pylibs && for f in whl/*.whl; do unzip -q -o $f -d w/pylibs; done
+          sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-expr \
+            "import sys; sys.path.insert(0, '/w/pylibs'); import numpy, scipy, onnxruntime as o; from scipy.spatial import cKDTree; from scipy.sparse.csgraph import shortest_path; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, o.get_available_providers())" 2>&1 | grep -E "LIBS|Error|error" | tee out/libs.txt
+          grep -q "^LIBS" out/libs.txt
+      - name: ONNX pack from the artifacts of the export workflows
+        run: |
+          bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skel.yml onnx-skel skel "${{ inputs.skel_run }}"
+          bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin "${{ inputs.skin_run }}"
+          python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
+          cat w/models/info.json | tr -d '\n ' ; echo; ls -la w/models | head -8
+      - name: Rig both meshes in the phone's Blender (time, peak RSS)
+        run: |
+          for n in java_mv_fast cm_game20k; do
+            echo "== $n"
+            ( while sleep 45; do echo "MON $(date +%T) rss_mb=$(( $(ps -C blender -o rss= | sort -n | tail -1) / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/mon_$n.txt 2>/dev/null &
+            MON=$!
+            timeout 150m /usr/bin/time -v -o out/time_$n.txt sudo chroot $R env HOME=/root OMP_NUM_THREADS=4 \
+              /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/phone/unirig_phone.py -- \
+              --in /w/in/$n.glb --out /w/out/$n.glb --models /w/models --pylibs /w/pylibs --threads 4 > out/log_$n.txt 2>&1 \
+              && echo "OK $n" || echo "FAILED $n (exit $?)"
+            kill $MON 2>/dev/null || true
+            grep -E "Elapsed|Maximum resident" out/time_$n.txt || true
+            grep -E "^(INPUT|MESH|SKELETON|PHASE|MEM|RESULT)|Traceback|Error" out/log_$n.txt | cut -c1-400 | tail -60
+          done
+          ls -la w/out
+      - name: Compare with the torch reference rigs (ci-logs-unirig)
+        if: always()
+        run: |
+          for n in java_mv_fast cm_game20k; do
+            [ -s w/out/$n.glb ] || { echo "no output for $n"; continue; }
+            sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python /w/phone/compare_rigs.py -- \
+              --ref /w/ref/unirig_$n.glb --new /w/out/$n.glb --label $n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
+          done
+      - name: Summary
+        if: always()
+        run: |
+          cp w/out/*.glb w/out/*.json out/ 2>/dev/null || true
+          { for n in java_mv_fast cm_game20k; do
+              echo "== $n: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_$n.txt 2>/dev/null)"
+              grep -E "^(INPUT|MESH|SKELETON|PHASE|MEM|RESULT)" out/log_$n.txt 2>/dev/null | cut -c1-500
+            done
+            echo "== compare with the torch reference rigs"; cat out/compare.txt 2>/dev/null
+            echo "== blender / libs"; cat out/blender_python.txt out/libs.txt 2>/dev/null
+          } | tee out/SUMMARY_arm.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: logs-arm, path: out, if-no-files-found: warn, retention-days: 3 }
+
+  publish:
+    needs: [parity, arm]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with: { pattern: "logs-*", path: out }
+      - name: Push to ci-logs-unirig-phone
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-phone
+          cp -r $GITHUB_WORKSPACE/out/logs-arm arm 2>/dev/null || true
+          cp -r $GITHUB_WORKSPACE/out/logs-x86 x86 2>/dev/null || true
+          { cat arm/SUMMARY_arm.txt; echo "== parity (x86)"; grep -E "^(PARITY|INFO)" x86/parity.txt; echo "== selftest"; cat x86/selftest.txt; } > SUMMARY.txt 2>/dev/null || echo none > SUMMARY.txt
+          ls -R | head -50; cat SUMMARY.txt
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig phone $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-phone

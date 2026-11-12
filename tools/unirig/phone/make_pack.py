@@ -24,10 +24,7 @@ for src in (a.skel, a.skin):
         if f.startswith(skip) or not os.path.isfile(f"{src}/{f}"):
             continue
         assert not os.path.exists(f"{a.out}/{f}"), f"{f} exists in both artifacts"
-        try:
-            os.link(f"{src}/{f}", f"{a.out}/{f}")
-        except OSError:
-            shutil.copy2(f"{src}/{f}", f"{a.out}/{f}")
+        shutil.copy2(f"{src}/{f}", f"{a.out}/{f}")  # not os.link: onnx refuses external data files with several hard links
 cap = np.load(sorted(glob.glob(f"{a.skin}/inputs_*.npz"))[0])
 json.dump({"tie": int(cap["tie"]), "sc": bool(cap["sc"]), "offs3": cap["offs3"].tolist(), "offs5": cap["offs5"].tolist()},
           open(f"{a.out}/skin_meta.json", "w"))

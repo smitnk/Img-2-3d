@@ -24,6 +24,7 @@ android {
         buildConfigField("String", "TEXGEN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/texgen-v1/\"")
         buildConfigField("String", "HUNYUAN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuan-v1/\"")
         buildConfigField("String", "CURIO_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/curiomesh-v1/\"")
+        buildConfigField("String", "UNIRIG_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/unirig-v1/\"")
         buildConfigField("String", "HUNYUANMV_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanmv-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }

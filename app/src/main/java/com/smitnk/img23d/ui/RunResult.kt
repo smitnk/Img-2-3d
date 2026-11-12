@@ -233,6 +233,9 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     }
                 }
             }
+            if (m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED) OutlinedButton(onClick = { vm.rigUnirig(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Rig with UniRig (AI skeleton + weights, ~20 min)")
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (m.blend != null) OutlinedButton(onClick = { cb.export(m, true) }, Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Save .blend") }
                 if (m.script != null) OutlinedButton(onClick = { showScript = true }, Modifier.weight(1f).heightIn(min = 48.dp)) {

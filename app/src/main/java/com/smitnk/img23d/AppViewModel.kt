@@ -18,6 +18,7 @@ import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
 import com.smitnk.img23d.body.CurioPack
+import com.smitnk.img23d.body.UnirigPack
 import com.smitnk.img23d.body.HunyuanMvPack
 import com.smitnk.img23d.body.HunyuanPack
 import com.smitnk.img23d.core.HunyuanShape
@@ -288,6 +289,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val hunyuanPack = HunyuanPack(app)
     val hunyuanMvPack = HunyuanMvPack(app)
     val curioPack = CurioPack(app)
+    val unirigPack = UnirigPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -618,6 +620,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val label = when (use) { "LOW_POLY" -> "low poly"; "ANIMATION" -> "animation"; else -> "game" }
             val b = blender("smart_mesh.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} $label", "--use", use, "--faces", faces.toString()), report)
             saveBlender(b, "${m.name} $label", Source.REFINED, thumbFile = m.thumbnail, detail = "Smart Mesh ($label, ${faces / 1000}k quads, CurioMesh) of ${m.name}")
+                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+        }
+    }
+
+    /** Rig with UniRig: AI skeleton + skin weights on the phone (~20 min, ~4.3 GB peak). Downloads its ~GB pack on first use. */
+    fun rigUnirig(m: Model) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        launchJob("Rig with UniRig", "Blender", 1) { report ->
+            val ram = android.app.ActivityManager.MemoryInfo().also {
+                getApplication<Application>().getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it)
+            }.totalMem
+            if (ram < 6_500_000_000L) throw IllegalStateException("UniRig needs about 4.3 GB of free memory, so a phone with at least 8 GB RAM. This phone has %.1f GB.".format(ram / 1e9))
+            if (!unirigPack.isReady()) {
+                report.stage("Downloading UniRig (~2.5 GB, once)", null)
+                unirigPack.install { st -> if (st is PackStatus.Downloading) report.stage("Downloading UniRig (~2.5 GB, once)", st.done.toFloat() / maxOf(st.total, 1L)) }
+            }
+            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
+            val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged", "--threads", s.threadCount().coerceAtMost(4).toString()), report)
+            saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }
     }

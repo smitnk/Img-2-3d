@@ -1,0 +1,80 @@
+name: UniRig phone pack (ONNX models + onnxruntime/scipy libs + phone scripts) -> release unirig-v1
+
+# One-time download for "Rig with UniRig" in the app. Needs live artifacts of unirig-onnx-skel.yml ("onnx-skel", 1 day) and
+# unirig-onnx-skin.yml ("unirig-skin-onnx", 7 days); if they expired, re-run those two workflows first (or pass their run ids).
+on:
+  workflow_dispatch:
+    inputs:
+      skel_run: { description: "run id of unirig-onnx-skel.yml (default: newest with a live artifact)", required: false }
+      skin_run: { description: "run id of unirig-onnx-skin.yml (default: newest with a live artifact)", required: false }
+permissions:
+  contents: write
+  actions: read
+concurrency: { group: unirig-pack, cancel-in-progress: true }
+env:
+  UNIRIG_COMMIT: 6793c6640ff01c8fb389f3993434124bb43d2933
+  ORT_VERSION: 1.20.0
+  SCIPY_VERSION: 1.13.1
+  GH_TOKEN: ${{ github.token }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+jobs:
+  pack:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: ONNX models from the export workflows
+        run: |
+          sudo apt-get install -y -qq unzip
+          for a in "unirig-onnx-skel.yml onnx-skel skel ${{ inputs.skel_run }}" "unirig-onnx-skin.yml unirig-skin-onnx skin ${{ inputs.skin_run }}"; do
+            bash tools/unirig/phone/fetch_artifact.sh $a || { echo "::error::UniRig ONNX artifacts expired or missing: re-run unirig-onnx-skel.yml and unirig-onnx-skin.yml, then this workflow"; exit 1; }
+          done
+          pip install -q --break-system-packages numpy && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack
+          # the legacy exporter can leave one loose file per tensor (names like onnx::MatMul_12): merge each graph into <graph>.data
+          pip install -q --break-system-packages onnx && python3 - <<'PY'
+          import os, re, onnx
+          keep = {"skel_encoder.onnx", "skel_decoder.onnx", "skin.onnx", "skin.onnx.data", "embed.npy", "info.json", "skin_meta.json"}
+          loose = [f for f in os.listdir("pack") if f not in keep]
+          for g in ("skel_encoder.onnx", "skel_decoder.onnx"):
+              if not loose: break
+              m = onnx.load(f"pack/{g}", load_external_data=True)
+              for x in (g, g + ".data"):
+                  if os.path.exists(f"pack/{x}"): os.remove(f"pack/{x}")
+              onnx.save_model(m, f"pack/{g}", save_as_external_data=True, all_tensors_to_one_file=True, location=g + ".data", size_threshold=1024)
+              del m
+          for f in loose:
+              if not re.fullmatch(r"skel_(encoder|decoder)\.onnx\.data", f): os.remove(f"pack/{f}")
+          print(sorted(os.listdir("pack")))
+          PY
+      - name: Wheels for Blender 4.2's Python 3.12 (cp312 aarch64), unpacked, zipped with the phone scripts
+        run: |
+          pip download -q --no-deps --only-binary=:all: --implementation cp --python-version 312 --abi cp312 \
+            --platform manylinux2014_aarch64 --platform manylinux_2_17_aarch64 --platform manylinux_2_27_aarch64 --platform manylinux_2_28_aarch64 \
+            onnxruntime==$ORT_VERSION scipy==$SCIPY_VERSION -d whl
+          mkdir py py/pylibs && for f in whl/*.whl; do unzip -q -o $f -d py/pylibs; done
+          cp tools/unirig/phone/*.py tools/unirig/onnx_skeleton.py tools/unirig/onnx_skin.py py/
+          rm -f py/selftest.py py/parity_x86.py py/compare_rigs.py
+          (cd py && zip -qr ../pack/unirig_py.zip .)
+      - name: Licence, SOURCE.txt, info json, check names and sizes
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/VAST-AI-Research/UniRig/$UNIRIG_COMMIT/LICENSE -o pack/LICENSE-UniRig.txt
+          grep -qi "MIT License" pack/LICENSE-UniRig.txt
+          echo "UniRig $UNIRIG_COMMIT from https://github.com/VAST-AI-Research/UniRig (MIT). The ONNX graphs are exported from its checkpoints by tools/unirig/ in $GITHUB_REPOSITORY; unirig_py.zip holds onnxruntime $ORT_VERSION and scipy $SCIPY_VERSION cp312 aarch64 wheels (unpacked) and the numpy port tools/unirig/phone/." > pack/SOURCE.txt
+          cd pack
+          for f in *; do
+            [[ "$f" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "::error::asset name $f is not [A-Za-z0-9_.-]+"; exit 1; }
+            [ $(stat -c %s "$f") -lt 2147483648 ] || { echo "::error::$f is over GitHub's 2 GB per-asset limit and would need splitting"; exit 1; }
+          done
+          python3 - <<'PY'
+          import hashlib, json, os
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir("."))}
+          json.dump({"version": 1, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
+          print(sum(f["bytes"] for f in files.values()) / 2**30, "GB total"); print(*files, sep="\n")
+          PY
+      - name: Publish release unirig-v1
+        run: |
+          cd pack
+          gh release view unirig-v1 >/dev/null 2>&1 || gh release create unirig-v1 --title "UniRig for phones v1" \
+            --notes "UniRig (VAST-AI-Research/UniRig, MIT) at $UNIRIG_COMMIT as ONNX models + onnxruntime/scipy libs for the app's Blender 4.2. Used by Rig with UniRig."
+          for f in $(ls | grep -v '^unirig_info.json$'); do gh release upload unirig-v1 --clobber "$f"; done
+          gh release upload unirig-v1 --clobber unirig_info.json

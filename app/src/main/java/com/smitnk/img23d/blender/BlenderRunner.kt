@@ -103,6 +103,7 @@ class BlenderRunner(private val context: Context, private val runtime: BlenderRu
             "-b", "${scripts.path}:/opt/app",
             "-b", "${File(context.filesDir, "bodypack").apply { mkdirs() }.path}:/opt/bodypack", // Body Creator assets
             "-b", "${File(context.filesDir, "curiomesh").apply { mkdirs() }.path}:/opt/curiomesh", // Smart Mesh (CurioMesh)
+            "-b", "${File(context.filesDir, "unirig").apply { mkdirs() }.path}:/opt/unirig", // Rig with UniRig
             "-w", "/opt/app",
             "/opt/blender/blender", "-b", "--factory-startup", "-t", threads.toString(),
             "--python-exit-code", "1", "--python", script, "--",

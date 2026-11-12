@@ -1,0 +1,143 @@
+name: UniRig skeleton -> ONNX fp32 (torch vs ORT on x86; ORT-only run on ARM)
+
+# Exports the SKELETON stage (Michelangelo encoder + OPT decoder with KV cache) to ONNX and checks it against the PyTorch
+# run of unirig-probe.yml: tools/unirig/export_skeleton.py (x86, torch) -> tools/unirig/onnx_skeleton.py (ARM, numpy + onnxruntime).
+on:
+  push:
+    paths: [".github/workflows/unirig-onnx-skel.yml", "tools/unirig/onnx_skeleton.py", "tools/unirig/export_skeleton.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: unirig-onnx-skel, cancel-in-progress: true }
+env:
+  UNIRIG_COMMIT: 6793c6640ff01c8fb389f3993434124bb43d2933
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: System libs (bpy runtime, OSMesa)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 libglu1-mesa libosmesa6
+      - name: Clone UniRig + the two meshes + the reference rigs
+        run: |
+          mkdir out onnx
+          git clone -q https://github.com/VAST-AI-Research/UniRig unirig && git -C unirig checkout -q $UNIRIG_COMMIT
+          git -C unirig rev-parse HEAD | tee out/unirig_commit.txt
+          git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/${{ github.repository }} m1
+          git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/${{ github.repository }} m2
+          git clone -q --depth 1 -b ci-logs-unirig https://github.com/${{ github.repository }} ref
+          mkdir unirig/in unirig/res
+          cp m1/java_mv_fast.glb m2/cm_game20k.glb unirig/in/ && ls -la unirig/in
+      - name: Python deps (same as unirig-probe.yml + onnx/onnxruntime)
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --only-binary=:all: --no-cache-dir torch_scatter torch_cluster -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+          grep -v '^flash_attn' unirig/requirements.txt > /tmp/req.txt
+          pip install -q -r /tmp/req.txt spconv psutil "numpy==1.26.4"
+          pip install -q "pyopengl==3.1.7"
+          pip install -q onnx==1.17.0 onnxruntime==1.20.0
+          pip list 2>/dev/null | grep -iE "^(torch|torch[-_]scatter|torch[-_]cluster|spconv|bpy|numpy|transformers|onnx|onnxruntime) " | tee out/pip_versions.txt
+      - name: Patch UniRig for CPU (same patch as the reference run)
+        run: python tools/unirig/patch_cpu.py unirig pyrender | tee out/patch.txt
+      - name: Torch beam reference + ONNX export + torch-vs-ORT checks (per mesh)
+        run: |
+          cd unirig
+          export PYTHONUNBUFFERED=1 PYOPENGL_PLATFORM=osmesa WANDB_MODE=disabled
+          export MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576 MALLOC_TRIM_THRESHOLD_=1048576
+          export SKEL_OUT=$GITHUB_WORKSPACE/onnx
+          (while sleep 30; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') py_rss $(ps -C python -o rss= | sort -n | tail -1)"; done) &
+          for n in java_mv_fast cm_game20k; do
+            echo "== $n"
+            bash launch/inference/extract.sh --config configs/data/quick_inference.yaml --require_suffix obj,fbx,FBX,dae,glb,gltf,vrm \
+              --force_override false --num_runs 1 --faces_target_count 50000 --input in/$n.glb --output_dir tmp > ../out/log_${n}_extract.txt 2>&1 || echo "extract failed $n"
+            SKEL_NAME=$n /usr/bin/time -v -o ../out/time_${n}_export.txt timeout 120m python $GITHUB_WORKSPACE/tools/unirig/export_skeleton.py \
+              --task=configs/task/quick_inference_skeleton_articulationxl_ar_256.yaml --seed=12345 --input=in/$n.glb --output=res/skel_$n.fbx \
+              --npz_dir=tmp > ../out/log_${n}_export.txt 2>&1 || echo "FAILED $n (exit $?)"
+            grep -E "Elapsed|Maximum resident" ../out/time_${n}_export.txt || true
+            grep -E "torch beam reference|encoder maxdiff|^greedy|^beam |SKEL_ONNX_FAILED|Error" ../out/log_${n}_export.txt | cut -c1-600 || true
+          done
+          ls -la res
+      - name: A/B of the ONNX-written skeleton vs the reference rigs (ci-logs-unirig)
+        if: always()
+        run: |
+          python tools/unirig/ab_check.py ref unirig/res java_mv_fast cm_game20k 2>&1 | grep -E "^AB skeleton" | tee out/ab_check.txt || true
+      - name: Collect
+        if: always()
+        run: |
+          cp onnx/report_*.json onnx/info.json out/ 2>/dev/null || true
+          cp unirig/res/skel_*.fbx out/ 2>/dev/null || true
+          { ls -la onnx; du -sh onnx; } | tee out/onnx_files.txt
+          for f in out/time_*_export.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f) wall=$(awk '/Elapsed/{print $NF}' $f)"; done | tee out/peak_rss_export.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: logs-export, path: out, if-no-files-found: warn, retention-days: 3 }
+      - uses: actions/upload-artifact@v4
+        with: { name: onnx-skel, path: onnx, compression-level: 1, retention-days: 1 }
+
+  arm:
+    needs: export
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Deps (onnxruntime only, no torch / bpy) + UniRig source for its tokenizer
+        run: |
+          sudo apt-get install -y -qq time
+          pip install -q numpy onnxruntime==1.20.0 python-box pyyaml
+          mkdir out; uname -m | tee out/machine.txt; lscpu | grep -E "Model name|^CPU\(s\)" | tee -a out/machine.txt; free -m | tee -a out/machine.txt
+          git clone -q https://github.com/VAST-AI-Research/UniRig unirig && git -C unirig checkout -q $UNIRIG_COMMIT
+      - uses: actions/download-artifact@v4
+        with: { name: onnx-skel, path: onnx }
+      - name: ORT-only run (encode -> greedy -> beam, one process per phase)
+        run: |
+          ls -la onnx | tee out/onnx_files_arm.txt
+          for n in java_mv_fast cm_game20k; do
+            for ph in encode greedy beam; do
+              /usr/bin/time -v -o out/time_arm_${n}_$ph.txt python tools/unirig/onnx_skeleton.py $ph --dir onnx --name $n --unirig unirig > out/arm_${n}_$ph.txt 2>&1 || echo "FAILED $n $ph"
+              echo "$n $ph: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_arm_${n}_$ph.txt)"; grep RESULT out/arm_${n}_$ph.txt | cut -c1-700 | grep . || tail -5 out/arm_${n}_$ph.txt
+            done
+          done 2>&1 | tee out/arm_summary.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: logs-arm, path: out, if-no-files-found: warn, retention-days: 3 }
+
+  publish:
+    needs: [export, arm]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with: { pattern: "logs-*", path: out, merge-multiple: true }
+      - name: Summary
+        run: |
+          cd out && ls -la
+          python - <<'PY' | tee SUMMARY.txt
+          import glob, json
+          for f in sorted(glob.glob("report_*.json")):
+              r = json.load(open(f))
+              print("==", f)
+              for k, v in r.items():
+                  if k != "logits_diff_per_step_first32":
+                      print(f"  {k}: {v}")
+              d = r.get("logits_diff_per_step_first32")
+              if d: print("  first 32 greedy steps, max |dlogit|:", " ".join(f"{x:.1e}" for x in d))
+          PY
+          for f in ab_check.txt peak_rss_export.txt onnx_files.txt arm_summary.txt machine.txt; do echo "== $f"; cat $f 2>/dev/null; done | tee -a SUMMARY.txt
+      - name: Push results to ci-logs-unirig-onnx-skel
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-onnx-skel
+          cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig onnx skeleton $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-onnx-skel

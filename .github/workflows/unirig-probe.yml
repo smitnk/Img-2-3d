@@ -99,6 +99,7 @@ jobs:
         if: always()
         run: |
           python tools/unirig/ab_check.py ref unirig/res java_mv_fast cm_game20k 2>&1 | grep -E "^AB " | tee out/ab_check.txt || true
+          grep -h "^MEM" out/log_*_skin.txt | tee out/mem_skin.txt || true   # per-stage RSS/HWM (also inside log_*_skin.txt)
           for f in out/time_*.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f) wall=$(awk '/Elapsed/{print $NF}' $f)"; done | tee out/peak_rss.txt
           echo "reference:"; for f in ref/time_*.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f)"; done | tee out/peak_rss_ref.txt
       - name: Push results to ci-logs-unirig-lowmem

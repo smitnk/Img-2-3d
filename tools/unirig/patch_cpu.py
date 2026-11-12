@@ -28,9 +28,82 @@ for task in ("quick_inference_skeleton_articulationxl_ar_256", "quick_inference_
           ("precision: bf16-mixed", "precision: 32-true"),
           ("accelerator: gpu", "accelerator: cpu"))
 
-# OPT-350m decoder: flash_attention_2 -> eager
+# OPT-350m decoder: flash_attention_2 -> sdpa (was eager). Same softmax(QK^T/sqrt(d))V; sdpa's CPU
+# kernel is blocked so it never materialises the 15 beams x 16 heads x 1026^2 fp32 score tensor
+# (~1 GB, 2-3 live copies) in the prefill. Differs from eager only by float summation order.
 patch("configs/model/unirig_ar_350m_1024_81920_float32.yaml",
-      ("_attn_implementation: flash_attention_2", "_attn_implementation: eager"))
+      ("_attn_implementation: flash_attention_2", "_attn_implementation: sdpa"))
+
+# ---- lossless RAM reductions ----
+# Beam search expands the 1026-token prompt (1024 shape latents + bos + cls) to 15 identical rows, so
+# HF's DynamicCache stores the prompt K/V 15 times (24 layers x 2 x 15 x 1026 x 1024 x 4 B = 3 GB).
+# SharedPrefixCache stores it once and rebuilds the per-layer (B, H, P+G, D) tensor with expand+cat on
+# the fly (transient, one layer at a time). The values fed to attention are bit-identical to the stock
+# cache; sharing is only enabled for a layer if all prompt rows are exactly equal (torch.equal), else
+# that layer falls back to the stock behaviour.
+SHARED_CACHE = '''
+
+from transformers import DynamicCache
+
+
+class SharedPrefixCache(DynamicCache):
+    def __init__(self):
+        super().__init__()
+        self.prefix = {}  # layer -> (k, v) of ONE beam
+        self.seen_layers = set()
+
+    def update(self, key_states, value_states, layer_idx, cache_kwargs=None):
+        if layer_idx not in self.seen_layers:  # prefill of this layer
+            self.seen_layers.add(layer_idx)
+            k, v = key_states, value_states
+            if k.shape[0] > 1 and torch.equal(k, k[:1].expand_as(k)) and torch.equal(v, v[:1].expand_as(v)):
+                if layer_idx == 0:
+                    self._seen_tokens += k.shape[-2]
+                while len(self.key_cache) <= layer_idx:
+                    self.key_cache.append(torch.tensor([]))
+                    self.value_cache.append(torch.tensor([]))
+                self.prefix[layer_idx] = (k[:1].clone(), v[:1].clone())
+                return k, v
+            return super().update(k, v, layer_idx, cache_kwargs)
+        gk, gv = super().update(key_states, value_states, layer_idx, cache_kwargs)
+        if layer_idx not in self.prefix:
+            return gk, gv
+        pk, pv = self.prefix[layer_idx]
+        B = gk.shape[0]
+        return (torch.cat([pk.expand(B, -1, -1, -1), gk], dim=-2),
+                torch.cat([pv.expand(B, -1, -1, -1), gv], dim=-2))
+
+    def get_seq_length(self, layer_idx=0):
+        n = super().get_seq_length(layer_idx)
+        return n + (self.prefix[layer_idx][0].shape[-2] if layer_idx in self.prefix else 0)
+    # reorder_cache (stock) only touches key_cache/value_cache = the generated part, which is what
+    # differs between beams; the shared prompt never needs reordering.
+'''
+patch("src/model/unirig_ar.py",
+      ("from .spec import ModelSpec, ModelInput\n", "from .spec import ModelSpec, ModelInput\n" + SHARED_CACHE),
+      ("        results = self.transformer.generate(\n            inputs_embeds=cond,",
+       "        if kwargs.get('num_beams', 1) > 1:\n            kwargs['past_key_values'] = SharedPrefixCache()\n"
+       "        results = self.transformer.generate(\n            inputs_embeds=cond,"))
+
+# The skin checkpoint is 4.4 GB for ~1.5 GB of weights: it still holds Adam optimizer state, and Lightning
+# keeps the whole dict in RAM next to the model while restoring. Drop optimizer_states/lr_schedulers (never
+# read in predict mode) once, mmap-loading so the untouched optimizer pages never become resident. The
+# state_dict is byte-identical, so the outputs are too. No-op for the skeleton ckpt (weights only).
+patch("run.py",
+      ("    resume_from_checkpoint = download(resume_from_checkpoint)\n",
+       "    resume_from_checkpoint = download(resume_from_checkpoint)\n"
+       "    try:\n"
+       "        _ck = torch.load(resume_from_checkpoint, map_location='cpu', mmap=True, weights_only=False)\n"
+       "        print('ckpt keys', list(_ck.keys()))\n"
+       "        if _ck.get('optimizer_states'):\n"
+       "            _ck['optimizer_states'] = []\n"
+       "            _ck['lr_schedulers'] = []\n"
+       "            torch.save(_ck, '/tmp/slim_model.ckpt')\n"
+       "            resume_from_checkpoint = '/tmp/slim_model.ckpt'\n"
+       "            print('slimmed ckpt (optimizer state dropped)')\n"
+       "        del _ck\n"
+       "    except Exception as e:\n"
+       "        print('ckpt slimming skipped:', e)\n"))
 
 # voxel_skin renders depth with pyrender (needs OpenGL); the workflow may switch to open3d
 patch("configs/transform/inference_skin_transform.yaml",

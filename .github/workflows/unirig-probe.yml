@@ -1,4 +1,4 @@
-name: UniRig CPU probe (skeleton -> skin -> merge on two chibi-girl meshes)
+name: UniRig CPU probe, low-RAM (skeleton -> skin -> merge, A/B vs ci-logs-unirig)
 
 on:
   push:
@@ -29,6 +29,7 @@ jobs:
           git clone -q --depth 1 -b ci-logs-hunyuan-java-mv https://github.com/${{ github.repository }} m1
           git clone -q --depth 1 -b ci-logs-curiomesh-native https://github.com/${{ github.repository }} m2
           mkdir unirig/in unirig/res
+          git clone -q --depth 1 -b ci-logs-unirig https://github.com/${{ github.repository }} ref   # reference outputs (read-only)
           cp m1/java_mv_fast.glb m2/cm_game20k.glb unirig/in/ && ls -la unirig/in
       - name: Python deps (CPU torch 2.5.1, PyG CPU wheels, spconv CPU, bpy)
         run: |
@@ -76,6 +77,8 @@ jobs:
         run: |
           cd unirig
           export PYTHONUNBUFFERED=1 PYOPENGL_PLATFORM=osmesa WANDB_MODE=disabled
+          # lossless RAM: fewer malloc arenas, big blocks mmap'd and returned to the OS. Torch threads left at default so numerics/seed match the reference run.
+          export MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576 MALLOC_TRIM_THRESHOLD_=1048576
           (while sleep 30; do echo "MON $(free -m | awk '/Mem/{print "mem",$3} /Swap/{print "swap",$3}' | tr '\n' ' ') py_rss $(ps -C python -o rss= | sort -n | tail -1)"; done) &
           # stage <input> <name> <cmd...>: timed, logged; a failure never stops the loop
           stage() { local n=$1 s=$2; shift 2; echo "== $n $s"
@@ -92,10 +95,16 @@ jobs:
           done
           ls -la res
           cp res/* ../out/ 2>/dev/null || true
-      - name: Push results to ci-logs-unirig
+      - name: A/B check vs reference (ci-logs-unirig)
         if: always()
         run: |
-          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig
+          python tools/unirig/ab_check.py ref unirig/res java_mv_fast cm_game20k 2>&1 | grep -E "^AB " | tee out/ab_check.txt || true
+          for f in out/time_*.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f) wall=$(awk '/Elapsed/{print $NF}' $f)"; done | tee out/peak_rss.txt
+          echo "reference:"; for f in ref/time_*.txt; do echo "$(basename $f .txt) peakRSS_GB=$(awk '/Maximum resident/{printf "%.2f", $NF/1048576}' $f)"; done | tee out/peak_rss_ref.txt
+      - name: Push results to ci-logs-unirig-lowmem
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-lowmem
           cp -r $GITHUB_WORKSPACE/out/* . 2>/dev/null || echo none > none.txt
-          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig probe $GITHUB_RUN_ID"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "unirig lowmem probe $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-lowmem

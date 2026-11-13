@@ -30,7 +30,7 @@ jobs:
             bash tools/unirig/phone/fetch_artifact.sh $a || { echo "::error::UniRig ONNX artifacts expired or missing: re-run unirig-onnx-skel.yml and unirig-onnx-skin.yml, then this workflow"; exit 1; }
           done
           # make_pack: weights of every graph -> <graph>.onnx.data (memory-mapped on the phone), skin network as skin_a/skin_pt/skin_head, loose files merged
-          pip install -q --break-system-packages numpy onnx && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack
+          pip install -q --break-system-packages numpy onnx onnxruntime==$ORT_VERSION && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack
           ls -la pack
       - name: Wheels for Blender 4.2's Python 3.12 (cp312 aarch64), unpacked, zipped with the phone scripts
         run: |
@@ -54,7 +54,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir("."))}
-          json.dump({"version": 3, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
+          json.dump({"version": 4, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
           print(sum(f["bytes"] for f in files.values()) / 2**30, "GB total"); print(*files, sep="\n")
           PY
       - name: Publish release unirig-v1

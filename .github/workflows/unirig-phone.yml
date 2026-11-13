@@ -120,6 +120,7 @@ jobs:
           for n in java_mv_fast cm_game20k; do echo "== $n"; rig $n $n $n; done
           echo "== resume: cm_game20k again, skeleton file must be reused"; rig resume_cm_game20k cm_game20k resume_cm_game20k
           grep -q "^RESUME skeleton file" out/log_resume_cm_game20k.txt || { echo "::error::second run did not reuse the skeleton file"; touch out/FAIL_resume; }
+          echo "== quality/cost probe: cm_game20k with 8 beams (own work dir, default stays 15)"; rig beams8_cm_game20k cm_game20k beams8_cm_game20k --beams 8 --work /w/work8
           ls -la w/out w/work/*
       - name: Memory budget (every process under 3 GB, per-phase numbers)
         if: always()
@@ -145,16 +146,16 @@ jobs:
       - name: Compare with the torch reference rigs (ci-logs-unirig)
         if: always()
         run: |
-          for n in java_mv_fast cm_game20k; do
+          for n in java_mv_fast cm_game20k beams8_cm_game20k; do
             [ -s w/out/$n.glb ] || { echo "no output for $n"; continue; }
             sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python /w/phone/compare_rigs.py -- \
-              --ref /w/ref/unirig_$n.glb --new /w/out/$n.glb --label $n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
+              --ref /w/ref/unirig_${n#beams8_}.glb --new /w/out/$n.glb --label $n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
           done
       - name: Summary
         if: always()
         run: |
           cp w/out/*.glb w/out/*.json out/ 2>/dev/null || true
-          { for n in java_mv_fast cm_game20k resume_cm_game20k; do
+          { for n in java_mv_fast cm_game20k resume_cm_game20k beams8_cm_game20k; do
               echo "== $n: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_$n.txt 2>/dev/null)"
               grep -E "^(INPUT|MESH|SKELETON|RESUME|PHASE|PEAK|MEM|RESULT)" out/log_$n.txt 2>/dev/null | cut -c1-500
             done

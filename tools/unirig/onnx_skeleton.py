@@ -34,11 +34,12 @@ def log_rss(tag):
         print(f"MEM {tag}: peak {rss_gb():.2f}GB", flush=True)
 
 
-def session(path, threads=0):
+def session(path, threads=0, prepack=True):
     """ORT session tuned for low peak RSS: no arena (it keeps the largest block ever requested and rounds up to powers of two),
     no memory pattern (dynamic shapes), initializers straight from the system allocator instead of the arena. Weights stored as external data
-    (<graph>.onnx.data) are memory-mapped; MLAS prepacking stays on here (the decoder runs ~15 rows per step, 2.4x faster than unpacked):
-    the packed copy is the only resident one, the mapped original is released after packing."""
+    (<graph>.onnx.data) are memory-mapped. prepack=True (encoder) packs MatMul weights into anonymous memory (the packed copy is the only
+    resident one, the mapped original is released); prepack=False (decoder) keeps them file-backed, so the kernel can drop pages instead of the
+    low-memory killer taking the app (slower per step: no packed GEMM)."""
     import onnxruntime as ort
     o = ort.SessionOptions()
     o.intra_op_num_threads = threads
@@ -46,6 +47,8 @@ def session(path, threads=0):
     o.enable_cpu_mem_arena = False
     o.enable_mem_pattern = False
     o.add_session_config_entry("session.use_device_allocator_for_initializers", "1")
+    if not prepack:
+        o.add_session_config_entry("session.disable_prepacking", "1")
     s = ort.InferenceSession(path, o, providers=["CPUExecutionProvider"])
     log_rss(f"session {os.path.basename(path)}")
     return s
@@ -76,7 +79,7 @@ def sample_queries(vertices, normals, token_num=1024):
 # ---------- decoder ----------
 class Decoder:
     def __init__(self, path, layers, threads=0):
-        self.s = session(path, threads)
+        self.s = session(path, threads, prepack=False)
         self.n = 2 * layers
 
     def run(self, emb, pos, pre, gen):
@@ -284,11 +287,14 @@ def main():
     ap.add_argument("--name", required=True)
     ap.add_argument("--unirig", required=True)
     ap.add_argument("--threads", type=int, default=0)
+    ap.add_argument("--beams", type=int, default=0, help="override the beam count (0 = info.json's, 15)")
     a = ap.parse_args()
     log_rss("start")
     d, info, embed, inp, tok, th = load(a.dir, a.name, a.unirig, a.threads)
     log_rss("inputs + tokenizer loaded")
     start = [int(x) for x in inp["start"]]
+    if a.beams:
+        info["num_beams"] = a.beams
     out = {"phase": a.phase, "name": a.name}
     t0 = time.time()
     if a.phase == "encode":

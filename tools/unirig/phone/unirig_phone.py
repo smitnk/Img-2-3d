@@ -44,6 +44,7 @@ def parse_args():
     p.add_argument("--work", default=None, help="directory of the resumable skeleton files (default <out dir>/.unirig_work)")
     p.add_argument("--nice", type=int, default=10)
     p.add_argument("--seed", type=int, default=12345)
+    p.add_argument("--beams", type=int, default=15, help="skeleton beam count (fewer = less memory/time, lower quality)")
     p.add_argument("--max-faces", type=int, default=50000)
     p.add_argument("--voxel-grid", type=int, default=196)
     return p.parse_args(argv)
@@ -201,6 +202,7 @@ def skeleton_phase(a, skel_file):
     phases = {}
     phase = timer(S, phases)
     info = json.load(open(f"{a.models}/info.json"))
+    info["num_beams"] = a.beams
     embed = np.load(f"{a.models}/embed.npy")
     S.log_rss("skeleton start")
 

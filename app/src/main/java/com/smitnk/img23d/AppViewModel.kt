@@ -720,6 +720,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         stopPreview()
         _state.update { it.copy(run = RunState(title = title, engine = engine, steps = steps), failure = null) }
         go(Dest.Running)
+        val svc = android.content.Intent(getApplication(), JobService::class.java).putExtra("title", title)
+        getApplication<Application>().startForegroundService(svc)
         job = viewModelScope.launch {
             val report = Report(System.currentTimeMillis())
             val monitor = launch(Dispatchers.Default) {
@@ -742,6 +744,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(stack = it.stack.dropLast(1), failure = Failure("$title failed", msg, repair)) }
             } finally {
                 monitor.cancel()
+                getApplication<Application>().stopService(svc)
                 tripo = null
                 hunyuan = null
                 System.gc()

@@ -54,7 +54,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir("."))}
-          json.dump({"version": 4, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
+          json.dump({"version": 5, "unirig": os.environ["UNIRIG_COMMIT"], "files": files}, open("unirig_info.json", "w"), indent=1)
           print(sum(f["bytes"] for f in files.values()) / 2**30, "GB total"); print(*files, sep="\n")
           PY
       - name: Publish release unirig-v1

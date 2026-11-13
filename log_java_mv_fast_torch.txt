@@ -1,0 +1,197 @@
+  0%|          | 0/1 [00:00<?, ?it/s]Info: Deleted 1 data-block(s)
+[32mNow processing res/skel_java_mv_fast.fbx...[0m
+Now processing res/skel_java_mv_fast.fbx...
+FBX version: 7400
+save to: tmp/res/skel_java_mv_fast
+100%|██████████| 1/1 [00:01<00:00,  1.30s/it]100%|██████████| 1/1 [00:01<00:00,  1.30s/it]
+1 models processed
+done
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+MEM run.py top (before torch import) rss=0.73GB hwm=0.73GB t=1s
+MEM after imports rss=1.06GB hwm=1.06GB t=1s
+Seed set to 12345
+[92mload task config: configs/task/quick_inference_unirig_skin.yaml[0m
+[92mload data config: configs/data/quick_inference.yaml[0m
+[92mload transform config: configs/transform/inference_skin_transform.yaml[0m
+MEM dataset: before transform_asset rss=1.07GB hwm=1.07GB t=1s
+MEM voxel_skin: before voxelization rss=1.07GB hwm=1.07GB t=1s
+MEM voxel_skin: voxelization done M=608738 N=27724 J=28 F=49930 rss=1.20GB hwm=1.57GB t=2s
+MEM voxel_skin: trees built rss=1.22GB hwm=1.57GB t=3s
+MEM voxel_skin: graph built nnz=3771908 rss=1.24GB hwm=1.57GB t=4s
+MEM voxel_skin: dijkstra done rss=1.21GB hwm=1.57GB t=8s
+MEM voxel_skin: done rss=1.21GB hwm=1.57GB t=8s
+MEM dataset: after transform_asset rss=1.20GB hwm=1.57GB t=9s
+MEM after preload transform (before model) rss=1.20GB hwm=1.57GB t=9s
+[92mload model config: configs/model/unirig_skin.yaml[0m
+WARNING: use BatchNorm in ptv3obj !!!
+[92mload system config: configs/system/skin.yaml[0m
+MEM after config/model/system construction rss=2.56GB hwm=2.56GB t=10s
+MEM before ckpt torch.load rss=2.57GB hwm=2.57GB t=38s
+MEM ckpt key=epoch bytes=0 (0.00GB)
+MEM ckpt key=global_step bytes=0 (0.00GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt key=state_dict bytes=0 (0.00GB)
+MEM ckpt key=loops bytes=0 (0.00GB)
+MEM ckpt key=callbacks bytes=32 (0.00GB)
+MEM ckpt key=optimizer_states bytes=2915974796 (2.72GB)
+MEM ckpt key=lr_schedulers bytes=0 (0.00GB)
+MEM ckpt key=hparams_name bytes=0 (0.00GB)
+MEM ckpt key=hyper_parameters bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=1156 params=364496338 fp32_bytes=1457985352 disk_bytes=0 disk_dtypes={'torch.float32': 1155, 'torch.int64': 1}
+MEM model params=364496273 param_dtypes={'torch.float32': 1153} buffers=5 buffer_bytes=320 buffer_dtypes={'torch.float32': 4, 'torch.int64': 1}
+MEM after ckpt torch.load (mmap) rss=2.58GB hwm=2.58GB t=38s
+state_dict loaded directly (optimizer state never read)
+MEM after load_state_dict rss=4.39GB hwm=4.39GB t=38s
+MEM after ckpt freed rss=2.57GB hwm=4.39GB t=39s
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `lightning.pytorch` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+MEM after Trainer creation rss=2.57GB hwm=4.39GB t=39s
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+MEM datamodule setup rss=2.57GB hwm=4.39GB t=39s
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]MEM dataset item taken from preload rss=2.58GB hwm=4.39GB t=39s
+MEM first batch batch.voxel_skin shape=(1, 16384, 28) dtype=torch.float64 bytes=3670016
+MEM first batch batch.skin shape=(1, 16384, 28) dtype=torch.float64 bytes=3670016
+MEM first batch batch.offset shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.joints shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.num_bones shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.tails shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.parents shape=(1, 28) dtype=torch.int64 bytes=224
+MEM first batch batch.matrix_local shape=(1, 28, 4, 4) dtype=torch.float32 bytes=1792
+MEM first batch batch.vertices shape=(1, 16384, 3) dtype=torch.float32 bytes=196608
+MEM first batch batch.normals shape=(1, 16384, 3) dtype=torch.float32 bytes=196608
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.origin_vertex_normals shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 49930, 3) dtype=torch.int64 bytes=1198320
+MEM first batch batch.origin_face_normals shape=(1, 49930, 3) dtype=torch.float32 bytes=599160
+MEM first batch built rss=2.59GB hwm=4.39GB t=39s
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]MEM predict_step: before model rss=2.57GB hwm=4.39GB t=39s
+MEM fwd start N=16384 J=28 rss=2.58GB hwm=4.39GB t=39s
+MEM fwd after global (Michelangelo) encoder rss=2.61GB hwm=4.39GB t=40s
+MEM MHA first call (q 28 x kv 1052) rss=2.63GB hwm=4.39GB t=40s
+MEM fwd after bone encoder rss=2.62GB hwm=4.39GB t=40s
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:386: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  'offset': torch.tensor(batch['offset']),
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/amp/autocast_mode.py:283: UserWarning: In CPU autocast, but the target dtype is not supported. Disabling autocast.
+CPU Autocast only supports dtype of torch.bfloat16, torch.float16 currently.
+  warnings.warn(error_message)
+MEM ptv3 serialized+sparsified N=16384 rss=2.62GB hwm=4.39GB t=40s
+SPCONV points=16384 unique_voxels=16001 points_in_shared_voxels=754
+SPCONV PROBE mesh_encoder.embedding.stem.conv K=5 spconv=2.3.8 weight=(32, 5, 5, 5, 9) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[1, 1, 1] inconsistent_pairs=181 missing_pairs=2006179
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-2,-2,-2 1:-2,-2,-1 2:-2,-2,0 3:-2,-2,1 4:-2,-2,2 5:-2,-1,-2 6:-2,-1,-1 7:-2,-1,0 8:-2,-1,1 9:-2,-1,2 10:-2,0,-2 11:-2,0,-1 12:-2,0,0 13:-2,0,1 14:-2,0,2 15:-2,1,-2 16:-2,1,-1 17:-2,1,0 18:-2,1,1 19:-2,1,2 20:-2,2,-2 21:-2,2,-1 22:-2,2,0 23:-2,2,1 24:-2,2,2 25:-1,-2,-2 26:-1,-2,-1 27:-1,-2,0 28:-1,-2,1 29:-1,-2,2 30:-1,-1,-2 31:-1,-1,-1 32:-1,-1,0 33:-1,-1,1 34:-1,-1,2 35:-1,0,-2 36:-1,0,-1 37:-1,0,0 38:-1,0,1 39:-1,0,2 40:-1,1,-2 41:-1,1,-1 42:-1,1,0 43:-1,1,1 44:-1,1,2 45:-1,2,-2 46:-1,2,-1 47:-1,2,0 48:-1,2,1 49:-1,2,2 50:0,-2,-2 51:0,-2,-1 52:0,-2,0 53:0,-2,1 54:0,-2,2 55:0,-1,-2 56:0,-1,-1 57:0,-1,0 58:0,-1,1 59:0,-1,2 60:0,0,-2 61:0,0,-1 62:0,0,0 63:0,0,1 64:0,0,2 65:0,1,-2 66:0,1,-1 67:0,1,0 68:0,1,1 69:0,1,2 70:0,2,-2 71:0,2,-1 72:0,2,0 73:0,2,1 74:0,2,2 75:1,-2,-2 76:1,-2,-1 77:1,-2,0 78:1,-2,1 79:1,-2,2 80:1,-1,-2 81:1,-1,-1 82:1,-1,0 83:1,-1,1 84:1,-1,2 85:1,0,-2 86:1,0,-1 87:1,0,0 88:1,0,1 89:1,0,2 90:1,1,-2 91:1,1,-1 92:1,1,0 93:1,1,1 94:1,1,2 95:1,2,-2 96:1,2,-1 97:1,2,0 98:1,2,1 99:1,2,2 100:2,-2,-2 101:2,-2,-1 102:2,-2,0 103:2,-2,1 104:2,-2,2 105:2,-1,-2 106:2,-1,-1 107:2,-1,0 108:2,-1,1 109:2,-1,2 110:2,0,-2 111:2,0,-1 112:2,0,0 113:2,0,1 114:2,0,2 115:2,1,-2 116:2,1,-1 117:2,1,0 118:2,1,1 119:2,1,2 120:2,2,-2 121:2,2,-1 122:2,2,0 123:2,2,1 124:2,2,2
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 729 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 1112 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 1067 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 1450 of 2048000 entries differ
+SPCONV TABLE K=5 tie=0 self_center=True differing_entries=729 FAIL
+SPCONV TABLE K=5 rows differing=613 of which in shared voxels=240 first rows=[67, 136, 168, 296, 377]
+SPCONV mesh_encoder.embedding.stem.conv K=5 in=9 out=32 max=2.791e+00 refmax=5.076e+01 dup_rows=2.791e+00 unique_rows=2.570e+00 rel_unique=5.06e-02 FAIL
+MEM ptv3 after embedding (stem conv k=5) rss=2.65GB hwm=4.39GB t=42s
+SPCONV PROBE mesh_encoder.enc.enc0.block0.cpe.0 K=3 spconv=2.3.8 weight=(32, 3, 3, 3, 32) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[0, 0, 0] inconsistent_pairs=42 missing_pairs=417881
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-1,-1,-1 1:-1,-1,0 2:-1,-1,1 3:-1,0,-1 4:-1,0,0 5:-1,0,1 6:-1,1,-1 7:-1,1,0 8:-1,1,1 9:0,-1,-1 10:0,-1,0 11:0,-1,1 12:0,0,-1 13:0,0,0 14:0,0,1 15:0,1,-1 16:0,1,0 17:0,1,1 18:1,-1,-1 19:1,-1,0 20:1,-1,1 21:1,0,-1 22:1,0,0 23:1,0,1 24:1,1,-1 25:1,1,0 26:1,1,1
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 235 of 442368 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 618 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 360 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 743 of 442368 entries differ
+SPCONV TABLE K=3 tie=0 self_center=True differing_entries=235 FAIL
+SPCONV TABLE K=3 rows differing=216 of which in shared voxels=110 first rows=[136, 817, 834, 1220, 1652]
+SPCONV mesh_encoder.enc.enc0.block0.cpe.0 K=3 in=32 out=32 max=3.182e+00 refmax=1.345e+01 dup_rows=3.182e+00 unique_rows=2.527e+00 rel_unique=1.88e-01 FAIL
+MEM ptv3 block C=32 H=2 N=16384 K=1024 rss=2.66GB hwm=4.39GB t=42s
+SPCONV mesh_encoder.enc.enc0.block1.cpe.0 K=3 in=32 out=32 max=3.609e+00 refmax=1.315e+01 dup_rows=3.609e+00 unique_rows=3.084e+00 rel_unique=2.35e-01 FAIL
+MEM ptv3 block C=32 H=2 N=16384 K=1024 rss=2.66GB hwm=4.39GB t=42s
+SPCONV mesh_encoder.enc.enc0.block2.cpe.0 K=3 in=32 out=32 max=3.803e+00 refmax=1.959e+01 dup_rows=3.713e+00 unique_rows=3.803e+00 rel_unique=1.94e-01 FAIL
+MEM ptv3 block C=32 H=2 N=16384 K=1024 rss=2.66GB hwm=4.39GB t=42s
+SPCONV mesh_encoder.enc.enc1.block0.cpe.0 K=3 in=64 out=64 max=9.839e+00 refmax=3.097e+01 dup_rows=9.839e+00 unique_rows=9.650e+00 rel_unique=3.12e-01 FAIL
+MEM ptv3 block C=64 H=4 N=16384 K=1024 rss=2.67GB hwm=4.39GB t=43s
+SPCONV mesh_encoder.enc.enc1.block1.cpe.0 K=3 in=64 out=64 max=5.934e+00 refmax=1.820e+01 dup_rows=5.934e+00 unique_rows=4.592e+00 rel_unique=2.52e-01 FAIL
+MEM ptv3 block C=64 H=4 N=16384 K=1024 rss=2.67GB hwm=4.39GB t=43s
+SPCONV mesh_encoder.enc.enc1.block2.cpe.0 K=3 in=64 out=64 max=7.585e+00 refmax=2.245e+01 dup_rows=7.585e+00 unique_rows=6.500e+00 rel_unique=2.90e-01 FAIL
+MEM ptv3 block C=64 H=4 N=16384 K=1024 rss=2.67GB hwm=4.39GB t=43s
+SPCONV mesh_encoder.enc.enc2.block0.cpe.0 K=3 in=128 out=128 max=2.258e+01 refmax=6.791e+01 dup_rows=2.258e+01 unique_rows=1.451e+01 rel_unique=2.14e-01 FAIL
+MEM ptv3 block C=128 H=8 N=16384 K=1024 rss=2.69GB hwm=4.39GB t=44s
+SPCONV mesh_encoder.enc.enc2.block1.cpe.0 K=3 in=128 out=128 max=1.364e+01 refmax=3.108e+01 dup_rows=1.364e+01 unique_rows=8.393e+00 rel_unique=2.70e-01 FAIL
+MEM ptv3 block C=128 H=8 N=16384 K=1024 rss=2.69GB hwm=4.39GB t=45s
+SPCONV mesh_encoder.enc.enc2.block2.cpe.0 K=3 in=128 out=128 max=8.421e+00 refmax=2.279e+01 dup_rows=8.421e+00 unique_rows=6.525e+00 rel_unique=2.86e-01 FAIL
+MEM ptv3 block C=128 H=8 N=16384 K=1024 rss=2.69GB hwm=4.39GB t=45s
+SPCONV mesh_encoder.enc.enc3.block0.cpe.0 K=3 in=256 out=256 max=4.437e+01 refmax=1.052e+02 dup_rows=4.437e+01 unique_rows=3.360e+01 rel_unique=3.19e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=47s
+SPCONV mesh_encoder.enc.enc3.block1.cpe.0 K=3 in=256 out=256 max=3.238e+01 refmax=1.068e+02 dup_rows=3.238e+01 unique_rows=2.830e+01 rel_unique=2.65e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=48s
+SPCONV mesh_encoder.enc.enc3.block2.cpe.0 K=3 in=256 out=256 max=5.007e+01 refmax=1.285e+02 dup_rows=5.007e+01 unique_rows=4.274e+01 rel_unique=3.33e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=50s
+SPCONV mesh_encoder.enc.enc3.block3.cpe.0 K=3 in=256 out=256 max=4.748e+01 refmax=1.363e+02 dup_rows=4.748e+01 unique_rows=4.497e+01 rel_unique=3.30e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=51s
+SPCONV mesh_encoder.enc.enc3.block4.cpe.0 K=3 in=256 out=256 max=5.166e+01 refmax=1.503e+02 dup_rows=5.166e+01 unique_rows=3.518e+01 rel_unique=2.34e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=53s
+SPCONV mesh_encoder.enc.enc3.block5.cpe.0 K=3 in=256 out=256 max=5.449e+01 refmax=1.483e+02 dup_rows=5.449e+01 unique_rows=4.189e+01 rel_unique=2.82e-01 FAIL
+MEM ptv3 block C=256 H=16 N=16384 K=1024 rss=2.72GB hwm=4.39GB t=55s
+SPCONV mesh_encoder.enc.enc4.block0.cpe.0 K=3 in=384 out=384 max=2.602e+02 refmax=7.103e+02 dup_rows=2.602e+02 unique_rows=2.431e+02 rel_unique=3.42e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=57s
+SPCONV mesh_encoder.enc.enc4.block1.cpe.0 K=3 in=384 out=384 max=2.788e+02 refmax=6.507e+02 dup_rows=2.788e+02 unique_rows=2.434e+02 rel_unique=3.74e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=60s
+SPCONV mesh_encoder.enc.enc4.block2.cpe.0 K=3 in=384 out=384 max=2.313e+02 refmax=6.061e+02 dup_rows=2.313e+02 unique_rows=2.235e+02 rel_unique=3.69e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=63s
+SPCONV mesh_encoder.enc.enc4.block3.cpe.0 K=3 in=384 out=384 max=2.815e+02 refmax=6.760e+02 dup_rows=2.594e+02 unique_rows=2.815e+02 rel_unique=4.17e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=65s
+SPCONV mesh_encoder.enc.enc4.block4.cpe.0 K=3 in=384 out=384 max=2.897e+02 refmax=6.953e+02 dup_rows=2.897e+02 unique_rows=2.753e+02 rel_unique=3.96e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=68s
+SPCONV mesh_encoder.enc.enc4.block5.cpe.0 K=3 in=384 out=384 max=2.956e+02 refmax=7.081e+02 dup_rows=2.956e+02 unique_rows=2.283e+02 rel_unique=3.22e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=70s
+SPCONV mesh_encoder.enc.enc4.block6.cpe.0 K=3 in=384 out=384 max=3.238e+02 refmax=7.318e+02 dup_rows=3.238e+02 unique_rows=2.090e+02 rel_unique=2.86e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=73s
+SPCONV mesh_encoder.enc.enc4.block7.cpe.0 K=3 in=384 out=384 max=2.761e+02 refmax=6.540e+02 dup_rows=2.761e+02 unique_rows=2.461e+02 rel_unique=3.76e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=76s
+SPCONV mesh_encoder.enc.enc4.block8.cpe.0 K=3 in=384 out=384 max=2.609e+02 refmax=7.152e+02 dup_rows=2.609e+02 unique_rows=1.958e+02 rel_unique=2.74e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=78s
+SPCONV mesh_encoder.enc.enc4.block9.cpe.0 K=3 in=384 out=384 max=2.758e+02 refmax=7.044e+02 dup_rows=2.758e+02 unique_rows=2.438e+02 rel_unique=3.46e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=81s
+SPCONV mesh_encoder.enc.enc4.block10.cpe.0 K=3 in=384 out=384 max=2.248e+02 refmax=6.441e+02 dup_rows=2.248e+02 unique_rows=1.710e+02 rel_unique=2.65e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=84s
+SPCONV mesh_encoder.enc.enc4.block11.cpe.0 K=3 in=384 out=384 max=2.402e+02 refmax=6.322e+02 dup_rows=2.402e+02 unique_rows=2.334e+02 rel_unique=3.69e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=86s
+SPCONV mesh_encoder.enc.enc4.block12.cpe.0 K=3 in=384 out=384 max=2.224e+02 refmax=6.288e+02 dup_rows=2.224e+02 unique_rows=1.726e+02 rel_unique=2.75e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=89s
+SPCONV mesh_encoder.enc.enc4.block13.cpe.0 K=3 in=384 out=384 max=2.239e+02 refmax=5.832e+02 dup_rows=2.239e+02 unique_rows=1.528e+02 rel_unique=2.62e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=91s
+SPCONV mesh_encoder.enc.enc4.block14.cpe.0 K=3 in=384 out=384 max=1.843e+02 refmax=5.303e+02 dup_rows=1.843e+02 unique_rows=1.655e+02 rel_unique=3.12e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=94s
+SPCONV mesh_encoder.enc.enc4.block15.cpe.0 K=3 in=384 out=384 max=2.243e+02 refmax=5.173e+02 dup_rows=2.243e+02 unique_rows=2.029e+02 rel_unique=3.92e-01 FAIL
+MEM ptv3 block C=384 H=24 N=16384 K=1024 rss=2.74GB hwm=4.39GB t=96s
+MEM fwd after PTv3 mesh encoder rss=2.71GB hwm=4.39GB t=97s
+MEM fwd after mesh_bone_attn x16 rss=2.71GB hwm=4.39GB t=119s
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:457: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  skin_pred[i, :, :num_bones[i]] = F.softmax(pred)
+MEM fwd after skin chunk loop rss=2.76GB hwm=4.39GB t=127s
+SPCONV SUMMARY convs=32 worst max abs diff 3.238e+02 (dup rows 3.238e+02, unique rows 2.815e+02) worst relative 4.424e-01
+SPCONV RESULT FAIL (convs failing=32 of 32, neighbour tables failing=2)
+PREP shuffle perm=[1, 3, 0, 2]
+PREP order equals the real run's: True
+PREP inverse equals the real run's: True
+PREP fps numpy == torch_cluster: True (1024/1024 rows)
+WRAPDIFF skin: max=1.084e-01 mean=3.249e-05 refmax=1.000e+00 shape=(16384, 28)
+WRAPDIFF dbg_global: max=4.053e-06 mean=1.959e-07 refmax=4.750e+00 shape=(1, 1024, 768)
+WRAPDIFF dbg_bone: max=1.907e-06 mean=1.829e-07 refmax=1.198e+01 shape=(1, 28, 768)
+WRAPDIFF dbg_ptv3: max=3.816e+01 mean=9.140e-02 refmax=2.175e+02 shape=(16384, 384)
+EXPORT part skin_a: 0.44 GB weights
+EXPORT part skin_pt: 0.42 GB weights
+EXPORT part skin_head: 0.50 GB weights
+EXPORT wrote /home/runner/work/Img-2-3d/Img-2-3d/onnx_out/skin.onnx (+external data), 2.72 GB
+MEM predict_step: after model rss=2.71GB hwm=7.40GB t=452s
+MEM writer: before reskin rss=2.71GB hwm=7.40GB t=452s
+MEM writer: after reskin rss=2.71GB hwm=7.40GB t=452s
+MEM writer: before fbx export rss=2.71GB hwm=7.40GB t=452s
+
+FBX export starting... 'torch_res/skin_java_mv_fast.fbx'
+(bpy.data.armatures['Armature'], 'POSE')
+export finished in 0.1156 sec.
+MEM writer: after fbx export rss=2.73GB hwm=7.40GB t=453s
+Predicting DataLoader 0: 100%|██████████| 1/1 [06:54<00:00,  0.00it/s]Predicting DataLoader 0: 100%|██████████| 1/1 [06:54<00:00,  0.00it/s]
+MEM after trainer.predict rss=2.72GB hwm=7.40GB t=453s
+done

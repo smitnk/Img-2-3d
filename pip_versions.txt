@@ -1,0 +1,14 @@
+bpy                                      4.2.0
+cumm                                     0.7.11
+lightning                                2.6.6
+numpy                                    1.26.4
+onnx                                     1.17.0
+onnxruntime                              1.20.1
+open3d                                   0.20.0
+PyOpenGL                                 3.1.7
+pyrender                                 0.1.45
+spconv                                   2.3.8
+torch                                    2.5.1+cpu
+torch_cluster                            1.6.3+pt25cpu
+torch_scatter                            2.1.2+pt25cpu
+transformers                             4.51.3

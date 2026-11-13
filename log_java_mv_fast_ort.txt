@@ -1,0 +1,96 @@
+  0%|          | 0/1 [00:00<?, ?it/s]Info: Deleted 1 data-block(s)
+[32mNow processing res/skel_java_mv_fast.fbx...[0m
+Now processing res/skel_java_mv_fast.fbx...
+FBX version: 7400
+save to: tmp/res/skel_java_mv_fast
+100%|██████████| 1/1 [00:01<00:00,  1.29s/it]100%|██████████| 1/1 [00:01<00:00,  1.29s/it]
+1 models processed
+done
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+MEM run.py top (before torch import) rss=2.20GB hwm=2.20GB t=3s
+MEM after imports rss=2.51GB hwm=2.51GB t=3s
+Seed set to 12345
+[92mload task config: configs/task/quick_inference_unirig_skin.yaml[0m
+[92mload data config: configs/data/quick_inference.yaml[0m
+[92mload transform config: configs/transform/inference_skin_transform.yaml[0m
+MEM dataset: before transform_asset rss=2.51GB hwm=2.51GB t=3s
+MEM voxel_skin: before voxelization rss=2.52GB hwm=2.52GB t=3s
+MEM voxel_skin: voxelization done M=608738 N=27724 J=28 F=49930 rss=2.65GB hwm=3.01GB t=5s
+MEM voxel_skin: trees built rss=2.67GB hwm=3.01GB t=5s
+MEM voxel_skin: graph built nnz=3771908 rss=2.69GB hwm=3.01GB t=6s
+MEM voxel_skin: dijkstra done rss=2.65GB hwm=3.01GB t=10s
+MEM voxel_skin: done rss=2.65GB hwm=3.01GB t=10s
+MEM dataset: after transform_asset rss=2.64GB hwm=3.01GB t=10s
+MEM after preload transform (before model) rss=2.64GB hwm=3.01GB t=10s
+[92mload model config: configs/model/unirig_skin.yaml[0m
+WARNING: use BatchNorm in ptv3obj !!!
+[92mload system config: configs/system/skin.yaml[0m
+MEM after config/model/system construction rss=4.00GB hwm=4.00GB t=12s
+MEM before ckpt torch.load rss=4.01GB hwm=4.01GB t=12s
+MEM ckpt key=epoch bytes=0 (0.00GB)
+MEM ckpt key=global_step bytes=0 (0.00GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt key=state_dict bytes=0 (0.00GB)
+MEM ckpt key=loops bytes=0 (0.00GB)
+MEM ckpt key=callbacks bytes=32 (0.00GB)
+MEM ckpt key=optimizer_states bytes=2915974796 (2.72GB)
+MEM ckpt key=lr_schedulers bytes=0 (0.00GB)
+MEM ckpt key=hparams_name bytes=0 (0.00GB)
+MEM ckpt key=hyper_parameters bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=1156 params=364496338 fp32_bytes=1457985352 disk_bytes=0 disk_dtypes={'torch.float32': 1155, 'torch.int64': 1}
+MEM model params=364496273 param_dtypes={'torch.float32': 1153} buffers=5 buffer_bytes=320 buffer_dtypes={'torch.float32': 4, 'torch.int64': 1}
+MEM after ckpt torch.load (mmap) rss=4.02GB hwm=4.02GB t=12s
+state_dict loaded directly (optimizer state never read)
+MEM after load_state_dict rss=5.83GB hwm=5.83GB t=12s
+MEM after ckpt freed rss=4.01GB hwm=5.83GB t=13s
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `lightning.pytorch` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+MEM after Trainer creation rss=4.01GB hwm=5.83GB t=13s
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+MEM datamodule setup rss=4.01GB hwm=5.83GB t=13s
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]MEM dataset item taken from preload rss=4.01GB hwm=5.83GB t=13s
+MEM first batch batch.voxel_skin shape=(1, 16384, 28) dtype=torch.float64 bytes=3670016
+MEM first batch batch.skin shape=(1, 16384, 28) dtype=torch.float64 bytes=3670016
+MEM first batch batch.offset shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.joints shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.num_bones shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.tails shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.parents shape=(1, 28) dtype=torch.int64 bytes=224
+MEM first batch batch.matrix_local shape=(1, 28, 4, 4) dtype=torch.float32 bytes=1792
+MEM first batch batch.vertices shape=(1, 16384, 3) dtype=torch.float32 bytes=196608
+MEM first batch batch.normals shape=(1, 16384, 3) dtype=torch.float32 bytes=196608
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.origin_vertex_normals shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 49930, 3) dtype=torch.int64 bytes=1198320
+MEM first batch batch.origin_face_normals shape=(1, 49930, 3) dtype=torch.float32 bytes=599160
+MEM first batch built rss=4.03GB hwm=5.83GB t=13s
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]MEM predict_step: before model rss=4.02GB hwm=5.83GB t=13s
+PREP vertices: equal to capture
+PREP normals: equal to capture
+PREP joints: equal to capture
+PREP voxel_skin: equal to capture
+PREP skin_mask: equal to capture
+PREP gsel: equal to capture
+PREP nbr3: equal to capture
+PREP nbr5: equal to capture
+PREP order: equal to capture
+PREP inverse: equal to capture
+ORT skin (16384, 28) prepare=0.3s ort=51.7s hwm=5.83GB
+MEM predict_step: after model rss=4.03GB hwm=5.83GB t=65s
+MEM writer: before reskin rss=4.03GB hwm=5.83GB t=65s
+MEM writer: after reskin rss=4.04GB hwm=5.83GB t=65s
+MEM writer: before fbx export rss=4.04GB hwm=5.83GB t=65s
+
+FBX export starting... 'ort_res/skin_java_mv_fast.fbx'
+(bpy.data.armatures['Armature'], 'POSE')
+export finished in 0.1088 sec.
+MEM writer: after fbx export rss=4.04GB hwm=5.83GB t=65s
+Predicting DataLoader 0: 100%|██████████| 1/1 [00:52<00:00,  0.02it/s]Predicting DataLoader 0: 100%|██████████| 1/1 [00:52<00:00,  0.02it/s]
+MEM after trainer.predict rss=4.03GB hwm=5.83GB t=65s
+done

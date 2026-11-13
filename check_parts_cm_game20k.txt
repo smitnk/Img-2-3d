@@ -1,0 +1,9 @@
+MEM session skin_a: rss 0.12GB hwm 0.12GB
+MEM skin_a done: rss 0.24GB hwm 0.68GB
+MEM session skin_pt: rss 0.15GB hwm 0.68GB
+MEM skin_pt done: rss 0.56GB hwm 1.95GB
+MEM session skin_head: rss 0.56GB hwm 1.95GB
+MEM skin_head done: rss 0.56GB hwm 1.95GB
+ORT parts run 50.6s
+ONNXDIFF x86parts_cm_game20k skin: max=4.610e-02 mean=4.771e-05 refmax=9.998e-01 shape=(16384, 28)
+ONNXPEAK x86parts_cm_game20k hwm_gb=1.95

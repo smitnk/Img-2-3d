@@ -1,0 +1,160 @@
+PREP vertices: equal to capture
+PREP normals: equal to capture
+PREP joints: equal to capture
+PREP voxel_skin: equal to capture
+PREP skin_mask: equal to capture
+PREP gsel: equal to capture
+PREP nbr3: equal to capture
+PREP nbr5: equal to capture
+PREP order: equal to capture
+PREP inverse: equal to capture
+ORT skin (16384, 28) prepare=0.3s ort=63.4s hwm=5.83GB
+MEM fwd start N=16384 J=28 rss=2.57GB hwm=4.38GB t=11s
+MEM fwd after global (Michelangelo) encoder rss=2.61GB hwm=4.38GB t=12s
+MEM fwd after bone encoder rss=2.61GB hwm=4.38GB t=12s
+SPCONV points=16384 unique_voxels=15831 points_in_shared_voxels=1078
+SPCONV PROBE mesh_encoder.embedding.stem.conv K=5 spconv=2.3.8 weight=(32, 5, 5, 5, 9) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[1, 1, 1] inconsistent_pairs=207 missing_pairs=1999542
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-2,-2,-2 1:-2,-2,-1 2:-2,-2,0 3:-2,-2,1 4:-2,-2,2 5:-2,-1,-2 6:-2,-1,-1 7:-2,-1,0 8:-2,-1,1 9:-2,-1,2 10:-2,0,-2 11:-2,0,-1 12:-2,0,0 13:-2,0,1 14:-2,0,2 15:-2,1,-2 16:-2,1,-1 17:-2,1,0 18:-2,1,1 19:-2,1,2 20:-2,2,-2 21:-2,2,-1 22:-2,2,0 23:-2,2,1 24:-2,2,2 25:-1,-2,-2 26:-1,-2,-1 27:-1,-2,0 28:-1,-2,1 29:-1,-2,2 30:-1,-1,-2 31:-1,-1,-1 32:-1,-1,0 33:-1,-1,1 34:-1,-1,2 35:-1,0,-2 36:-1,0,-1 37:-1,0,0 38:-1,0,1 39:-1,0,2 40:-1,1,-2 41:-1,1,-1 42:-1,1,0 43:-1,1,1 44:-1,1,2 45:-1,2,-2 46:-1,2,-1 47:-1,2,0 48:-1,2,1 49:-1,2,2 50:0,-2,-2 51:0,-2,-1 52:0,-2,0 53:0,-2,1 54:0,-2,2 55:0,-1,-2 56:0,-1,-1 57:0,-1,0 58:0,-1,1 59:0,-1,2 60:0,0,-2 61:0,0,-1 62:0,0,0 63:0,0,1 64:0,0,2 65:0,1,-2 66:0,1,-1 67:0,1,0 68:0,1,1 69:0,1,2 70:0,2,-2 71:0,2,-1 72:0,2,0 73:0,2,1 74:0,2,2 75:1,-2,-2 76:1,-2,-1 77:1,-2,0 78:1,-2,1 79:1,-2,2 80:1,-1,-2 81:1,-1,-1 82:1,-1,0 83:1,-1,1 84:1,-1,2 85:1,0,-2 86:1,0,-1 87:1,0,0 88:1,0,1 89:1,0,2 90:1,1,-2 91:1,1,-1 92:1,1,0 93:1,1,1 94:1,1,2 95:1,2,-2 96:1,2,-1 97:1,2,0 98:1,2,1 99:1,2,2 100:2,-2,-2 101:2,-2,-1 102:2,-2,0 103:2,-2,1 104:2,-2,2 105:2,-1,-2 106:2,-1,-1 107:2,-1,0 108:2,-1,1 109:2,-1,2 110:2,0,-2 111:2,0,-1 112:2,0,0 113:2,0,1 114:2,0,2 115:2,1,-2 116:2,1,-1 117:2,1,0 118:2,1,1 119:2,1,2 120:2,2,-2 121:2,2,-1 122:2,2,0 123:2,2,1 124:2,2,2
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 1446 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 1999 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 2203 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 2756 of 2048000 entries differ
+SPCONV TABLE K=5 tie=0 self_center=True differing_entries=1446 FAIL
+SPCONV TABLE K=5 rows differing=1052 of which in shared voxels=437 first rows=[51, 54, 105, 218, 298]
+SPCONV mesh_encoder.embedding.stem.conv K=5 in=9 out=32 max=3.775e+00 refmax=5.078e+01 dup_rows=3.775e+00 unique_rows=3.173e+00 rel_unique=6.25e-02 FAIL
+SPCONV PROBE mesh_encoder.enc.enc0.block0.cpe.0 K=3 spconv=2.3.8 weight=(32, 3, 3, 3, 32) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[0, 0, 0] inconsistent_pairs=96 missing_pairs=415040
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-1,-1,-1 1:-1,-1,0 2:-1,-1,1 3:-1,0,-1 4:-1,0,0 5:-1,0,1 6:-1,1,-1 7:-1,1,0 8:-1,1,1 9:0,-1,-1 10:0,-1,0 11:0,-1,1 12:0,0,-1 13:0,0,0 14:0,0,1 15:0,1,-1 16:0,1,0 17:0,1,1 18:1,-1,-1 19:1,-1,0 20:1,-1,1 21:1,0,-1 22:1,0,0 23:1,0,1 24:1,1,-1 25:1,1,0 26:1,1,1
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 531 of 442368 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 1084 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 795 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 1348 of 442368 entries differ
+SPCONV TABLE K=3 tie=0 self_center=True differing_entries=531 FAIL
+SPCONV TABLE K=3 rows differing=469 of which in shared voxels=225 first rows=[51, 105, 298, 423, 429]
+SPCONV mesh_encoder.enc.enc0.block0.cpe.0 K=3 in=32 out=32 max=5.682e+00 refmax=1.644e+01 dup_rows=5.418e+00 unique_rows=5.682e+00 rel_unique=3.46e-01 FAIL
+SPCONV mesh_encoder.enc.enc0.block1.cpe.0 K=3 in=32 out=32 max=7.118e+00 refmax=1.605e+01 dup_rows=5.242e+00 unique_rows=7.118e+00 rel_unique=4.43e-01 FAIL
+SPCONV mesh_encoder.enc.enc0.block2.cpe.0 K=3 in=32 out=32 max=5.817e+00 refmax=2.153e+01 dup_rows=5.817e+00 unique_rows=4.709e+00 rel_unique=2.19e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block0.cpe.0 K=3 in=64 out=64 max=1.700e+01 refmax=4.206e+01 dup_rows=1.700e+01 unique_rows=1.299e+01 rel_unique=3.09e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block1.cpe.0 K=3 in=64 out=64 max=7.422e+00 refmax=2.018e+01 dup_rows=7.269e+00 unique_rows=7.422e+00 rel_unique=3.68e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block2.cpe.0 K=3 in=64 out=64 max=1.197e+01 refmax=2.803e+01 dup_rows=9.961e+00 unique_rows=1.197e+01 rel_unique=4.27e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block0.cpe.0 K=3 in=128 out=128 max=2.973e+01 refmax=6.674e+01 dup_rows=2.342e+01 unique_rows=2.973e+01 rel_unique=4.45e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block1.cpe.0 K=3 in=128 out=128 max=1.942e+01 refmax=4.751e+01 dup_rows=1.437e+01 unique_rows=1.942e+01 rel_unique=4.09e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block2.cpe.0 K=3 in=128 out=128 max=1.732e+01 refmax=3.827e+01 dup_rows=1.310e+01 unique_rows=1.732e+01 rel_unique=4.52e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block0.cpe.0 K=3 in=256 out=256 max=8.962e+01 refmax=2.065e+02 dup_rows=5.781e+01 unique_rows=8.962e+01 rel_unique=4.34e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block1.cpe.0 K=3 in=256 out=256 max=9.327e+01 refmax=1.795e+02 dup_rows=6.084e+01 unique_rows=9.327e+01 rel_unique=5.20e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block2.cpe.0 K=3 in=256 out=256 max=7.490e+01 refmax=1.351e+02 dup_rows=6.195e+01 unique_rows=7.490e+01 rel_unique=5.54e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block3.cpe.0 K=3 in=256 out=256 max=8.170e+01 refmax=1.630e+02 dup_rows=5.971e+01 unique_rows=8.170e+01 rel_unique=5.01e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block4.cpe.0 K=3 in=256 out=256 max=9.062e+01 refmax=2.224e+02 dup_rows=6.224e+01 unique_rows=9.062e+01 rel_unique=4.07e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block5.cpe.0 K=3 in=256 out=256 max=1.095e+02 refmax=2.126e+02 dup_rows=8.963e+01 unique_rows=1.095e+02 rel_unique=5.15e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block0.cpe.0 K=3 in=384 out=384 max=5.163e+02 refmax=1.038e+03 dup_rows=3.381e+02 unique_rows=5.163e+02 rel_unique=4.98e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block1.cpe.0 K=3 in=384 out=384 max=4.616e+02 refmax=9.641e+02 dup_rows=3.660e+02 unique_rows=4.616e+02 rel_unique=4.79e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block2.cpe.0 K=3 in=384 out=384 max=4.315e+02 refmax=8.050e+02 dup_rows=3.005e+02 unique_rows=4.315e+02 rel_unique=5.36e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block3.cpe.0 K=3 in=384 out=384 max=5.594e+02 refmax=1.113e+03 dup_rows=3.118e+02 unique_rows=5.594e+02 rel_unique=5.03e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block4.cpe.0 K=3 in=384 out=384 max=5.301e+02 refmax=1.140e+03 dup_rows=3.544e+02 unique_rows=5.301e+02 rel_unique=4.65e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block5.cpe.0 K=3 in=384 out=384 max=5.256e+02 refmax=1.248e+03 dup_rows=3.892e+02 unique_rows=5.256e+02 rel_unique=4.21e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block6.cpe.0 K=3 in=384 out=384 max=4.780e+02 refmax=1.009e+03 dup_rows=3.512e+02 unique_rows=4.780e+02 rel_unique=4.74e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block7.cpe.0 K=3 in=384 out=384 max=5.382e+02 refmax=1.000e+03 dup_rows=3.240e+02 unique_rows=5.382e+02 rel_unique=5.38e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block8.cpe.0 K=3 in=384 out=384 max=5.896e+02 refmax=1.082e+03 dup_rows=3.763e+02 unique_rows=5.896e+02 rel_unique=5.45e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block9.cpe.0 K=3 in=384 out=384 max=6.202e+02 refmax=1.067e+03 dup_rows=3.090e+02 unique_rows=6.202e+02 rel_unique=5.81e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block10.cpe.0 K=3 in=384 out=384 max=4.787e+02 refmax=9.421e+02 dup_rows=2.982e+02 unique_rows=4.787e+02 rel_unique=5.08e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block11.cpe.0 K=3 in=384 out=384 max=4.358e+02 refmax=8.403e+02 dup_rows=3.175e+02 unique_rows=4.358e+02 rel_unique=5.19e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block12.cpe.0 K=3 in=384 out=384 max=4.354e+02 refmax=8.792e+02 dup_rows=2.873e+02 unique_rows=4.354e+02 rel_unique=4.95e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block13.cpe.0 K=3 in=384 out=384 max=4.387e+02 refmax=7.481e+02 dup_rows=2.347e+02 unique_rows=4.387e+02 rel_unique=5.86e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block14.cpe.0 K=3 in=384 out=384 max=5.038e+02 refmax=1.091e+03 dup_rows=3.093e+02 unique_rows=5.038e+02 rel_unique=4.62e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block15.cpe.0 K=3 in=384 out=384 max=5.323e+02 refmax=9.219e+02 dup_rows=3.268e+02 unique_rows=5.323e+02 rel_unique=5.77e-01 FAIL
+MEM fwd after PTv3 mesh encoder rss=2.71GB hwm=4.38GB t=68s
+MEM fwd after mesh_bone_attn x16 rss=2.71GB hwm=4.38GB t=91s
+MEM fwd after skin chunk loop rss=2.75GB hwm=4.38GB t=100s
+SPCONV SUMMARY convs=32 worst max abs diff 6.202e+02 (dup rows 3.892e+02, unique rows 6.202e+02) worst relative 5.864e-01
+SPCONV RESULT FAIL (convs failing=32 of 32, neighbour tables failing=2)
+PREP shuffle perm=[1, 3, 0, 2]
+PREP order equals the real run's: True
+PREP inverse equals the real run's: True
+PREP fps numpy == torch_cluster: True (1024/1024 rows)
+WRAPDIFF skin: max=4.610e-02 mean=4.772e-05 refmax=9.998e-01 shape=(16384, 28)
+WRAPDIFF dbg_global: max=3.338e-06 mean=1.784e-07 refmax=4.791e+00 shape=(1, 1024, 768)
+WRAPDIFF dbg_bone: max=1.907e-06 mean=1.668e-07 refmax=1.147e+01 shape=(1, 28, 768)
+WRAPDIFF dbg_ptv3: max=3.090e+01 mean=2.016e-01 refmax=2.112e+02 shape=(16384, 384)
+PREP vertices: equal to capture
+PREP normals: equal to capture
+PREP joints: equal to capture
+PREP voxel_skin: equal to capture
+PREP skin_mask: equal to capture
+PREP gsel: equal to capture
+PREP nbr3: equal to capture
+PREP nbr5: equal to capture
+PREP order: equal to capture
+PREP inverse: equal to capture
+ORT skin (16384, 28) prepare=0.3s ort=51.7s hwm=5.83GB
+MEM fwd start N=16384 J=28 rss=2.58GB hwm=4.39GB t=39s
+MEM fwd after global (Michelangelo) encoder rss=2.61GB hwm=4.39GB t=40s
+MEM fwd after bone encoder rss=2.62GB hwm=4.39GB t=40s
+SPCONV points=16384 unique_voxels=16001 points_in_shared_voxels=754
+SPCONV PROBE mesh_encoder.embedding.stem.conv K=5 spconv=2.3.8 weight=(32, 5, 5, 5, 9) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[1, 1, 1] inconsistent_pairs=181 missing_pairs=2006179
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-2,-2,-2 1:-2,-2,-1 2:-2,-2,0 3:-2,-2,1 4:-2,-2,2 5:-2,-1,-2 6:-2,-1,-1 7:-2,-1,0 8:-2,-1,1 9:-2,-1,2 10:-2,0,-2 11:-2,0,-1 12:-2,0,0 13:-2,0,1 14:-2,0,2 15:-2,1,-2 16:-2,1,-1 17:-2,1,0 18:-2,1,1 19:-2,1,2 20:-2,2,-2 21:-2,2,-1 22:-2,2,0 23:-2,2,1 24:-2,2,2 25:-1,-2,-2 26:-1,-2,-1 27:-1,-2,0 28:-1,-2,1 29:-1,-2,2 30:-1,-1,-2 31:-1,-1,-1 32:-1,-1,0 33:-1,-1,1 34:-1,-1,2 35:-1,0,-2 36:-1,0,-1 37:-1,0,0 38:-1,0,1 39:-1,0,2 40:-1,1,-2 41:-1,1,-1 42:-1,1,0 43:-1,1,1 44:-1,1,2 45:-1,2,-2 46:-1,2,-1 47:-1,2,0 48:-1,2,1 49:-1,2,2 50:0,-2,-2 51:0,-2,-1 52:0,-2,0 53:0,-2,1 54:0,-2,2 55:0,-1,-2 56:0,-1,-1 57:0,-1,0 58:0,-1,1 59:0,-1,2 60:0,0,-2 61:0,0,-1 62:0,0,0 63:0,0,1 64:0,0,2 65:0,1,-2 66:0,1,-1 67:0,1,0 68:0,1,1 69:0,1,2 70:0,2,-2 71:0,2,-1 72:0,2,0 73:0,2,1 74:0,2,2 75:1,-2,-2 76:1,-2,-1 77:1,-2,0 78:1,-2,1 79:1,-2,2 80:1,-1,-2 81:1,-1,-1 82:1,-1,0 83:1,-1,1 84:1,-1,2 85:1,0,-2 86:1,0,-1 87:1,0,0 88:1,0,1 89:1,0,2 90:1,1,-2 91:1,1,-1 92:1,1,0 93:1,1,1 94:1,1,2 95:1,2,-2 96:1,2,-1 97:1,2,0 98:1,2,1 99:1,2,2 100:2,-2,-2 101:2,-2,-1 102:2,-2,0 103:2,-2,1 104:2,-2,2 105:2,-1,-2 106:2,-1,-1 107:2,-1,0 108:2,-1,1 109:2,-1,2 110:2,0,-2 111:2,0,-1 112:2,0,0 113:2,0,1 114:2,0,2 115:2,1,-2 116:2,1,-1 117:2,1,0 118:2,1,1 119:2,1,2 120:2,2,-2 121:2,2,-1 122:2,2,0 123:2,2,1 124:2,2,2
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 729 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 1112 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 1067 of 2048000 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 1450 of 2048000 entries differ
+SPCONV TABLE K=5 tie=0 self_center=True differing_entries=729 FAIL
+SPCONV TABLE K=5 rows differing=613 of which in shared voxels=240 first rows=[67, 136, 168, 296, 377]
+SPCONV mesh_encoder.embedding.stem.conv K=5 in=9 out=32 max=2.791e+00 refmax=5.076e+01 dup_rows=2.791e+00 unique_rows=2.570e+00 rel_unique=5.06e-02 FAIL
+SPCONV PROBE mesh_encoder.enc.enc0.block0.cpe.0 K=3 spconv=2.3.8 weight=(32, 3, 3, 3, 32) indices=(16384, 4) spatial_shape=[365, 323, 495] batch=1 padding=[0, 0, 0] inconsistent_pairs=42 missing_pairs=417881
+SPCONV PROBE offsets by weight index (k: dx,dy,dz): 0:-1,-1,-1 1:-1,-1,0 2:-1,-1,1 3:-1,0,-1 4:-1,0,0 5:-1,0,1 6:-1,1,-1 7:-1,1,0 8:-1,1,1 9:0,-1,-1 10:0,-1,0 11:0,-1,1 12:0,0,-1 13:0,0,0 14:0,0,1 15:0,1,-1 16:0,1,0 17:0,1,1 18:1,-1,-1 19:1,-1,0 20:1,-1,1 21:1,0,-1 22:1,0,0 23:1,0,1 24:1,1,-1 25:1,1,0 26:1,1,1
+SPCONV PROBE offsets == natural order: True, == reversed: False, coords == serialize grid: True
+SPCONV PROBE build_nbr tie=0 self_center=True: 235 of 442368 entries differ
+SPCONV PROBE build_nbr tie=0 self_center=False: 618 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=True: 360 of 442368 entries differ
+SPCONV PROBE build_nbr tie=1 self_center=False: 743 of 442368 entries differ
+SPCONV TABLE K=3 tie=0 self_center=True differing_entries=235 FAIL
+SPCONV TABLE K=3 rows differing=216 of which in shared voxels=110 first rows=[136, 817, 834, 1220, 1652]
+SPCONV mesh_encoder.enc.enc0.block0.cpe.0 K=3 in=32 out=32 max=3.182e+00 refmax=1.345e+01 dup_rows=3.182e+00 unique_rows=2.527e+00 rel_unique=1.88e-01 FAIL
+SPCONV mesh_encoder.enc.enc0.block1.cpe.0 K=3 in=32 out=32 max=3.609e+00 refmax=1.315e+01 dup_rows=3.609e+00 unique_rows=3.084e+00 rel_unique=2.35e-01 FAIL
+SPCONV mesh_encoder.enc.enc0.block2.cpe.0 K=3 in=32 out=32 max=3.803e+00 refmax=1.959e+01 dup_rows=3.713e+00 unique_rows=3.803e+00 rel_unique=1.94e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block0.cpe.0 K=3 in=64 out=64 max=9.839e+00 refmax=3.097e+01 dup_rows=9.839e+00 unique_rows=9.650e+00 rel_unique=3.12e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block1.cpe.0 K=3 in=64 out=64 max=5.934e+00 refmax=1.820e+01 dup_rows=5.934e+00 unique_rows=4.592e+00 rel_unique=2.52e-01 FAIL
+SPCONV mesh_encoder.enc.enc1.block2.cpe.0 K=3 in=64 out=64 max=7.585e+00 refmax=2.245e+01 dup_rows=7.585e+00 unique_rows=6.500e+00 rel_unique=2.90e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block0.cpe.0 K=3 in=128 out=128 max=2.258e+01 refmax=6.791e+01 dup_rows=2.258e+01 unique_rows=1.451e+01 rel_unique=2.14e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block1.cpe.0 K=3 in=128 out=128 max=1.364e+01 refmax=3.108e+01 dup_rows=1.364e+01 unique_rows=8.393e+00 rel_unique=2.70e-01 FAIL
+SPCONV mesh_encoder.enc.enc2.block2.cpe.0 K=3 in=128 out=128 max=8.421e+00 refmax=2.279e+01 dup_rows=8.421e+00 unique_rows=6.525e+00 rel_unique=2.86e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block0.cpe.0 K=3 in=256 out=256 max=4.437e+01 refmax=1.052e+02 dup_rows=4.437e+01 unique_rows=3.360e+01 rel_unique=3.19e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block1.cpe.0 K=3 in=256 out=256 max=3.238e+01 refmax=1.068e+02 dup_rows=3.238e+01 unique_rows=2.830e+01 rel_unique=2.65e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block2.cpe.0 K=3 in=256 out=256 max=5.007e+01 refmax=1.285e+02 dup_rows=5.007e+01 unique_rows=4.274e+01 rel_unique=3.33e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block3.cpe.0 K=3 in=256 out=256 max=4.748e+01 refmax=1.363e+02 dup_rows=4.748e+01 unique_rows=4.497e+01 rel_unique=3.30e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block4.cpe.0 K=3 in=256 out=256 max=5.166e+01 refmax=1.503e+02 dup_rows=5.166e+01 unique_rows=3.518e+01 rel_unique=2.34e-01 FAIL
+SPCONV mesh_encoder.enc.enc3.block5.cpe.0 K=3 in=256 out=256 max=5.449e+01 refmax=1.483e+02 dup_rows=5.449e+01 unique_rows=4.189e+01 rel_unique=2.82e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block0.cpe.0 K=3 in=384 out=384 max=2.602e+02 refmax=7.103e+02 dup_rows=2.602e+02 unique_rows=2.431e+02 rel_unique=3.42e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block1.cpe.0 K=3 in=384 out=384 max=2.788e+02 refmax=6.507e+02 dup_rows=2.788e+02 unique_rows=2.434e+02 rel_unique=3.74e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block2.cpe.0 K=3 in=384 out=384 max=2.313e+02 refmax=6.061e+02 dup_rows=2.313e+02 unique_rows=2.235e+02 rel_unique=3.69e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block3.cpe.0 K=3 in=384 out=384 max=2.815e+02 refmax=6.760e+02 dup_rows=2.594e+02 unique_rows=2.815e+02 rel_unique=4.17e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block4.cpe.0 K=3 in=384 out=384 max=2.897e+02 refmax=6.953e+02 dup_rows=2.897e+02 unique_rows=2.753e+02 rel_unique=3.96e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block5.cpe.0 K=3 in=384 out=384 max=2.956e+02 refmax=7.081e+02 dup_rows=2.956e+02 unique_rows=2.283e+02 rel_unique=3.22e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block6.cpe.0 K=3 in=384 out=384 max=3.238e+02 refmax=7.318e+02 dup_rows=3.238e+02 unique_rows=2.090e+02 rel_unique=2.86e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block7.cpe.0 K=3 in=384 out=384 max=2.761e+02 refmax=6.540e+02 dup_rows=2.761e+02 unique_rows=2.461e+02 rel_unique=3.76e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block8.cpe.0 K=3 in=384 out=384 max=2.609e+02 refmax=7.152e+02 dup_rows=2.609e+02 unique_rows=1.958e+02 rel_unique=2.74e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block9.cpe.0 K=3 in=384 out=384 max=2.758e+02 refmax=7.044e+02 dup_rows=2.758e+02 unique_rows=2.438e+02 rel_unique=3.46e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block10.cpe.0 K=3 in=384 out=384 max=2.248e+02 refmax=6.441e+02 dup_rows=2.248e+02 unique_rows=1.710e+02 rel_unique=2.65e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block11.cpe.0 K=3 in=384 out=384 max=2.402e+02 refmax=6.322e+02 dup_rows=2.402e+02 unique_rows=2.334e+02 rel_unique=3.69e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block12.cpe.0 K=3 in=384 out=384 max=2.224e+02 refmax=6.288e+02 dup_rows=2.224e+02 unique_rows=1.726e+02 rel_unique=2.75e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block13.cpe.0 K=3 in=384 out=384 max=2.239e+02 refmax=5.832e+02 dup_rows=2.239e+02 unique_rows=1.528e+02 rel_unique=2.62e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block14.cpe.0 K=3 in=384 out=384 max=1.843e+02 refmax=5.303e+02 dup_rows=1.843e+02 unique_rows=1.655e+02 rel_unique=3.12e-01 FAIL
+SPCONV mesh_encoder.enc.enc4.block15.cpe.0 K=3 in=384 out=384 max=2.243e+02 refmax=5.173e+02 dup_rows=2.243e+02 unique_rows=2.029e+02 rel_unique=3.92e-01 FAIL
+MEM fwd after PTv3 mesh encoder rss=2.71GB hwm=4.39GB t=97s
+MEM fwd after mesh_bone_attn x16 rss=2.71GB hwm=4.39GB t=119s
+MEM fwd after skin chunk loop rss=2.76GB hwm=4.39GB t=127s
+SPCONV SUMMARY convs=32 worst max abs diff 3.238e+02 (dup rows 3.238e+02, unique rows 2.815e+02) worst relative 4.424e-01
+SPCONV RESULT FAIL (convs failing=32 of 32, neighbour tables failing=2)
+PREP shuffle perm=[1, 3, 0, 2]
+PREP order equals the real run's: True
+PREP inverse equals the real run's: True
+PREP fps numpy == torch_cluster: True (1024/1024 rows)
+WRAPDIFF skin: max=1.084e-01 mean=3.249e-05 refmax=1.000e+00 shape=(16384, 28)
+WRAPDIFF dbg_global: max=4.053e-06 mean=1.959e-07 refmax=4.750e+00 shape=(1, 1024, 768)
+WRAPDIFF dbg_bone: max=1.907e-06 mean=1.829e-07 refmax=1.198e+01 shape=(1, 28, 768)
+WRAPDIFF dbg_ptv3: max=3.816e+01 mean=9.140e-02 refmax=2.175e+02 shape=(16384, 384)
+EXPORT part skin_a: 0.44 GB weights
+EXPORT part skin_pt: 0.42 GB weights
+EXPORT part skin_head: 0.50 GB weights
+EXPORT wrote /home/runner/work/Img-2-3d/Img-2-3d/onnx_out/skin.onnx (+external data), 2.72 GB

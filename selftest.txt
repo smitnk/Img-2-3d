@@ -1,0 +1,9 @@
+selftest K=3 tie=0 self_center=True: max abs err 8.34e-07
+selftest K=3 tie=1 self_center=True: max abs err 9.29e-07
+selftest K=3 tie=0 self_center=False: max abs err 4.73e-07
+selftest K=3 tie=1 self_center=False: max abs err 8.27e-07
+selftest K=5 tie=0 self_center=True: max abs err 1.49e-06
+selftest K=5 tie=1 self_center=True: max abs err 1.40e-06
+selftest K=5 tie=0 self_center=False: max abs err 1.49e-06
+selftest K=5 tie=1 self_center=False: max abs err 1.40e-06
+selftest OK

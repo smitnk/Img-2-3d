@@ -1,0 +1,14 @@
+total 2916124
+drwxr-xr-x  2 runner runner       4096 Nov 13 18:20 .
+drwxr-xr-x 15 runner runner       4096 Nov 13 18:07 ..
+-rw-r--r--  1 runner runner    4361578 Nov 13 18:20 inputs_cm_game20k.npz
+-rw-r--r--  1 runner runner    4347728 Nov 13 18:11 inputs_java_mv_fast.npz
+-rw-r--r--  1 runner runner   28154380 Nov 13 18:20 ref_cm_game20k.npz
+-rw-r--r--  1 runner runner   28149288 Nov 13 18:11 ref_java_mv_fast.npz
+-rw-r--r--  1 runner runner 1460479159 Nov 13 18:13 skin.onnx
+-rw-r--r--  1 runner runner     207326 Nov 13 18:13 skin_a.onnx
+-rw-r--r--  1 runner runner  472363008 Nov 13 18:13 skin_a.onnx.data
+-rw-r--r--  1 runner runner     696889 Nov 13 18:15 skin_head.onnx
+-rw-r--r--  1 runner runner  533615616 Nov 13 18:15 skin_head.onnx.data
+-rw-r--r--  1 runner runner    1496645 Nov 13 18:14 skin_pt.onnx
+-rw-r--r--  1 runner runner  452200192 Nov 13 18:14 skin_pt.onnx.data

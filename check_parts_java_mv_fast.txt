@@ -1,0 +1,9 @@
+MEM session skin_a: rss 0.12GB hwm 0.12GB
+MEM skin_a done: rss 0.24GB hwm 0.68GB
+MEM session skin_pt: rss 0.24GB hwm 0.68GB
+MEM skin_pt done: rss 0.56GB hwm 1.94GB
+MEM session skin_head: rss 0.56GB hwm 1.94GB
+MEM skin_head done: rss 0.56GB hwm 1.94GB
+ORT parts run 51.2s
+ONNXDIFF x86parts_java_mv_fast skin: max=1.084e-01 mean=3.250e-05 refmax=1.000e+00 shape=(16384, 28)
+ONNXPEAK x86parts_java_mv_fast hwm_gb=1.94

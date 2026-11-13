@@ -1,0 +1,23 @@
+	Command being timed: "timeout 120m bash launch/inference/gen_skin_ort.sh --input res/skel_java_mv_fast.fbx --output ort_res/skin_java_mv_fast.fbx"
+	User time (seconds): 99.40
+	System time (seconds): 26.27
+	Percent of CPU this job got: 172%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:12.98
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 6109408
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 328
+	Minor (reclaiming a frame) page faults: 17017974
+	Voluntary context switches: 8578
+	Involuntary context switches: 10101
+	Swaps: 0
+	File system inputs: 252400
+	File system outputs: 18560
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

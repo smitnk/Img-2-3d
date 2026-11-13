@@ -1,0 +1,2 @@
+3:  num_samples: 16384
+4:  vertex_samples: 4096

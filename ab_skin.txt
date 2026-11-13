@@ -1,0 +1,9 @@
+torch vs reference (ci-logs-unirig):
+AB skin java_mv_fast: max=7.993e-01 mean=3.843e-03 verts=27724 joints=28
+AB skin cm_game20k: max=6.647e-01 mean=3.108e-03 verts=21238 joints=28
+ORT vs reference:
+AB skin java_mv_fast: max=7.991e-01 mean=3.841e-03 verts=27724 joints=28
+AB skin cm_game20k: max=6.647e-01 mean=3.108e-03 verts=21238 joints=28
+ORT vs torch (ref=torch):
+AB skin java_mv_fast: max=5.464e-02 mean=2.832e-05 verts=27724 joints=28
+AB skin cm_game20k: max=1.073e-01 mean=4.733e-05 verts=21238 joints=28

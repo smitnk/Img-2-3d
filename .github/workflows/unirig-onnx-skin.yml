@@ -72,6 +72,11 @@ jobs:
           cat out/smoke_pyrender.txt; tail -1 $GITHUB_OUTPUT
       - name: Patch UniRig for CPU (unchanged tools/unirig/patch_cpu.py)
         run: python tools/unirig/patch_cpu.py unirig ${{ steps.smoke.outputs.voxel }} | tee out/patch.txt
+      - name: Skin samples 16384 (+4096 vertex samples) instead of UniRig's 32768 + 8192 - the graphs get N = 16384 baked in (phone RAM)
+        run: |
+          sed -i 's/num_samples: 32768/num_samples: 16384/; s/vertex_samples: 8192/vertex_samples: 4096/' unirig/configs/transform/inference_skin_transform.yaml
+          grep -nE "num_samples|vertex_samples" unirig/configs/transform/inference_skin_transform.yaml | tee out/skin_samples.txt
+          grep -c "num_samples: 16384" out/skin_samples.txt
       - name: Skin on the reference skeletons - torch (capture + export) then ORT in the same pipeline
         run: |
           WS=$GITHUB_WORKSPACE

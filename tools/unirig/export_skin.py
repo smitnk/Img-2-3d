@@ -17,7 +17,7 @@ The pipeline then carries on with the torch result, so the torch FBX is produced
 The sparse conv: spconv has no ONNX op, so out[i] = bias + sum_k W_k . feat[nbr[i, k]] with the neighbour table
 nbr (N, K^3) built in numpy from the voxel coordinates (onnx_skin.build_nbr), row N = an all-zero row for empty
 neighbours. Serialization orders, FPS query points and the parent-accumulated voxel mask are also inputs.
-Assumes batch size 1, N = 32768 points (N % 1024 == 0, so the PTv3 patch padding is the identity), no pooling.
+Assumes batch size 1, N = 16384 points (the phone's size; the graphs have N baked in, UniRig's own inference config uses 32768; N % 1024 == 0, so the PTv3 patch padding is the identity), no pooling.
 """
 import math
 import os
@@ -160,7 +160,7 @@ class SkinONNX(nn.Module):
         q = heads(ca.attn.c_q(ca.ln_1(x)), h)
         kv = ca.attn.c_kv(ca.ln_2(data)).reshape(1, -1, h, 2 * (data.shape[-1] // h))
         k, v = kv.chunk(2, dim=-1)
-        # 128 query rows x 8 heads x 32768 keys = 134 MB of scores per chunk
+        # 128 query rows x 8 heads x 32768 keys (N at 32768) = 134 MB of scores per chunk
         o = sdpa(q, k.transpose(1, 2), v.transpose(1, 2), sq=gsel.shape[0], chunk=128)
         x = x + ca.attn.c_proj(merge(o))
         x = x + ca.mlp(ca.ln_3(x))

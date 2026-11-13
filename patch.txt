@@ -1,0 +1,15 @@
+patched configs/task/quick_inference_skeleton_articulationxl_ar_256.yaml
+patched configs/task/quick_inference_unirig_skin.yaml
+patched configs/model/unirig_ar_350m_1024_81920_float32.yaml
+patched src/model/unirig_ar.py
+wrote src/memlog.py
+patched run.py
+patched src/data/dataset.py
+patched src/data/vertex_group.py
+patched configs/transform/inference_skin_transform.yaml
+patched src/model/unirig_skin.py
+patched src/model/pointcept/models/PTv3Object.py
+patched src/inference/download.py
+patched src/model/michelangelo/models/modules/transformer_blocks.py
+patched src/model/unirig_skin.py
+patched src/system/skin.py

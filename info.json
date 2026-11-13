@@ -1,0 +1,21 @@
+{
+ "layers": 24,
+ "heads": 16,
+ "head_dim": 64,
+ "hidden": 1024,
+ "vocab": 267,
+ "eos": 258,
+ "bos": 257,
+ "pad": 259,
+ "start": [
+  257,
+  266
+ ],
+ "points": 65536,
+ "max_new_tokens": 2048,
+ "repetition_penalty": 3.0,
+ "num_beams": 15,
+ "temperature": 1.5,
+ "top_k": 5,
+ "top_p": 0.95
+}

@@ -1,0 +1,297 @@
+== report_cm_game20k.json
+  name: cm_game20k
+  points: 65536
+  prompt_tokens: 1026
+  sizes_bytes: {'skel_decoder.onnx': 1369770, 'skel_encoder.onnx': 216716304}
+  fps_idx_equal: True
+  encoder_maxdiff: 0.000415802001953125
+  encoder_ort_seconds: 5.2
+  greedy_torch_seconds: 30.6
+  greedy_tokens: 172
+  logits_maxdiff_first32: 1.8835067749023438e-05
+  logits_maxdiff_all: 7.605552673339844e-05
+  greedy_argmax_agree: 172
+  greedy_tokens_equal: True
+  greedy_first_mismatch: 172
+  greedy_ort_seconds: 253.1
+  beam_ort_seconds: 676.4
+  beam_tokens_ort: 104
+  beam_tokens_torch: 104
+  beam_tokens_equal: True
+  beam_first_mismatch: 104
+  joints_ort: 28
+  joints_torch: 28
+  joints_maxdiff_normalized_vs_torch: 0.0
+  first 32 greedy steps, max |dlogit|: 3.8e-06 1.0e-05 8.6e-06 1.2e-05 9.5e-06 1.0e-05 9.5e-06 8.7e-06 5.9e-06 1.6e-05 5.2e-06 1.1e-05 6.7e-06 6.7e-06 6.7e-06 1.4e-05 8.1e-06 1.5e-05 1.3e-05 7.4e-06 1.4e-05 6.7e-06 1.5e-05 7.4e-06 1.9e-05 1.2e-05 7.6e-06 9.8e-06 8.6e-06 1.3e-05 7.6e-06 5.7e-06
+== report_java_mv_fast.json
+  name: java_mv_fast
+  points: 65536
+  prompt_tokens: 1026
+  sizes_bytes: {'skel_decoder.onnx': 1369770, 'skel_encoder.onnx': 216716304}
+  fps_idx_equal: True
+  encoder_maxdiff: 0.000194549560546875
+  encoder_ort_seconds: 5.2
+  greedy_torch_seconds: 18.9
+  greedy_tokens: 102
+  logits_maxdiff_first32: 2.384185791015625e-05
+  logits_maxdiff_all: 2.384185791015625e-05
+  greedy_argmax_agree: 102
+  greedy_tokens_equal: True
+  greedy_first_mismatch: 102
+  greedy_ort_seconds: 217.4
+  beam_ort_seconds: 657.6
+  beam_tokens_ort: 104
+  beam_tokens_torch: 104
+  beam_tokens_equal: True
+  beam_first_mismatch: 104
+  joints_ort: 28
+  joints_torch: 28
+  joints_maxdiff_normalized_vs_torch: 0.0
+  first 32 greedy steps, max |dlogit|: 3.8e-06 8.6e-06 7.6e-06 1.5e-05 1.4e-05 1.0e-05 9.5e-06 8.6e-06 7.2e-06 8.1e-06 1.0e-05 6.0e-06 1.2e-05 8.6e-06 8.6e-06 5.7e-06 8.6e-06 7.6e-06 7.2e-06 7.6e-06 1.5e-05 1.5e-05 6.2e-06 6.9e-06 5.7e-06 1.4e-05 6.2e-06 5.7e-06 2.4e-05 5.2e-06 4.8e-06 1.0e-05
+== ab_check.txt
+AB skeleton java_mv_fast: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28
+AB skeleton cm_game20k: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28
+== peak_rss_export.txt
+time_cm_game20k_export peakRSS_GB=4.33 wall=20:01.25
+time_java_mv_fast_export peakRSS_GB=4.81 wall=19:25.78
+== onnx_files.txt
+total 1418844
+drwxr-xr-x  2 runner runner     12288 Nov 13 03:57 .
+drwxr-xr-x 17 runner runner      4096 Nov 13 03:15 ..
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1008_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_100_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1019_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_101_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_1020_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1021_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1027_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1029_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1031_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1054_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1065_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_1066_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1067_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1073_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1075_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1077_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_107_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_109_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1100_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1111_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_1112_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1113_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1119_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_111_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1121_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1123_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_1146_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1157_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_1158_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_1159_attr__value
+-rw-r--r--  1 runner runner   1093632 Nov 13 03:21 _Constant_1163_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_134_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_145_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_146_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_147_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_153_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_155_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_157_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_180_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_191_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_192_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_193_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_199_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_201_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_203_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_226_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_237_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_238_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_239_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_245_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_247_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_249_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_272_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_283_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_284_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_285_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_291_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_293_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_295_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_318_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_329_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_330_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_331_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_337_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_339_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_341_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_364_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_375_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_376_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_377_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_383_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_385_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_387_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_410_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_421_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_422_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_423_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_429_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_431_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_433_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_456_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_467_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_468_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_469_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_475_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_477_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_479_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_502_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_513_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_514_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_515_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_521_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_523_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_525_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_548_attr__value
+-rw-r--r--  1 runner runner  12607488 Nov 13 03:21 _Constant_54_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_559_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_560_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_561_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_567_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_569_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_571_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_594_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_59_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_605_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_606_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_607_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_613_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_615_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_617_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_63_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_640_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_651_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_652_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_653_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_659_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_65_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_661_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_663_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_686_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_697_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_698_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_699_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_705_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_707_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_709_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_732_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_743_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_744_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_745_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_751_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_753_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_755_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_778_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_789_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_790_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_791_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_797_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_799_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_801_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_824_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_835_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_836_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_837_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_843_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_845_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_847_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_870_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_881_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_882_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_883_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_889_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_88_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_891_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_893_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_916_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_927_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_928_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_929_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_935_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_937_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_939_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_962_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_973_attr__value
+-rw-r--r--  1 runner runner     16384 Nov 13 03:21 _Constant_974_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_975_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_981_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_983_attr__value
+-rw-r--r--  1 runner runner   4194304 Nov 13 03:21 _Constant_985_attr__value
+-rw-r--r--  1 runner runner  16777216 Nov 13 03:21 _Constant_99_attr__value
+-rw-r--r--  1 runner runner       960 Nov 13 03:57 beam_ids_ort_cm_game20k.npy
+-rw-r--r--  1 runner runner       960 Nov 13 03:36 beam_ids_ort_java_mv_fast.npy
+-rw-r--r--  1 runner runner   1093760 Nov 13 03:40 embed.npy
+-rw-r--r--  1 runner runner       287 Nov 13 03:40 info.json
+-rw-r--r--  1 runner runner   5805338 Nov 13 03:45 inputs_cm_game20k.npz
+-rw-r--r--  1 runner runner   5804778 Nov 13 03:25 inputs_java_mv_fast.npz
+-rw-r--r--  1 runner runner      1555 Nov 13 03:57 report_cm_game20k.json
+-rw-r--r--  1 runner runner      1546 Nov 13 03:36 report_java_mv_fast.json
+-rw-r--r--  1 runner runner   1369770 Nov 13 03:21 skel_decoder.onnx
+-rw-r--r--  1 runner runner 216716304 Nov 13 03:21 skel_encoder.onnx
+1.4G	onnx
+== arm_summary.txt
+java_mv_fast encode:  wall=0:03.94peakRSS_GB=0.90
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.04GB (anon 0.02 file 0.02) peak 0.04GB
+  MEM session skel_encoder.onnx: rss 0.39GB (anon 0.37 file 0.03) peak 0.45GB
+  MEM encoder run done: rss 0.42GB (anon 0.39 file 0.03) peak 0.90GB
+  MEM end: rss 0.42GB (anon 0.39 file 0.03) peak 0.90GB
+RESULT {"phase": "encode", "name": "java_mv_fast", "encoder_maxdiff_vs_torch_x86": 0.000255584716796875, "seconds": 3.8, "self_peak_rss_gb": 0.9}
+java_mv_fast greedy:  wall=1:10.34peakRSS_GB=1.60
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.63GB (anon 0.61 file 0.03) peak 0.63GB
+  MEM prefill done: rss 1.59GB (anon 0.81 file 0.78) peak 1.59GB
+  MEM end: rss 1.47GB (anon 0.69 file 0.78) peak 1.60GB
+RESULT {"phase": "greedy", "name": "java_mv_fast", "tokens": 102, "torch_tokens": 102, "equal": true, "first_mismatch": 102, "logits_maxdiff_first32": 4.100799560546875e-05, "seconds": 70.2, "self_peak_rss_gb": 1.6}
+java_mv_fast beam:  wall=5:31.98peakRSS_GB=2.12
+  MEM start: rss 0.03GB (anon 0.01 file 0.01) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.01) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.61GB (anon 0.59 file 0.03) peak 0.61GB
+  MEM prefill done: rss 1.57GB (anon 0.79 file 0.79) peak 1.58GB
+  MEM beam step 1: rss 1.57GB (anon 0.79 file 0.79) peak 1.58GB
+  MEM beam step 50: rss 1.60GB (anon 0.82 file 0.79) peak 1.79GB
+  MEM beam step 100: rss 1.93GB (anon 1.14 file 0.79) peak 2.12GB
+  MEM end: rss 1.52GB (anon 0.73 file 0.79) peak 2.12GB
+RESULT {"phase": "beam", "name": "java_mv_fast", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.009488333016633987, "seconds": 331.8, "self_peak_rss_gb": 2.12}
+cm_game20k encode:  wall=0:03.88peakRSS_GB=0.90
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_encoder.onnx: rss 0.39GB (anon 0.36 file 0.03) peak 0.45GB
+  MEM encoder run done: rss 0.41GB (anon 0.38 file 0.03) peak 0.90GB
+  MEM end: rss 0.41GB (anon 0.38 file 0.03) peak 0.90GB
+RESULT {"phase": "encode", "name": "cm_game20k", "encoder_maxdiff_vs_torch_x86": 0.000431060791015625, "seconds": 3.7, "self_peak_rss_gb": 0.9}
+cm_game20k greedy:  wall=1:16.02peakRSS_GB=1.59
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.64GB (anon 0.62 file 0.03) peak 0.64GB
+  MEM prefill done: rss 1.58GB (anon 0.80 file 0.78) peak 1.59GB
+  MEM end: rss 1.40GB (anon 0.62 file 0.78) peak 1.59GB
+RESULT {"phase": "greedy", "name": "cm_game20k", "tokens": 172, "torch_tokens": 172, "equal": true, "first_mismatch": 172, "logits_maxdiff_first32": 8.106231689453125e-05, "seconds": 75.8, "self_peak_rss_gb": 1.59}
+cm_game20k beam:  wall=5:24.85peakRSS_GB=2.14
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.64GB (anon 0.61 file 0.03) peak 0.64GB
+  MEM prefill done: rss 1.60GB (anon 0.82 file 0.79) peak 1.61GB
+  MEM beam step 1: rss 1.60GB (anon 0.82 file 0.79) peak 1.61GB
+  MEM beam step 50: rss 1.61GB (anon 0.82 file 0.79) peak 1.79GB
+  MEM beam step 100: rss 1.94GB (anon 1.16 file 0.79) peak 2.12GB
+  MEM end: rss 1.60GB (anon 0.81 file 0.79) peak 2.14GB
+RESULT {"phase": "beam", "name": "cm_game20k", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.015842825174331665, "seconds": 324.7, "self_peak_rss_gb": 2.14}
+== machine.txt
+aarch64
+CPU(s):                                  4
+Model name:                              Neoverse-N2
+               total        used        free      shared  buff/cache   available
+Mem:           15941        1113       13211          46        1905       14828
+Swap:           3071           0        3071

@@ -1,0 +1,70 @@
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+MEM run.py top (before torch import) rss=0.72GB hwm=0.72GB t=0s
+MEM after imports rss=1.06GB hwm=1.06GB t=0s
+Seed set to 12345
+[92mload task config: configs/task/quick_inference_skeleton_articulationxl_ar_256.yaml[0m
+[92mload data config: configs/data/quick_inference.yaml[0m
+[92mload transform config: configs/transform/inference_ar_transform.yaml[0m
+[92mload tokenizer config: configs/tokenizer/tokenizer_parts_articulationxl_256.yaml[0m
+[92mload model config: configs/model/unirig_ar_350m_1024_81920_float32.yaml[0m
+[92mload system config: configs/system/ar_inference_articulationxl.yaml[0m
+MEM after config/model/system construction rss=2.41GB hwm=2.41GB t=4s
+MEM before ckpt torch.load rss=2.41GB hwm=2.41GB t=14s
+MEM ckpt key=state_dict bytes=1440520192 (1.34GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=585 params=360130048 fp32_bytes=1440520192 disk_bytes=1440520192 disk_dtypes={'torch.float32': 585}
+MEM model params=359856640 param_dtypes={'torch.float32': 584} buffers=1 buffer_bytes=32 buffer_dtypes={'torch.float32': 1}
+MEM after ckpt torch.load (mmap) rss=2.42GB hwm=2.42GB t=14s
+MEM after ckpt freed rss=2.43GB hwm=2.43GB t=14s
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `lightning.pytorch` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+MEM after Trainer creation rss=2.43GB hwm=2.43GB t=14s
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+MEM datamodule setup rss=2.43GB hwm=2.43GB t=14s
+Restoring states from the checkpoint path at /home/runner/.cache/huggingface/hub/models--VAST-AI--UniRig/snapshots/36842e2b5947e9e60f89275b83208c8e74071c63/skeleton/articulation-xl_quantization_256/model.ckpt
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+Loaded model weights from the checkpoint at /home/runner/.cache/huggingface/hub/models--VAST-AI--UniRig/snapshots/36842e2b5947e9e60f89275b83208c8e74071c63/skeleton/articulation-xl_quantization_256/model.ckpt
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]MEM dataset: before transform_asset rss=2.43GB hwm=3.77GB t=15s
+MEM dataset: after transform_asset rss=2.44GB hwm=3.77GB t=15s
+MEM first batch batch.vertices shape=(1, 65536, 3) dtype=torch.float32 bytes=786432
+MEM first batch batch.normals shape=(1, 65536, 3) dtype=torch.float32 bytes=786432
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.origin_vertex_normals shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 49999, 3) dtype=torch.int64 bytes=1199976
+MEM first batch batch.origin_face_normals shape=(1, 49999, 3) dtype=torch.float32 bytes=599988
+MEM first batch built rss=2.44GB hwm=3.77GB t=15s
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]torch beam reference 215s, 104 tokens
+/home/runner/work/Img-2-3d/Img-2-3d/tools/unirig/export_skeleton.py:44: TracerWarning: Converting a tensor to a Python float might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+  scale = 1 / math.sqrt(math.sqrt(attn_ch))
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/michelangelo/models/modules/transformer_blocks.py:90: TracerWarning: Converting a tensor to a Python float might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+  scale = 1 / math.sqrt(math.sqrt(attn_ch))
+encoder exported 9s
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/transformers/models/opt/modeling_opt.py:751: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+  if sequence_length != 1:
+decoder exported 25s
+MEM session skel_encoder.onnx: rss 2.73GB (anon 2.11 file 0.63) peak 4.81GB
+MEM encoder run done: rss 2.74GB (anon 2.11 file 0.63) peak 4.81GB
+encoder maxdiff 0.000194549560546875 fps equal True
+MEM session skel_decoder.onnx: rss 2.92GB (anon 2.29 file 0.63) peak 4.81GB
+MEM prefill done: rss 3.87GB (anon 2.49 file 1.38) peak 4.81GB
+greedy {'greedy_torch_seconds': 18.9, 'greedy_tokens': 102, 'logits_maxdiff_first32': 2.384185791015625e-05, 'logits_maxdiff_all': 2.384185791015625e-05, 'greedy_argmax_agree': 102, 'greedy_tokens_equal': True, 'greedy_first_mismatch': 102, 'greedy_ort_seconds': 217.4}
+MEM prefill done: rss 3.87GB (anon 2.49 file 1.38) peak 4.81GB
+beam step 1 best -0.00
+MEM beam step 1: rss 3.87GB (anon 2.49 file 1.38) peak 4.81GB
+beam step 50 best -21.19
+MEM beam step 50: rss 4.00GB (anon 2.62 file 1.38) peak 4.81GB
+beam step 100 best -48.75
+MEM beam step 100: rss 4.14GB (anon 2.76 file 1.38) peak 4.81GB
+beam {'beam_ort_seconds': 657.6, 'beam_tokens_ort': 104, 'beam_tokens_torch': 104, 'beam_tokens_equal': True, 'beam_first_mismatch': 104, 'joints_ort': 28, 'joints_torch': 28, 'joints_maxdiff_normalized_vs_torch': 0.0}
+REPORT {"name": "java_mv_fast", "points": 65536, "prompt_tokens": 1026, "sizes_bytes": {"skel_decoder.onnx": 1369770, "skel_encoder.onnx": 216716304}, "fps_idx_equal": true, "encoder_maxdiff": 0.000194549560546875, "encoder_ort_seconds": 5.2, "greedy_torch_seconds": 18.9, "greedy_tokens": 102, "logits_maxdiff_first32": 2.384185791015625e-05, "logits_maxdiff_all": 2.384185791015625e-05, "logits_diff_per_step_first32": [3.814697265625e-06, 8.58306884765625e-06, 7.62939453125e-06, 1.4781951904296875e-05, 1.430511474609375e-05, 1.049041748046875e-05, 9.5367431640625e-06, 8.58306884765625e-06, 7.152557373046875e-06, 8.106231689453125e-06, 1.049041748046875e-05, 5.9604644775390625e-06, 1.239776611328125e-05, 8.58306884765625e-06, 8.58306884765625e-06, 5.7220458984375e-06, 8.58306884765625e-06, 7.62939453125e-06, 7.152557373046875e-06, 7.62939453125e-06, 1.52587890625e-05, 1.52587890625e-05, 6.198883056640625e-06, 6.9141387939453125e-06, 5.7220458984375e-06, 1.430511474609375e-05, 6.198883056640625e-06, 5.7220458984375e-06, 2.384185791015625e-05, 5.245208740234375e-06, 4.76837158203125e-06, 1.049041748046875e-05], "greedy_argmax_agree": 102, "greedy_tokens_equal": true, "greedy_first_mismatch": 102, "greedy_ort_seconds": 217.4, "beam_ort_seconds": 657.6, "beam_tokens_ort": 104, "beam_tokens_torch": 104, "beam_tokens_equal": true, "beam_first_mismatch": 104, "joints_ort": 28, "joints_torch": 28, "joints_maxdiff_normalized_vs_torch": 0.0}
+
+FBX export starting... 'res/skel_java_mv_fast.fbx'
+export finished in 0.1113 sec.
+Predicting DataLoader 0: 100%|██████████| 1/1 [19:04<00:00,  0.00it/s]Predicting DataLoader 0: 100%|██████████| 1/1 [19:04<00:00,  0.00it/s]
+MEM after trainer.predict rss=2.54GB hwm=4.81GB t=1159s

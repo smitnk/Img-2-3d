@@ -1,0 +1,7 @@
+MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+do not have open3d
+MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+MEM session skel_encoder.onnx: rss 0.39GB (anon 0.36 file 0.03) peak 0.45GB
+MEM encoder run done: rss 0.41GB (anon 0.38 file 0.03) peak 0.90GB
+MEM end: rss 0.41GB (anon 0.38 file 0.03) peak 0.90GB
+RESULT {"phase": "encode", "name": "cm_game20k", "encoder_maxdiff_vs_torch_x86": 0.000431060791015625, "seconds": 3.7, "self_peak_rss_gb": 0.9}

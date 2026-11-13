@@ -1,0 +1,6 @@
+aarch64
+CPU(s):                                  4
+Model name:                              Neoverse-N2
+               total        used        free      shared  buff/cache   available
+Mem:           15941        1113       13211          46        1905       14828
+Swap:           3071           0        3071

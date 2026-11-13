@@ -1,0 +1,7 @@
+MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+do not have open3d
+MEM inputs + tokenizer loaded: rss 0.04GB (anon 0.02 file 0.02) peak 0.04GB
+MEM session skel_encoder.onnx: rss 0.39GB (anon 0.37 file 0.03) peak 0.45GB
+MEM encoder run done: rss 0.42GB (anon 0.39 file 0.03) peak 0.90GB
+MEM end: rss 0.42GB (anon 0.39 file 0.03) peak 0.90GB
+RESULT {"phase": "encode", "name": "java_mv_fast", "encoder_maxdiff_vs_torch_x86": 0.000255584716796875, "seconds": 3.8, "self_peak_rss_gb": 0.9}

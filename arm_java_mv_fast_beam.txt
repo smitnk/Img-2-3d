@@ -1,0 +1,13 @@
+MEM start: rss 0.03GB (anon 0.01 file 0.01) peak 0.03GB
+do not have open3d
+MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.01) peak 0.03GB
+MEM session skel_decoder.onnx: rss 0.61GB (anon 0.59 file 0.03) peak 0.61GB
+MEM prefill done: rss 1.57GB (anon 0.79 file 0.79) peak 1.58GB
+beam step 1 best -0.00
+MEM beam step 1: rss 1.57GB (anon 0.79 file 0.79) peak 1.58GB
+beam step 50 best -21.82
+MEM beam step 50: rss 1.60GB (anon 0.82 file 0.79) peak 1.79GB
+beam step 100 best -50.50
+MEM beam step 100: rss 1.93GB (anon 1.14 file 0.79) peak 2.12GB
+MEM end: rss 1.52GB (anon 0.73 file 0.79) peak 2.12GB
+RESULT {"phase": "beam", "name": "java_mv_fast", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.009488333016633987, "seconds": 331.8, "self_peak_rss_gb": 2.12}

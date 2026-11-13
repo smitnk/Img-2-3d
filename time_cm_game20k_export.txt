@@ -1,0 +1,23 @@
+	Command being timed: "timeout 120m python /home/runner/work/Img-2-3d/Img-2-3d/tools/unirig/export_skeleton.py --task=configs/task/quick_inference_skeleton_articulationxl_ar_256.yaml --seed=12345 --input=in/cm_game20k.glb --output=res/skel_cm_game20k.fbx --npz_dir=tmp"
+	User time (seconds): 2660.08
+	System time (seconds): 1149.86
+	Percent of CPU this job got: 317%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 20:01.25
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4539004
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 508941881
+	Voluntary context switches: 84496
+	Involuntary context switches: 502819
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 16376
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

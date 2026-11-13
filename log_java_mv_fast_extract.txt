@@ -1,0 +1,10 @@
+  0%|          | 0/1 [00:00<?, ?it/s]Info: Deleted 1 data-block(s)
+[32mNow processing in/java_mv_fast.glb...[0m
+Now processing in/java_mv_fast.glb...
+03:17:15 | INFO: Data are loaded, start creating Blender stuff
+03:17:15 | INFO: Blender create Mesh node 0
+03:17:16 | INFO: glTF import finished in 0.41s
+save to: tmp/in/java_mv_fast
+100%|██████████| 1/1 [00:15<00:00, 15.11s/it]100%|██████████| 1/1 [00:15<00:00, 15.11s/it]
+1 models processed
+done

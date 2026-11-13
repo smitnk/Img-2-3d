@@ -1,0 +1,108 @@
+PARITY serialization order/inverse == the real run's (inputs_cm_game20k.npz): ok 
+PARITY serialization order/inverse == the real run's (inputs_java_mv_fast.npz): ok 
+PARITY serialization uniform 32768: grid: ok 
+PARITY serialization uniform 32768: codes (bit exact): ok depth 9
+PARITY serialization uniform 32768: order/inverse: ok order differs in 0 slots (ties of equal codes)
+INFO   tie rule 'std_sort emulation' vs torch.argsort(2-D): 0 slots differ
+INFO   tie rule 'np stable' vs torch.argsort(2-D): 46 slots differ
+INFO   tie rule 'np reverse of stable(-code)' vs torch.argsort(2-D): 42 slots differ
+INFO   tie rule 'torch.sort stable=True' vs torch.argsort(2-D): 46 slots differ
+INFO   tie rule 'torch.argsort 1-D row' vs torch.argsort(2-D): 46 slots differ
+PARITY serialization small 1000: grid: ok 
+PARITY serialization small 1000: codes (bit exact): ok depth 6
+PARITY serialization small 1000: order/inverse: ok order differs in 0 slots (ties of equal codes)
+INFO   tie rule 'std_sort emulation' vs torch.argsort(2-D): 0 slots differ
+INFO   tie rule 'np stable' vs torch.argsort(2-D): 20 slots differ
+INFO   tie rule 'np reverse of stable(-code)' vs torch.argsort(2-D): 4 slots differ
+INFO   tie rule 'torch.sort stable=True' vs torch.argsort(2-D): 20 slots differ
+INFO   tie rule 'torch.argsort 1-D row' vs torch.argsort(2-D): 0 slots differ
+PARITY serialization duplicates 8192: grid: ok 
+PARITY serialization duplicates 8192: codes (bit exact): ok depth 8
+PARITY serialization duplicates 8192: order/inverse: ok order differs in 0 slots (ties of equal codes)
+INFO   tie rule 'std_sort emulation' vs torch.argsort(2-D): 0 slots differ
+INFO   tie rule 'np stable' vs torch.argsort(2-D): 537 slots differ
+INFO   tie rule 'np reverse of stable(-code)' vs torch.argsort(2-D): 621 slots differ
+INFO   tie rule 'torch.sort stable=True' vs torch.argsort(2-D): 537 slots differ
+INFO   tie rule 'torch.argsort 1-D row' vs torch.argsort(2-D): 0 slots differ
+PARITY serialization captured inputs_cm_game20k.npz: grid: ok 
+PARITY serialization captured inputs_cm_game20k.npz: codes (bit exact): ok depth 9
+PARITY serialization captured inputs_cm_game20k.npz: order/inverse: ok order differs in 0 slots (ties of equal codes)
+INFO   tie rule 'std_sort emulation' vs torch.argsort(2-D): 0 slots differ
+INFO   tie rule 'np stable' vs torch.argsort(2-D): 2181 slots differ
+INFO   tie rule 'np reverse of stable(-code)' vs torch.argsort(2-D): 2264 slots differ
+INFO   tie rule 'torch.sort stable=True' vs torch.argsort(2-D): 2181 slots differ
+INFO   tie rule 'torch.argsort 1-D row' vs torch.argsort(2-D): 0 slots differ
+PARITY serialization captured inputs_java_mv_fast.npz: grid: ok 
+PARITY serialization captured inputs_java_mv_fast.npz: codes (bit exact): ok depth 9
+PARITY serialization captured inputs_java_mv_fast.npz: order/inverse: ok order differs in 0 slots (ties of equal codes)
+INFO   tie rule 'std_sort emulation' vs torch.argsort(2-D): 0 slots differ
+INFO   tie rule 'np stable' vs torch.argsort(2-D): 1502 slots differ
+INFO   tie rule 'np reverse of stable(-code)' vs torch.argsort(2-D): 1553 slots differ
+INFO   tie rule 'torch.sort stable=True' vs torch.argsort(2-D): 1502 slots differ
+INFO   tie rule 'torch.argsort 1-D row' vs torch.argsort(2-D): 0 slots differ
+do not have open3d
+PARITY tokenizer constants: ok 
+PARITY tokenizer grammar masks at every step of 30 random streams: ok 
+PARITY tokenizer detokenize bones/tails/parents/names on 32 streams (30 random + captured real ones): ok 32 equal
+19:24:57 | INFO: Data are loaded, start creating Blender stuff
+19:24:57 | INFO: Blender create Mesh node in_Retopo
+19:24:57 | INFO: glTF import finished in 0.06s
+19:24:57 | INFO: Data are loaded, start creating Blender stuff
+19:24:57 | INFO: Blender create Mesh node 0
+19:24:58 | INFO: glTF import finished in 0.35s
+PARITY affine (mesh only) == AugmentAffine: ok 
+PARITY sample_mix (mesh only) == SamplerMix with np.random.seed(7): ok 
+PARITY affine (mesh + joints) == AugmentAffine: ok 
+PARITY sample_mix (mesh + joints) == SamplerMix with np.random.seed(7): ok 
+PARITY mesh cm_game20k: merged vertices/faces count: ok 21238/42428 vs 21238/42428
+PARITY mesh cm_game20k: merged vertices equal trimesh's: ok max diff 0.0e+00
+PARITY mesh cm_game20k: vertex / face normals on trimesh's arrays: ok max diff 0.0e+00 (mean 0.0e+00) / 0.0e+00; 0 bad faces, smallest-area bad 0.0e+00, zero-area faces 0, bad vertices 0
+PARITY mesh java_mv_fast: merged vertices/faces count: ok 176435/337433 vs 176435/337433
+PARITY mesh java_mv_fast: merged vertices equal trimesh's: ok max diff 8.3e-07
+PARITY mesh java_mv_fast: vertex / face normals on trimesh's arrays: ok max diff 2.8e-16 (mean 1.9e-20) / 0.0e+00; 0 bad faces, smallest-area bad 0.0e+00, zero-area faces 0, bad vertices 0
+PARITY voxelization cm_game20k grid 64 vs pyrender: FAIL IoU 0.0809, pyrender 262144 voxels, ray cast 21220 (pyrender reference is degenerate: the whole grid)
+INFO   grid 64 cam +z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.215, identity agreement 0.2153, best symmetry (agreement, rot90 k, flip) 0.2153 3 1
+INFO   grid 64 cam -z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.215, identity agreement 0.2153, best symmetry (agreement, rot90 k, flip) 0.2153 3 1
+INFO   grid 64 cam +y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.388, identity agreement 0.3882, best symmetry (agreement, rot90 k, flip) 0.3882 3 1
+INFO   grid 64 cam -y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.388, identity agreement 0.3882, best symmetry (agreement, rot90 k, flip) 0.3882 3 1
+INFO   grid 64 cam +x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.281, identity agreement 0.2805, best symmetry (agreement, rot90 k, flip) 0.2805 3 1
+INFO   grid 64 cam -x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.281, identity agreement 0.2805, best symmetry (agreement, rot90 k, flip) 0.2805 3 1
+INFO   IoU with axis 0 mirrored: 0.0809
+INFO   IoU with axis 1 mirrored: 0.0809
+INFO   IoU with axis 2 mirrored: 0.0809
+PARITY voxelization cm_game20k grid 196 vs pyrender: FAIL IoU 0.0810, pyrender 7529536 voxels, ray cast 610009 (pyrender reference is degenerate: the whole grid)
+INFO   grid 196 cam +z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.216, identity agreement 0.2155, best symmetry (agreement, rot90 k, flip) 0.2155 3 1
+INFO   grid 196 cam -z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.216, identity agreement 0.2155, best symmetry (agreement, rot90 k, flip) 0.2155 3 1
+INFO   grid 196 cam +y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.387, identity agreement 0.3872, best symmetry (agreement, rot90 k, flip) 0.3872 3 1
+INFO   grid 196 cam -y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.387, identity agreement 0.3872, best symmetry (agreement, rot90 k, flip) 0.3872 3 1
+INFO   grid 196 cam +x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.280, identity agreement 0.2802, best symmetry (agreement, rot90 k, flip) 0.2802 3 1
+INFO   grid 196 cam -x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.280, identity agreement 0.2802, best symmetry (agreement, rot90 k, flip) 0.2802 3 1
+INFO   IoU with axis 0 mirrored: 0.0810
+INFO   IoU with axis 1 mirrored: 0.0810
+INFO   IoU with axis 2 mirrored: 0.0810
+PARITY voxel_skin cm_game20k == UniRig's: ok max diff 0.0e+00
+PARITY reskin cm_game20k == UniRig's: ok max diff 0.0e+00
+PARITY voxelization java_mv_fast grid 64 vs pyrender: FAIL IoU 0.0811, pyrender 262144 voxels, ray cast 21256 (pyrender reference is degenerate: the whole grid)
+INFO   grid 64 cam +z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.217, identity agreement 0.2166, best symmetry (agreement, rot90 k, flip) 0.2166 3 1
+INFO   grid 64 cam -z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.217, identity agreement 0.2166, best symmetry (agreement, rot90 k, flip) 0.2166 3 1
+INFO   grid 64 cam +y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.390, identity agreement 0.3901, best symmetry (agreement, rot90 k, flip) 0.3901 3 1
+INFO   grid 64 cam -y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.390, identity agreement 0.3901, best symmetry (agreement, rot90 k, flip) 0.3901 3 1
+INFO   grid 64 cam +x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.280, identity agreement 0.2803, best symmetry (agreement, rot90 k, flip) 0.2803 3 1
+INFO   grid 64 cam -x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.280, identity agreement 0.2803, best symmetry (agreement, rot90 k, flip) 0.2803 3 1
+INFO   IoU with axis 0 mirrored: 0.0811
+INFO   IoU with axis 1 mirrored: 0.0811
+INFO   IoU with axis 2 mirrored: 0.0811
+PARITY voxelization java_mv_fast grid 196 vs pyrender: FAIL IoU 0.0811, pyrender 7529536 voxels, ray cast 610655 (pyrender reference is degenerate: the whole grid)
+INFO   grid 196 cam +z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.216, identity agreement 0.2164, best symmetry (agreement, rot90 k, flip) 0.2164 3 1
+INFO   grid 196 cam -z: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.216, identity agreement 0.2164, best symmetry (agreement, rot90 k, flip) 0.2164 3 1
+INFO   grid 196 cam +y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.388, identity agreement 0.3878, best symmetry (agreement, rot90 k, flip) 0.3878 3 1
+INFO   grid 196 cam -y: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.388, identity agreement 0.3878, best symmetry (agreement, rot90 k, flip) 0.3878 3 1
+INFO   grid 196 cam +x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.281, identity agreement 0.2809, best symmetry (agreement, rot90 k, flip) 0.2809 3 1
+INFO   grid 196 cam -x: raw min/max 0.05/0.05, hit pixels pyrender 1.000 mine 0.281, identity agreement 0.2809, best symmetry (agreement, rot90 k, flip) 0.2809 3 1
+INFO   java_mv_fast grid 196 voxels: pyrender 7529536, ray cast 610655, the real (50k face simplified) run had 608738
+INFO   IoU with axis 0 mirrored: 0.0811
+INFO   IoU with axis 1 mirrored: 0.0811
+INFO   IoU with axis 2 mirrored: 0.0811
+PARITY voxel_skin java_mv_fast == UniRig's: ok max diff 0.0e+00
+PARITY reskin java_mv_fast == UniRig's: ok max diff 0.0e+00
+PARITY SUMMARY hard failures: none; soft: ['voxelization cm_game20k grid 64 vs pyrender', 'voxelization cm_game20k grid 196 vs pyrender', 'voxelization java_mv_fast grid 64 vs pyrender', 'voxelization java_mv_fast grid 196 vs pyrender']

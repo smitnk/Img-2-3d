@@ -1,0 +1,25 @@
+{
+ "input": "java_mv_fast.glb",
+ "mesh_objects": 1,
+ "vertices": 176435,
+ "simplified_faces": 49999,
+ "joints": 28,
+ "tokens": 104,
+ "threads": 2,
+ "phases": {
+  "mesh": 0.5,
+  "skeleton encoder": 6.5,
+  "skeleton decoder": 245.1,
+  "voxel skin": 16.4,
+  "skin inputs": 0.8,
+  "skin network": 257.1,
+  "rig + export": 1.8
+ },
+ "peak_rss_gb": {
+  "skeleton": 1.03,
+  "skin": 2.64
+ },
+ "skin_graphs": "parts",
+ "total_seconds": 276.7,
+ "zero_length_bones_nudged": 0
+}

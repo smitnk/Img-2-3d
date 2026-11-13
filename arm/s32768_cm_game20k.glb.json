@@ -1,0 +1,25 @@
+{
+ "input": "cm_game20k.glb",
+ "mesh_objects": 1,
+ "vertices": 36080,
+ "simplified_faces": 42428,
+ "joints": 28,
+ "tokens": 104,
+ "threads": 2,
+ "phases": {
+  "mesh": 0.2,
+  "skeleton encoder": 6.6,
+  "skeleton decoder": 250.5,
+  "voxel skin": 16.0,
+  "skin inputs": 0.8,
+  "skin network": 258.3,
+  "rig + export": 0.5
+ },
+ "peak_rss_gb": {
+  "skeleton": 0.94,
+  "skin": 2.61
+ },
+ "skin_graphs": "parts",
+ "total_seconds": 275.9,
+ "zero_length_bones_nudged": 0
+}

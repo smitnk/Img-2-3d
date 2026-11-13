@@ -1,0 +1,3 @@
+MON 19:41:39 rss_mb=1563 free_mb=13715
+MON 19:42:24 rss_mb=693 free_mb=14309
+MON 19:43:09 rss_mb=917 free_mb=14503

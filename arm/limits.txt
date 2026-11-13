@@ -1,0 +1,2 @@
+cgroup cap: yes
+limits for the comparison runs: cap 3G

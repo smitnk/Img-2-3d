@@ -1,0 +1,33 @@
+RESUME skeleton file /w/work/ae2202bedac85d54/skel.npz
+MEM skin start: rss 0.15GB (anon 0.08 file 0.07) peak 0.15GB
+SKELETON 104 tokens, 28 joints (file ae2202bedac85d54)
+19:57:12 | INFO: Data are loaded, start creating Blender stuff
+19:57:12 | INFO: Blender create Mesh node in_Retopo
+19:57:12 | INFO: glTF import finished in 0.07s
+PHASE mesh: 0.2s
+MEM mesh: rss 0.17GB (anon 0.10 file 0.07) peak 0.18GB
+PHASE voxel skin: 16.0s
+MEM voxel skin: rss 0.18GB (anon 0.11 file 0.07) peak 0.61GB
+PHASE skin inputs: 0.8s
+MEM skin inputs: rss 0.24GB (anon 0.17 file 0.07) peak 0.61GB
+MEM session skin_a: rss 0.25GB (anon 0.16 file 0.08) peak 0.61GB
+MEM skin_a done: rss 0.29GB (anon 0.21 file 0.08) peak 0.73GB
+MEM session skin_pt: rss 0.30GB (anon 0.22 file 0.08) peak 0.73GB
+MEM skin_pt done: rss 0.35GB (anon 0.27 file 0.08) peak 2.61GB
+MEM session skin_head: rss 0.35GB (anon 0.27 file 0.08) peak 2.61GB
+MEM skin_head done: rss 0.36GB (anon 0.28 file 0.08) peak 2.61GB
+PHASE skin network: 258.3s
+MEM skin network: rss 0.33GB (anon 0.25 file 0.08) peak 2.61GB
+20:01:48 | INFO: Starting glTF 2.0 export
+20:01:48 | INFO: Extracting primitive: in_Retopo
+20:01:48 | INFO: Primitives created: 1
+20:01:48 | INFO: Finished glTF 2.0 export in 0.17989134788513184 s
+ERROR Draco mesh compression is not available because library could not be found at /opt/blender/4.2/python/lib/python3.12/site-packages/libextern_draco.so
+
+PHASE rig + export: 0.5s
+MEM rig + export: rss 0.39GB (anon 0.30 file 0.08) peak 2.61GB
+PEAK skin 2.61GB
+RESULT {"input": "cm_game20k.glb", "mesh_objects": 1, "vertices": 36080, "simplified_faces": 42428, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.2, "skeleton encoder": 6.6, "skeleton decoder": 250.5, "voxel skin": 16.0, "skin inputs": 0.8, "skin network": 258.3, "rig + export": 0.5}, "peak_rss_gb": {"skeleton": 0.94, "skin": 2.61}, "skin_graphs": "parts", "total_seconds": 275.9, "zero_length_bones_nudged": 0}
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

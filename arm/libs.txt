@@ -1,0 +1,1 @@
+LIBS numpy 1.26.4 scipy 1.13.1 ort 1.20.0 ['AzureExecutionProvider', 'CPUExecutionProvider']

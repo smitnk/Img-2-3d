@@ -1,0 +1,33 @@
+RESUME skeleton file /w/work/20cfdeb2022a01e0/skel.npz
+MEM skin start: rss 0.15GB (anon 0.08 file 0.07) peak 0.15GB
+SKELETON 104 tokens, 28 joints (file 20cfdeb2022a01e0)
+19:52:35 | INFO: Data are loaded, start creating Blender stuff
+19:52:35 | INFO: Blender create Mesh node 0
+19:52:35 | INFO: glTF import finished in 0.36s
+PHASE mesh: 0.5s
+MEM mesh: rss 0.24GB (anon 0.17 file 0.07) peak 0.27GB
+PHASE voxel skin: 16.4s
+MEM voxel skin: rss 0.24GB (anon 0.17 file 0.07) peak 0.62GB
+PHASE skin inputs: 0.8s
+MEM skin inputs: rss 0.29GB (anon 0.22 file 0.07) peak 0.62GB
+MEM session skin_a: rss 0.30GB (anon 0.22 file 0.08) peak 0.62GB
+MEM skin_a done: rss 0.33GB (anon 0.25 file 0.08) peak 0.77GB
+MEM session skin_pt: rss 0.34GB (anon 0.26 file 0.08) peak 0.77GB
+MEM skin_pt done: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+MEM session skin_head: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+MEM skin_head done: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+PHASE skin network: 257.1s
+MEM skin network: rss 0.31GB (anon 0.22 file 0.08) peak 2.64GB
+19:57:11 | INFO: Starting glTF 2.0 export
+19:57:11 | INFO: Extracting primitive: Mesh_0
+19:57:11 | INFO: Primitives created: 1
+19:57:11 | INFO: Finished glTF 2.0 export in 0.9561035633087158 s
+ERROR Draco mesh compression is not available because library could not be found at /opt/blender/4.2/python/lib/python3.12/site-packages/libextern_draco.so
+
+PHASE rig + export: 1.8s
+MEM rig + export: rss 0.53GB (anon 0.44 file 0.08) peak 2.64GB
+PEAK skin 2.64GB
+RESULT {"input": "java_mv_fast.glb", "mesh_objects": 1, "vertices": 176435, "simplified_faces": 49999, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.5, "skeleton encoder": 6.5, "skeleton decoder": 245.1, "voxel skin": 16.4, "skin inputs": 0.8, "skin network": 257.1, "rig + export": 1.8}, "peak_rss_gb": {"skeleton": 1.03, "skin": 2.64}, "skin_graphs": "parts", "total_seconds": 276.7, "zero_length_bones_nudged": 0}
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

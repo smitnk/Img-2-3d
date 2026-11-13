@@ -1,0 +1,201 @@
+== java_mv_fast:  wall=6:43.50peakRSS_GB=1.81
+MEM skeleton start: rss 0.15GB (anon 0.09 file 0.07) peak 0.15GB
+INPUT 1 mesh object(s), 176435 vertices, 337433 triangles
+MESH 29891 vertices, 49999 faces after merge/simplify
+PHASE mesh: 3.5s
+MEM mesh: rss 0.49GB (anon 0.42 file 0.07) peak 0.50GB
+MEM session skel_encoder.onnx: rss 0.50GB (anon 0.42 file 0.08) peak 0.50GB
+MEM encoder run done: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+PHASE skeleton encoder: 6.5s
+MEM skeleton encoder: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+MEM session skel_decoder.onnx: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+MEM prefill done: rss 0.79GB (anon 0.42 file 0.37) peak 1.01GB
+MEM beam step 1: rss 0.79GB (anon 0.42 file 0.37) peak 1.01GB
+MEM beam step 50: rss 0.85GB (anon 0.48 file 0.37) peak 1.01GB
+MEM beam step 100: rss 0.96GB (anon 0.59 file 0.37) peak 1.02GB
+SKELETON 104 tokens, 28 joints
+PHASE skeleton decoder: 245.1s
+MEM skeleton decoder: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PEAK skeleton 1.03GB
+MEM skin start: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+SKELETON 104 tokens, 28 joints (file 20cfdeb2022a01e0)
+PHASE mesh: 0.4s
+MEM mesh: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PHASE voxel skin: 15.6s
+MEM voxel skin: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PHASE skin inputs: 0.4s
+MEM skin inputs: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM session skin_a: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM skin_a done: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM session skin_pt: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM skin_pt done: rss 0.51GB (anon 0.43 file 0.08) peak 1.81GB
+MEM session skin_head: rss 0.51GB (anon 0.43 file 0.08) peak 1.81GB
+MEM skin_head done: rss 0.53GB (anon 0.45 file 0.08) peak 1.81GB
+PHASE skin network: 127.3s
+MEM skin network: rss 0.53GB (anon 0.45 file 0.08) peak 1.81GB
+PHASE rig + export: 1.9s
+MEM rig + export: rss 0.57GB (anon 0.49 file 0.08) peak 1.81GB
+PEAK skin 1.81GB
+RESULT {"input": "java_mv_fast.glb", "mesh_objects": 1, "vertices": 176435, "simplified_faces": 49999, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.4, "skeleton encoder": 6.5, "skeleton decoder": 245.1, "voxel skin": 15.6, "skin inputs": 0.4, "skin network": 127.3, "rig + export": 1.9}, "peak_rss_gb": {"skeleton": 1.03, "skin": 1.81}, "skin_graphs": "parts", "total_seconds": 401.6, "zero_length_bones_nudged": 0}
+== cm_game20k:  wall=6:42.14peakRSS_GB=1.76
+MEM skeleton start: rss 0.15GB (anon 0.09 file 0.07) peak 0.15GB
+INPUT 1 mesh object(s), 36080 vertices, 42428 triangles
+MESH 21238 vertices, 42428 faces after merge/simplify
+PHASE mesh: 0.2s
+MEM mesh: rss 0.18GB (anon 0.11 file 0.07) peak 0.18GB
+MEM session skel_encoder.onnx: rss 0.39GB (anon 0.31 file 0.08) peak 0.40GB
+MEM encoder run done: rss 0.41GB (anon 0.33 file 0.08) peak 0.90GB
+PHASE skeleton encoder: 6.6s
+MEM skeleton encoder: rss 0.23GB (anon 0.15 file 0.08) peak 0.90GB
+MEM session skel_decoder.onnx: rss 0.23GB (anon 0.15 file 0.08) peak 0.90GB
+MEM prefill done: rss 0.70GB (anon 0.33 file 0.37) peak 0.90GB
+MEM beam step 1: rss 0.70GB (anon 0.33 file 0.37) peak 0.90GB
+MEM beam step 50: rss 0.78GB (anon 0.41 file 0.37) peak 0.90GB
+MEM beam step 100: rss 0.87GB (anon 0.50 file 0.37) peak 0.94GB
+SKELETON 104 tokens, 28 joints
+PHASE skeleton decoder: 250.5s
+MEM skeleton decoder: rss 0.52GB (anon 0.44 file 0.08) peak 0.94GB
+PEAK skeleton 0.94GB
+MEM skin start: rss 0.52GB (anon 0.44 file 0.08) peak 0.94GB
+SKELETON 104 tokens, 28 joints (file ae2202bedac85d54)
+PHASE mesh: 0.1s
+MEM mesh: rss 0.53GB (anon 0.44 file 0.08) peak 0.94GB
+PHASE voxel skin: 16.1s
+MEM voxel skin: rss 0.53GB (anon 0.45 file 0.08) peak 0.94GB
+PHASE skin inputs: 0.4s
+MEM skin inputs: rss 0.53GB (anon 0.45 file 0.08) peak 0.94GB
+MEM session skin_a: rss 0.53GB (anon 0.45 file 0.08) peak 0.94GB
+MEM skin_a done: rss 0.53GB (anon 0.45 file 0.08) peak 0.97GB
+MEM session skin_pt: rss 0.53GB (anon 0.45 file 0.08) peak 0.97GB
+MEM skin_pt done: rss 0.53GB (anon 0.44 file 0.08) peak 1.76GB
+MEM session skin_head: rss 0.53GB (anon 0.44 file 0.08) peak 1.76GB
+MEM skin_head done: rss 0.53GB (anon 0.44 file 0.08) peak 1.76GB
+PHASE skin network: 127.2s
+MEM skin network: rss 0.53GB (anon 0.44 file 0.08) peak 1.76GB
+PHASE rig + export: 0.5s
+MEM rig + export: rss 0.54GB (anon 0.45 file 0.08) peak 1.76GB
+PEAK skin 1.76GB
+RESULT {"input": "cm_game20k.glb", "mesh_objects": 1, "vertices": 36080, "simplified_faces": 42428, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.1, "skeleton encoder": 6.6, "skeleton decoder": 250.5, "voxel skin": 16.1, "skin inputs": 0.4, "skin network": 127.2, "rig + export": 0.5}, "peak_rss_gb": {"skeleton": 0.94, "skin": 1.76}, "skin_graphs": "parts", "total_seconds": 401.7, "zero_length_bones_nudged": 0}
+== resume_cm_game20k:  wall=2:26.72peakRSS_GB=1.74
+RESUME skeleton file /w/work/ae2202bedac85d54/skel.npz
+MEM skin start: rss 0.15GB (anon 0.08 file 0.07) peak 0.15GB
+SKELETON 104 tokens, 28 joints (file ae2202bedac85d54)
+PHASE mesh: 0.2s
+MEM mesh: rss 0.17GB (anon 0.10 file 0.07) peak 0.18GB
+PHASE voxel skin: 15.6s
+MEM voxel skin: rss 0.18GB (anon 0.11 file 0.07) peak 0.61GB
+PHASE skin inputs: 0.4s
+MEM skin inputs: rss 0.20GB (anon 0.13 file 0.07) peak 0.61GB
+MEM session skin_a: rss 0.22GB (anon 0.14 file 0.08) peak 0.61GB
+MEM skin_a done: rss 0.27GB (anon 0.18 file 0.08) peak 0.71GB
+MEM session skin_pt: rss 0.27GB (anon 0.18 file 0.08) peak 0.71GB
+MEM skin_pt done: rss 0.32GB (anon 0.23 file 0.08) peak 1.74GB
+MEM session skin_head: rss 0.32GB (anon 0.23 file 0.08) peak 1.74GB
+MEM skin_head done: rss 0.32GB (anon 0.23 file 0.08) peak 1.74GB
+PHASE skin network: 129.5s
+MEM skin network: rss 0.25GB (anon 0.17 file 0.08) peak 1.74GB
+PHASE rig + export: 0.5s
+MEM rig + export: rss 0.31GB (anon 0.23 file 0.08) peak 1.74GB
+PEAK skin 1.74GB
+RESULT {"input": "cm_game20k.glb", "mesh_objects": 1, "vertices": 36080, "simplified_faces": 42428, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.2, "skeleton encoder": 6.6, "skeleton decoder": 250.5, "voxel skin": 15.6, "skin inputs": 0.4, "skin network": 129.5, "rig + export": 0.5}, "peak_rss_gb": {"skeleton": 0.94, "skin": 1.74}, "skin_graphs": "parts", "total_seconds": 146.3, "zero_length_bones_nudged": 0}
+== beams15_cm_game20k:  wall=9:14.05peakRSS_GB=1.76
+MEM skeleton start: rss 0.15GB (anon 0.09 file 0.07) peak 0.15GB
+INPUT 1 mesh object(s), 36080 vertices, 42428 triangles
+MESH 21238 vertices, 42428 faces after merge/simplify
+PHASE mesh: 0.2s
+MEM mesh: rss 0.18GB (anon 0.11 file 0.07) peak 0.18GB
+MEM session skel_encoder.onnx: rss 0.39GB (anon 0.31 file 0.08) peak 0.40GB
+MEM encoder run done: rss 0.41GB (anon 0.33 file 0.08) peak 0.90GB
+PHASE skeleton encoder: 6.5s
+MEM skeleton encoder: rss 0.23GB (anon 0.15 file 0.08) peak 0.90GB
+MEM session skel_decoder.onnx: rss 0.23GB (anon 0.15 file 0.08) peak 0.90GB
+MEM prefill done: rss 0.70GB (anon 0.33 file 0.37) peak 0.90GB
+MEM beam step 1: rss 0.70GB (anon 0.33 file 0.37) peak 0.90GB
+MEM beam step 50: rss 0.86GB (anon 0.49 file 0.37) peak 0.98GB
+MEM beam step 100: rss 1.06GB (anon 0.69 file 0.37) peak 1.18GB
+SKELETON 104 tokens, 28 joints
+PHASE skeleton decoder: 401.9s
+MEM skeleton decoder: rss 0.46GB (anon 0.38 file 0.08) peak 1.20GB
+PEAK skeleton 1.2GB
+MEM skin start: rss 0.46GB (anon 0.38 file 0.08) peak 1.20GB
+SKELETON 104 tokens, 28 joints (file ae2202bedac85d54)
+PHASE mesh: 0.1s
+MEM mesh: rss 0.46GB (anon 0.38 file 0.08) peak 1.20GB
+PHASE voxel skin: 16.5s
+MEM voxel skin: rss 0.47GB (anon 0.38 file 0.08) peak 1.20GB
+PHASE skin inputs: 0.4s
+MEM skin inputs: rss 0.47GB (anon 0.39 file 0.08) peak 1.20GB
+MEM session skin_a: rss 0.47GB (anon 0.39 file 0.08) peak 1.20GB
+MEM skin_a done: rss 0.47GB (anon 0.38 file 0.08) peak 1.20GB
+MEM session skin_pt: rss 0.47GB (anon 0.38 file 0.08) peak 1.20GB
+MEM skin_pt done: rss 0.55GB (anon 0.46 file 0.08) peak 1.76GB
+MEM session skin_head: rss 0.55GB (anon 0.46 file 0.08) peak 1.76GB
+MEM skin_head done: rss 0.55GB (anon 0.46 file 0.08) peak 1.76GB
+PHASE skin network: 127.4s
+MEM skin network: rss 0.45GB (anon 0.37 file 0.08) peak 1.76GB
+PHASE rig + export: 0.5s
+MEM rig + export: rss 0.46GB (anon 0.38 file 0.08) peak 1.76GB
+PEAK skin 1.76GB
+RESULT {"input": "cm_game20k.glb", "mesh_objects": 1, "vertices": 36080, "simplified_faces": 42428, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.1, "skeleton encoder": 6.5, "skeleton decoder": 401.9, "voxel skin": 16.5, "skin inputs": 0.4, "skin network": 127.4, "rig + export": 0.5}, "peak_rss_gb": {"skeleton": 1.2, "skin": 1.76}, "skin_graphs": "parts", "total_seconds": 553.7, "zero_length_bones_nudged": 0}
+== s32768_java_mv_fast:  wall=4:37.20peakRSS_GB=2.64
+RESUME skeleton file /w/work/20cfdeb2022a01e0/skel.npz
+MEM skin start: rss 0.15GB (anon 0.08 file 0.07) peak 0.15GB
+SKELETON 104 tokens, 28 joints (file 20cfdeb2022a01e0)
+PHASE mesh: 0.5s
+MEM mesh: rss 0.24GB (anon 0.17 file 0.07) peak 0.27GB
+PHASE voxel skin: 16.4s
+MEM voxel skin: rss 0.24GB (anon 0.17 file 0.07) peak 0.62GB
+PHASE skin inputs: 0.8s
+MEM skin inputs: rss 0.29GB (anon 0.22 file 0.07) peak 0.62GB
+MEM session skin_a: rss 0.30GB (anon 0.22 file 0.08) peak 0.62GB
+MEM skin_a done: rss 0.33GB (anon 0.25 file 0.08) peak 0.77GB
+MEM session skin_pt: rss 0.34GB (anon 0.26 file 0.08) peak 0.77GB
+MEM skin_pt done: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+MEM session skin_head: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+MEM skin_head done: rss 0.39GB (anon 0.31 file 0.08) peak 2.64GB
+PHASE skin network: 257.1s
+MEM skin network: rss 0.31GB (anon 0.22 file 0.08) peak 2.64GB
+PHASE rig + export: 1.8s
+MEM rig + export: rss 0.53GB (anon 0.44 file 0.08) peak 2.64GB
+PEAK skin 2.64GB
+RESULT {"input": "java_mv_fast.glb", "mesh_objects": 1, "vertices": 176435, "simplified_faces": 49999, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.5, "skeleton encoder": 6.5, "skeleton decoder": 245.1, "voxel skin": 16.4, "skin inputs": 0.8, "skin network": 257.1, "rig + export": 1.8}, "peak_rss_gb": {"skeleton": 1.03, "skin": 2.64}, "skin_graphs": "parts", "total_seconds": 276.7, "zero_length_bones_nudged": 0}
+== s32768_cm_game20k:  wall=4:36.30peakRSS_GB=2.61
+RESUME skeleton file /w/work/ae2202bedac85d54/skel.npz
+MEM skin start: rss 0.15GB (anon 0.08 file 0.07) peak 0.15GB
+SKELETON 104 tokens, 28 joints (file ae2202bedac85d54)
+PHASE mesh: 0.2s
+MEM mesh: rss 0.17GB (anon 0.10 file 0.07) peak 0.18GB
+PHASE voxel skin: 16.0s
+MEM voxel skin: rss 0.18GB (anon 0.11 file 0.07) peak 0.61GB
+PHASE skin inputs: 0.8s
+MEM skin inputs: rss 0.24GB (anon 0.17 file 0.07) peak 0.61GB
+MEM session skin_a: rss 0.25GB (anon 0.16 file 0.08) peak 0.61GB
+MEM skin_a done: rss 0.29GB (anon 0.21 file 0.08) peak 0.73GB
+MEM session skin_pt: rss 0.30GB (anon 0.22 file 0.08) peak 0.73GB
+MEM skin_pt done: rss 0.35GB (anon 0.27 file 0.08) peak 2.61GB
+MEM session skin_head: rss 0.35GB (anon 0.27 file 0.08) peak 2.61GB
+MEM skin_head done: rss 0.36GB (anon 0.28 file 0.08) peak 2.61GB
+PHASE skin network: 258.3s
+MEM skin network: rss 0.33GB (anon 0.25 file 0.08) peak 2.61GB
+PHASE rig + export: 0.5s
+MEM rig + export: rss 0.39GB (anon 0.30 file 0.08) peak 2.61GB
+PEAK skin 2.61GB
+RESULT {"input": "cm_game20k.glb", "mesh_objects": 1, "vertices": 36080, "simplified_faces": 42428, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.2, "skeleton encoder": 6.6, "skeleton decoder": 250.5, "voxel skin": 16.0, "skin inputs": 0.8, "skin network": 258.3, "rig + export": 0.5}, "peak_rss_gb": {"skeleton": 0.94, "skin": 2.61}, "skin_graphs": "parts", "total_seconds": 275.9, "zero_length_bones_nudged": 0}
+== limits / memory budget
+cgroup cap: yes
+limits for the comparison runs: cap 3G
+BUDGET java_mv_fast: phases_s={'mesh': 0.4, 'skeleton encoder': 6.5, 'skeleton decoder': 245.1, 'voxel skin': 15.6, 'skin inputs': 0.4, 'skin network': 127.3, 'rig + export': 1.9} peak_rss_gb={'skeleton': 1.03, 'skin': 1.81} max_process_rss_gb=1.81 total_s=401.6 graphs=parts
+BUDGET cm_game20k: phases_s={'mesh': 0.1, 'skeleton encoder': 6.6, 'skeleton decoder': 250.5, 'voxel skin': 16.1, 'skin inputs': 0.4, 'skin network': 127.2, 'rig + export': 0.5} peak_rss_gb={'skeleton': 0.94, 'skin': 1.76} max_process_rss_gb=1.76 total_s=401.7 graphs=parts
+BUDGET resume_cm_game20k: phases_s={'mesh': 0.2, 'skeleton encoder': 6.6, 'skeleton decoder': 250.5, 'voxel skin': 15.6, 'skin inputs': 0.4, 'skin network': 129.5, 'rig + export': 0.5} peak_rss_gb={'skeleton': 0.94, 'skin': 1.74} max_process_rss_gb=1.74 total_s=146.3 graphs=parts
+== compare with the torch reference rigs
+CMP {"label": "java_mv_fast", "bones_ref": 28, "bones_new": 28, "vertices_ref": 176467, "vertices_new": 176467, "joint_chamfer_over_diag": 0.0042, "joint_hausdorff_over_diag": 0.0188, "bone_len_min_over_diag_ref": 0.00971, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.00926, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.1843, "weight_abs_diff_mean": 0.006584, "argmax_bone_agreement_pct": 90.32, "skin_centroid_err_mean": 0.0062, "skin_centroid_err_p95": 0.0269, "skin_centroid_err_max": 0.1182, "dominant_bone_dist_over_diag_mean_ref": 0.1591, "dominant_bone_dist_over_diag_mean_new": 0.1583}
+CMP {"label": "cm_game20k", "bones_ref": 28, "bones_new": 28, "vertices_ref": 36419, "vertices_new": 36419, "joint_chamfer_over_diag": 0.0053, "joint_hausdorff_over_diag": 0.0146, "bone_len_min_over_diag_ref": 0.00926, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.01243, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.2027, "weight_abs_diff_mean": 0.007241, "argmax_bone_agreement_pct": 90.76, "skin_centroid_err_mean": 0.006, "skin_centroid_err_p95": 0.0179, "skin_centroid_err_max": 0.091, "dominant_bone_dist_over_diag_mean_ref": 0.1549, "dominant_bone_dist_over_diag_mean_new": 0.1548}
+CMP {"label": "beams15_cm_game20k", "bones_ref": 28, "bones_new": 28, "vertices_ref": 36419, "vertices_new": 36419, "joint_chamfer_over_diag": 0.0052, "joint_hausdorff_over_diag": 0.0149, "bone_len_min_over_diag_ref": 0.00926, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.01243, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.269, "weight_abs_diff_mean": 0.009609, "argmax_bone_agreement_pct": 84.94, "skin_centroid_err_mean": 0.006, "skin_centroid_err_p95": 0.0169, "skin_centroid_err_max": 0.0966, "dominant_bone_dist_over_diag_mean_ref": 0.1549, "dominant_bone_dist_over_diag_mean_new": 0.1551}
+CMP {"label": "s32768_java_mv_fast", "bones_ref": 28, "bones_new": 28, "vertices_ref": 176467, "vertices_new": 176467, "joint_chamfer_over_diag": 0.0042, "joint_hausdorff_over_diag": 0.0188, "bone_len_min_over_diag_ref": 0.00971, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.00926, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.1909, "weight_abs_diff_mean": 0.00682, "argmax_bone_agreement_pct": 89.86, "skin_centroid_err_mean": 0.0062, "skin_centroid_err_p95": 0.0267, "skin_centroid_err_max": 0.1191, "dominant_bone_dist_over_diag_mean_ref": 0.1591, "dominant_bone_dist_over_diag_mean_new": 0.1583}
+CMP {"label": "s32768_cm_game20k", "bones_ref": 28, "bones_new": 28, "vertices_ref": 36419, "vertices_new": 36419, "joint_chamfer_over_diag": 0.0053, "joint_hausdorff_over_diag": 0.0146, "bone_len_min_over_diag_ref": 0.00926, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.01243, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.1774, "weight_abs_diff_mean": 0.006335, "argmax_bone_agreement_pct": 91.38, "skin_centroid_err_mean": 0.0057, "skin_centroid_err_p95": 0.017, "skin_centroid_err_max": 0.0842, "dominant_bone_dist_over_diag_mean_ref": 0.1549, "dominant_bone_dist_over_diag_mean_new": 0.1548}
+CMP {"label": "16384_vs_32768_java_mv_fast", "bones_ref": 28, "bones_new": 28, "vertices_ref": 176467, "vertices_new": 176467, "joint_chamfer_over_diag": 0.0, "joint_hausdorff_over_diag": 0.0, "bone_len_min_over_diag_ref": 0.00926, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.00926, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.0975, "weight_abs_diff_mean": 0.003483, "argmax_bone_agreement_pct": 95.15, "skin_centroid_err_mean": 0.0028, "skin_centroid_err_p95": 0.0116, "skin_centroid_err_max": 0.0921, "dominant_bone_dist_over_diag_mean_ref": 0.1583, "dominant_bone_dist_over_diag_mean_new": 0.1583}
+CMP {"label": "16384_vs_32768_cm_game20k", "bones_ref": 28, "bones_new": 28, "vertices_ref": 36419, "vertices_new": 36419, "joint_chamfer_over_diag": 0.0, "joint_hausdorff_over_diag": 0.0, "bone_len_min_over_diag_ref": 0.01243, "leaf_bones_ref": 5, "weight_sum_min_max_ref": [1.0, 1.0], "max_influences_ref": 4, "unweighted_vertices_ref": 0, "bone_len_min_over_diag_new": 0.01243, "leaf_bones_new": 5, "weight_sum_min_max_new": [1.0, 1.0], "max_influences_new": 4, "unweighted_vertices_new": 0, "vertex_order_equal": true, "weight_l1_per_vertex_mean": 0.0904, "weight_abs_diff_mean": 0.00323, "argmax_bone_agreement_pct": 95.23, "skin_centroid_err_mean": 0.0026, "skin_centroid_err_p95": 0.0107, "skin_centroid_err_max": 0.0965, "dominant_bone_dist_over_diag_mean_ref": 0.1548, "dominant_bone_dist_over_diag_mean_new": 0.1548}
+== blender / libs
+BLENDERPY 3.12.3 numpy 1.26.4 (3, 12)
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+LIBS numpy 1.26.4 scipy 1.13.1 ort 1.20.0 ['AzureExecutionProvider', 'CPUExecutionProvider']

@@ -1,0 +1,23 @@
+	Command being timed: "sudo systemd-run --scope -q -p MemoryMax=3G -p MemorySwapMax=0 taskset -c 0,1 chroot /home/runner/work/Img-2-3d/Img-2-3d/x env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/phone/unirig_phone.py -- --in /w/in/java_mv_fast.glb --out /w/out/s32768_java_mv_fast.glb --models /w/models --pylibs /w/pylibs --work /w/work --threads 2 --skin-samples 32768 --models /w/models32"
+	User time (seconds): 480.75
+	System time (seconds): 41.90
+	Percent of CPU this job got: 188%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:37.20
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2772592
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 29266339
+	Voluntary context switches: 2310
+	Involuntary context switches: 3563
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 23128
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

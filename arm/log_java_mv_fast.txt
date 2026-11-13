@@ -1,0 +1,56 @@
+MEM skeleton start: rss 0.15GB (anon 0.09 file 0.07) peak 0.15GB
+19:27:31 | INFO: Data are loaded, start creating Blender stuff
+19:27:31 | INFO: Blender create Mesh node 0
+19:27:31 | INFO: glTF import finished in 0.42s
+INPUT 1 mesh object(s), 176435 vertices, 337433 triangles
+MESH 29891 vertices, 49999 faces after merge/simplify
+PHASE mesh: 3.5s
+MEM mesh: rss 0.49GB (anon 0.42 file 0.07) peak 0.50GB
+MEM session skel_encoder.onnx: rss 0.50GB (anon 0.42 file 0.08) peak 0.50GB
+MEM encoder run done: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+PHASE skeleton encoder: 6.5s
+MEM skeleton encoder: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+MEM session skel_decoder.onnx: rss 0.49GB (anon 0.41 file 0.08) peak 1.01GB
+MEM prefill done: rss 0.79GB (anon 0.42 file 0.37) peak 1.01GB
+beam step 1 best -0.00
+MEM beam step 1: rss 0.79GB (anon 0.42 file 0.37) peak 1.01GB
+beam step 50 best -22.06
+MEM beam step 50: rss 0.85GB (anon 0.48 file 0.37) peak 1.01GB
+beam step 100 best -52.68
+MEM beam step 100: rss 0.96GB (anon 0.59 file 0.37) peak 1.02GB
+SKELETON 104 tokens, 28 joints
+PHASE skeleton decoder: 245.1s
+MEM skeleton decoder: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PEAK skeleton 1.03GB
+MEM skin start: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+SKELETON 104 tokens, 28 joints (file 20cfdeb2022a01e0)
+19:31:46 | INFO: Data are loaded, start creating Blender stuff
+19:31:46 | INFO: Blender create Mesh node 0
+19:31:46 | INFO: glTF import finished in 0.34s
+PHASE mesh: 0.4s
+MEM mesh: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PHASE voxel skin: 15.6s
+MEM voxel skin: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+PHASE skin inputs: 0.4s
+MEM skin inputs: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM session skin_a: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM skin_a done: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM session skin_pt: rss 0.50GB (anon 0.42 file 0.08) peak 1.03GB
+MEM skin_pt done: rss 0.51GB (anon 0.43 file 0.08) peak 1.81GB
+MEM session skin_head: rss 0.51GB (anon 0.43 file 0.08) peak 1.81GB
+MEM skin_head done: rss 0.53GB (anon 0.45 file 0.08) peak 1.81GB
+PHASE skin network: 127.3s
+MEM skin network: rss 0.53GB (anon 0.45 file 0.08) peak 1.81GB
+19:34:10 | INFO: Starting glTF 2.0 export
+19:34:11 | INFO: Extracting primitive: Mesh_0
+19:34:11 | INFO: Primitives created: 1
+19:34:11 | INFO: Finished glTF 2.0 export in 0.9274895191192627 s
+ERROR Draco mesh compression is not available because library could not be found at /opt/blender/4.2/python/lib/python3.12/site-packages/libextern_draco.so
+
+PHASE rig + export: 1.9s
+MEM rig + export: rss 0.57GB (anon 0.49 file 0.08) peak 1.81GB
+PEAK skin 1.81GB
+RESULT {"input": "java_mv_fast.glb", "mesh_objects": 1, "vertices": 176435, "simplified_faces": 49999, "joints": 28, "tokens": 104, "threads": 2, "phases": {"mesh": 0.4, "skeleton encoder": 6.5, "skeleton decoder": 245.1, "voxel skin": 15.6, "skin inputs": 0.4, "skin network": 127.3, "rig + export": 1.9}, "peak_rss_gb": {"skeleton": 1.03, "skin": 1.81}, "skin_graphs": "parts", "total_seconds": 401.6, "zero_length_bones_nudged": 0}
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

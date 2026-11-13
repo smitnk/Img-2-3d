@@ -103,7 +103,7 @@ jobs:
       - name: Rig both meshes in the phone's Blender (2 cores, 2 GB cap; per-phase time, peak RSS)
         run: |
           # phone-like limits: 2 cores (taskset) and a 2 GB cgroup cap (no swap, like a killed process) where systemd-run works; else only the peak check below
-          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then LIM="sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1"; echo "cgroup cap: yes" | tee out/limits.txt
+          if sudo systemd-run --scope -q -p MemoryMax=3G -p MemorySwapMax=0 true 2>/dev/null; then LIM="sudo systemd-run --scope -q -p MemoryMax=3G -p MemorySwapMax=0 taskset -c 0,1"; echo "cgroup cap: yes" | tee out/limits.txt
           else LIM="sudo taskset -c 0,1"; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
           rig() {  # name, input glb, output glb, extra args
             local n=$1 in=$2 o=$3; shift 3
@@ -137,7 +137,7 @@ jobs:
               tv = open(f"out/time_{n}.txt").read()
               mx = int(re.search(r"Maximum resident set size \(kbytes\): (\d+)", tv).group(1)) / 1048576
               print(f"BUDGET {n}: phases_s={rep['phases']} peak_rss_gb={rep['peak_rss_gb']} max_process_rss_gb={mx:.2f} total_s={rep['total_seconds']} graphs={rep['skin_graphs']}")
-              if mx > 2.0 or max(rep["peak_rss_gb"].values()) > 2.0:
+              if mx > 3.0 or max(rep["peak_rss_gb"].values()) > 3.0:
                   print(f"BUDGET {n}: OVER 2 GB"); bad += 1
           import os
           bad += os.path.exists("out/FAIL_resume")

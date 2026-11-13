@@ -86,7 +86,7 @@ class CurioPack(context: Context) : AssetPack(File(context.filesDir, "curiomesh"
 
 /** UniRig on the phone (ONNX skeleton + skin models ~GB, onnxruntime/scipy libs, MIT), for Rig with UniRig; release unirig-v1 (unirig-pack.yml). */
 class UnirigPack(context: Context) : AssetPack(File(context.filesDir, "unirig"), BuildConfig.UNIRIG_BASE_URL, "unirig_info.json",
-    3, "unirig_py.zip") // v2: weights as external data (.onnx.data), skin network in three graphs, v3: skeleton in-process + file-backed decoder
+    4, "unirig_py.zip") // v2: weights as external data (.onnx.data), skin network in three graphs, v3: skeleton in-process + file-backed decoder, v4: int8 skeleton decoder + 8 beams (phone RAM)
 
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")

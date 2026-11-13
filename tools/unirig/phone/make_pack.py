@@ -45,6 +45,16 @@ for n in [n for n in m.graph.node if n.op_type == "Constant" and n.attribute[0].
     t.name = n.output[0]
     m.graph.initializer.append(t)
     m.graph.node.remove(n)
+from onnx import numpy_helper  # noqa: E402  # q/k/v/out projections are MatMul(x, Transpose(weight)): fold the transpose so the weight is a direct initializer
+ini = {t.name: t for t in m.graph.initializer}
+for n in [n for n in m.graph.node if n.op_type == "Transpose" and n.input[0] in ini]:
+    w = numpy_helper.to_array(ini[n.input[0]])
+    perm = list(n.attribute[0].ints) if n.attribute else None
+    m.graph.initializer.append(numpy_helper.from_array(np.ascontiguousarray(w.transpose(perm)), n.output[0]))
+    m.graph.node.remove(n)
+used = {i for n in m.graph.node for i in n.input}
+for t in [t for t in m.graph.initializer if t.name not in used and t.name not in [o.name for o in m.graph.output]]:
+    m.graph.initializer.remove(t)
 onnx.save(m, dec + ".init.onnx")  # < 2 GB protobuf: fp32 decoder is ~1.4 GB
 del m
 quantize_dynamic(dec + ".init.onnx", tmp, weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul", "Gemm"], per_channel=False)

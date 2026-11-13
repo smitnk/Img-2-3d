@@ -16,7 +16,7 @@ def load(path):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
     arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
-    mesh = next(o for o in bpy.data.objects if o.type == "MESH")
+    mesh = max((o for o in bpy.data.objects if o.type == "MESH"), key=lambda o: len(o.data.vertices))  # not the glTF importer's 42-vertex bone shape
     bones = list(arm.data.bones)
     heads = np.array([np.array(arm.matrix_world @ b.head_local) for b in bones])
     parents = [b.parent.name if b.parent else None for b in bones]

@@ -1,0 +1,4 @@
+armparts_java_mv_fast peakRSS_GB=1.65 wall=1:04.03
+arm_java_mv_fast peakRSS_GB=2.74 wall=2:19.35
+armparts_cm_game20k peakRSS_GB=1.63 wall=1:09.79
+arm_cm_game20k peakRSS_GB=2.74 wall=2:17.80

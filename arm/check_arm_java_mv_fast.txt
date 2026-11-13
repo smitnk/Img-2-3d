@@ -1,0 +1,8 @@
+ORT session ready 4.6s rss=1.52GB hwm=1.56GB
+ORT run 0 67.3s hwm=2.71GB rss start=1.52GB peak=2.71GB@23s end=1.59GB
+ORT run 1 67.0s hwm=2.74GB rss start=1.59GB peak=2.74GB@8s end=1.62GB
+ONNXDIFF arm_java_mv_fast skin: max=1.084e-01 mean=3.249e-05 refmax=1.000e+00 shape=(16384, 28)
+ONNXDIFF arm_java_mv_fast dbg_global: max=1.377e-05 mean=5.246e-07 refmax=4.750e+00 shape=(1, 1024, 768)
+ONNXDIFF arm_java_mv_fast dbg_bone: max=7.629e-06 mean=3.651e-07 refmax=1.198e+01 shape=(1, 28, 768)
+ONNXDIFF arm_java_mv_fast dbg_ptv3: max=3.816e+01 mean=9.140e-02 refmax=2.175e+02 shape=(16384, 384)
+ONNXPEAK arm_java_mv_fast hwm_gb=2.74

@@ -1,0 +1,4 @@
+aarch64
+               total        used        free      shared  buff/cache   available
+Mem:              15           1          10           0           4          14
+Swap:              2           0           2

@@ -1,0 +1,23 @@
+	Command being timed: "python tools/unirig/onnx_skin.py check --onnx onnx_out/skin.onnx --inputs onnx_out/inputs_cm_game20k.npz --ref onnx_out/ref_cm_game20k.npz --label arm_cm_game20k --repeat 2"
+	User time (seconds): 476.09
+	System time (seconds): 40.37
+	Percent of CPU this job got: 374%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:17.80
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2868880
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 28070633
+	Voluntary context switches: 3547
+	Involuntary context switches: 74692
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 24
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,8 @@
+ORT session ready 4.6s rss=1.52GB hwm=1.56GB
+ORT run 0 66.8s hwm=2.71GB rss start=1.52GB peak=2.71GB@20s end=1.59GB
+ORT run 1 66.0s hwm=2.74GB rss start=1.59GB peak=2.74GB@8s end=1.62GB
+ONNXDIFF arm_cm_game20k skin: max=4.610e-02 mean=4.771e-05 refmax=9.998e-01 shape=(16384, 28)
+ONNXDIFF arm_cm_game20k dbg_global: max=1.013e-05 mean=4.456e-07 refmax=4.791e+00 shape=(1, 1024, 768)
+ONNXDIFF arm_cm_game20k dbg_bone: max=4.768e-06 mean=3.023e-07 refmax=1.147e+01 shape=(1, 28, 768)
+ONNXDIFF arm_cm_game20k dbg_ptv3: max=3.090e+01 mean=2.016e-01 refmax=2.112e+02 shape=(16384, 384)
+ONNXPEAK arm_cm_game20k hwm_gb=2.74

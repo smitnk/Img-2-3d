@@ -38,8 +38,18 @@ if K.has_parts(a.out):  # the parts replace the monolith (same weights, split): 
 # int8 weights for the decoder (fp32 + beam KV cache got Blender killed on the phone); encoder / skin stay fp32; embed.npy is separate
 from onnxruntime.quantization import QuantType, quantize_dynamic  # noqa: E402
 dec, tmp = f"{a.out}/skel_decoder.onnx", f"{a.out}/_q.onnx"
-quantize_dynamic(dec, tmp, weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul", "Gemm"], per_channel=False)
+import onnx  # noqa: E402
+m = onnx.load(dec)  # the legacy exporter keeps the weights as Constant nodes, which quantize_dynamic ignores: make the big ones initializers
+for n in [n for n in m.graph.node if n.op_type == "Constant" and n.attribute[0].name == "value" and n.attribute[0].t.ByteSize() > 1024]:
+    t = n.attribute[0].t
+    t.name = n.output[0]
+    m.graph.initializer.append(t)
+    m.graph.node.remove(n)
+onnx.save(m, dec + ".init.onnx")  # < 2 GB protobuf: fp32 decoder is ~1.4 GB
+del m
+quantize_dynamic(dec + ".init.onnx", tmp, weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul", "Gemm"], per_channel=False)
 os.remove(dec)
+os.remove(dec + ".init.onnx")
 if os.path.exists(dec + ".data"):
     os.remove(dec + ".data")
 os.replace(tmp, dec)

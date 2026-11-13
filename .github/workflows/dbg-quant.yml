@@ -3,15 +3,15 @@ on: { workflow_dispatch: {} }
 env: { GH_TOKEN: "${{ github.token }}", GITHUB_REPOSITORY: "${{ github.repository }}" }
 jobs:
   q:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - run: |
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skel.yml onnx-skel skel
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin
           ls -la skel | head -20
-          pip install -q numpy onnx onnxruntime==1.20.0
+          pip install -q --break-system-packages numpy onnx onnxruntime==1.20.0
           echo "--- BEFORE"; python tools/unirig/phone/dbg_quant.py skel/skel_decoder.onnx
           python tools/unirig/phone/make_pack.py --skel skel --skin skin --out pack | tail -8
           ls -la pack
-          echo "--- AFTER"; python tools/unirig/phone/dbg_quant.py pack/skel_decoder.onnx
+          python3 -c "import os;print(os.path.getsize('pack/skel_decoder.onnx.data'))"; echo "--- AFTER"; python tools/unirig/phone/dbg_quant.py pack/skel_decoder.onnx

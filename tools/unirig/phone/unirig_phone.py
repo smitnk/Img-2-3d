@@ -10,7 +10,7 @@ Pipeline = UniRig @6793c66 (extract.sh -> generate_skeleton.sh -> generate_skin.
   glTF import, meshes baked to world space -> trimesh-style vertex merge, Blender Decimate to <= 50000 faces (fast_simplification stand-in)
   -> normals -> affine into [-1,1]^3 -> 65536 samples (RandomState(seed), UniRig's draw order) -> skel_encoder -> 15-beam sampling over
   skel_decoder -> detokenize (bone_i names) -> tails, affine again (mesh + joints) -> voxel skin (ray-cast depth images, scipy Dijkstra)
-  -> 32768 samples -> PTv3 serialization (numpy) -> skin.onnx -> reskin onto the mesh vertices -> nearest vertex of every ORIGINAL
+  -> --skin-samples (16384; the graphs have N baked in, 32768 needs the older graphs) samples -> PTv3 serialization (numpy) -> skin.onnx -> reskin onto the mesh vertices -> nearest vertex of every ORIGINAL
   vertex, top-4 weights -> armature (bone_i, roll 0, unconnected) + vertex groups -> GLB.
 Memory/CPU policy for a phone: --phase all runs the skeleton (mesh -> skeleton file <work>/<input hash>/skel.npz) in its OWN Blender process, so
 everything it used is returned to the OS before the skin phase starts in this one; a skel.npz of the same input (hash of the GLB + seed + faces)
@@ -47,6 +47,7 @@ def parse_args():
     p.add_argument("--beams", type=int, default=8, help="skeleton beam count (fewer = less memory/time, lower quality; 15 = UniRig default)")
     p.add_argument("--max-faces", type=int, default=50000)
     p.add_argument("--voxel-grid", type=int, default=196)
+    p.add_argument("--skin-samples", type=int, default=16384, help="points the skin network sees; must equal the N the skin graphs were exported with (pack v5: 16384, v4: 32768)")
     return p.parse_args(argv)
 
 
@@ -305,7 +306,7 @@ def main():
         o += len(ob.data.vertices)
     phase("mesh", t0)
 
-    # ---- 3. skin inputs: tails, second affine (mesh + joints), voxel skin, 32768 samples, serialization
+    # ---- 3. skin inputs: tails, second affine (mesh + joints), voxel skin, --skin-samples (a quarter of them are mesh vertices), serialization
     t0 = time.time()
     joints, tails = sk_joints.astype(np.float32), P.connect_tails(sk_joints, sk_tails, sk_parents).astype(np.float32)
     rs = np.random.RandomState(a.seed)
@@ -313,7 +314,7 @@ def main():
     vskin = P.voxel_skin_weights(V2, F, joints2, bvh_cast_factory, grid=a.voxel_grid).astype(np.float32)
     phase("voxel skin", t0)
     t0 = time.time()
-    Vs, Ns, Ss = (x.astype(np.float32) for x in P.sample_mix(rs, V2, VN, F, FN, 32768, 8192, vskin))
+    Vs, Ns, Ss = (x.astype(np.float32) for x in P.sample_mix(rs, V2, VN, F, FN, a.skin_samples, a.skin_samples // 4, vskin))
     ser = Z.serialize(Vs)
     perm = np.random.RandomState(a.seed).permutation(4)  # PTv3 shuffle_orders
     ser["order"], ser["inverse"] = ser["order"][perm], ser["inverse"][perm]

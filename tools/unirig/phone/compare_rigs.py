@@ -67,6 +67,11 @@ def main():
         kd.balance()
         idx = np.array([kd.find(v)[1] for v in R["V"]])
         out["vertex_order_equal"] = False
+    if R["names"] == N["names"]:  # same skeleton (e.g. 16384 vs 32768 samples with one skeleton file): compare the weights themselves
+        Wn = N["W"][idx]
+        out["weight_l1_per_vertex_mean"] = round(float(np.abs(R["W"] - Wn).sum(1).mean()), 4)
+        out["weight_abs_diff_mean"] = round(float(np.abs(R["W"] - Wn).mean()), 6)
+        out["argmax_bone_agreement_pct"] = round(float((R["W"].argmax(1) == Wn.argmax(1)).mean() * 100), 2)
     cen = lambda X: (X["W"] @ X["heads"]) / np.maximum(X["W"].sum(1, keepdims=True), 1e-9)  # where the vertex's weights point
     e = np.linalg.norm(cen(R) - cen(N)[idx], axis=1) / diag
     out.update(skin_centroid_err_mean=round(float(e.mean()), 4), skin_centroid_err_p95=round(float(np.percentile(e, 95)), 4),

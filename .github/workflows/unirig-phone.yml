@@ -12,6 +12,7 @@ on:
     inputs:
       skel_run: { description: "run id of unirig-onnx-skel.yml (default: newest with a live artifact)", required: false }
       skin_run: { description: "run id of unirig-onnx-skin.yml (default: newest with a live artifact)", required: false }
+      skin32_run: { description: "run id of an unirig-onnx-skin.yml run from before N=16384 (32768-point graphs) for the quality comparison run", required: false, default: "43251457492" }
 permissions:
   contents: write
   actions: read
@@ -100,13 +101,19 @@ jobs:
           bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin "${{ inputs.skin_run }}"
           pip install -q --break-system-packages numpy onnx onnxruntime==$ORT_VERSION && python3 tools/unirig/phone/make_pack.py --skel skel --skin skin --out w/models | tee out/pack.txt
           cat w/models/info.json | tr -d '\n ' ; echo; ls -la w/models | head -8
+          # comparison pack: the same files, but the 32768-point skin graphs of an older export (only skin_*.onnx[.data] differ); optional
+          if bash tools/unirig/phone/fetch_artifact.sh unirig-onnx-skin.yml unirig-skin-onnx skin32 "${{ inputs.skin32_run || '43251457492' }}"; then
+            cp -r w/models w/models32 && rm -f w/models32/skin_*.onnx* && cp skin32/skin_*.onnx* w/models32/ && ls -la w/models32 | grep skin_ && touch w/have32
+          else echo "no 32768-point skin artifact: comparison runs are skipped"; fi
       - name: Rig both meshes in the phone's Blender (2 cores, 2 GB cap; per-phase time, peak RSS)
         run: |
           # phone-like limits: 2 cores (taskset) and a 2 GB cgroup cap (no swap, like a killed process) where systemd-run works; else only the peak check below
-          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then LIM="sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1"; echo "cgroup cap: yes" | tee out/limits.txt
-          else LIM="sudo taskset -c 0,1"; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
-          rig() {  # name, input glb, output glb, extra args
-            local n=$1 in=$2 o=$3; shift 3
+          CAP=2G
+          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then SYSD=1; echo "cgroup cap: yes" | tee out/limits.txt
+          else SYSD=0; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
+          rig() {  # name, input glb, output glb, extra args; memory cap = $CAP
+            local n=$1 in=$2 o=$3 LIM; shift 3
+            if [ $SYSD = 1 ]; then LIM="sudo systemd-run --scope -q -p MemoryMax=$CAP -p MemorySwapMax=0 taskset -c 0,1"; else LIM="sudo taskset -c 0,1"; fi
             ( while sleep 45; do echo "MON $(date +%T) rss_mb=$(( $(ps -C blender -o rss= | sort -n | tail -1) / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/mon_$n.txt 2>/dev/null &
             MON=$!
             timeout 150m /usr/bin/time -v -o out/time_$n.txt $LIM chroot $R env HOME=/root \
@@ -121,6 +128,14 @@ jobs:
           echo "== resume: cm_game20k again, skeleton file must be reused"; rig resume_cm_game20k cm_game20k resume_cm_game20k
           grep -q "^RESUME skeleton file" out/log_resume_cm_game20k.txt || { echo "::error::second run did not reuse the skeleton file"; touch out/FAIL_resume; }
           echo "== quality/cost probe: cm_game20k with 15 beams (own work dir, default is 8)"; rig beams15_cm_game20k cm_game20k beams15_cm_game20k --beams 15 --work /w/work15
+          if [ -e w/have32 ]; then
+            CAP=3G; echo "limits for the comparison runs: cap $CAP" >> out/limits.txt
+            for n in java_mv_fast cm_game20k; do
+              echo "== comparison: $n with 32768 skin samples (old graphs in /w/models32, same skeleton file, 3 GB cap)"
+              rig s32768_$n $n s32768_$n --skin-samples 32768 --models /w/models32
+            done
+            CAP=2G
+          fi
           ls -la w/out w/work/*
       - name: Memory budget (every process under 2 GB, per-phase numbers)
         if: always()
@@ -146,16 +161,21 @@ jobs:
       - name: Compare with the torch reference rigs (ci-logs-unirig)
         if: always()
         run: |
-          for n in java_mv_fast cm_game20k beams15_cm_game20k; do
+          for n in java_mv_fast cm_game20k beams15_cm_game20k s32768_java_mv_fast s32768_cm_game20k; do
             [ -s w/out/$n.glb ] || { echo "no output for $n"; continue; }
             sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python /w/phone/compare_rigs.py -- \
-              --ref /w/ref/unirig_${n#beams15_}.glb --new /w/out/$n.glb --label $n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
+              --ref /w/ref/unirig_$(echo $n | sed 's/^beams15_//;s/^s32768_//').glb --new /w/out/$n.glb --label $n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
+          done
+          for n in java_mv_fast cm_game20k; do  # 16384 vs 32768 samples, same skeleton file: skin weight diff + argmax-bone agreement
+            [ -s w/out/s32768_$n.glb ] || continue
+            sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python /w/phone/compare_rigs.py -- \
+              --ref /w/out/s32768_$n.glb --new /w/out/$n.glb --label 16384_vs_32768_$n 2>&1 | grep -E "^CMP|Traceback|Error" | tee -a out/compare.txt
           done
       - name: Summary
         if: always()
         run: |
           cp w/out/*.glb w/out/*.json out/ 2>/dev/null || true
-          { for n in java_mv_fast cm_game20k resume_cm_game20k beams15_cm_game20k; do
+          { for n in java_mv_fast cm_game20k resume_cm_game20k beams15_cm_game20k s32768_java_mv_fast s32768_cm_game20k; do
               echo "== $n: $(awk '/Maximum resident/{printf "peakRSS_GB=%.2f", $NF/1048576} /Elapsed/{printf " wall=%s", $NF}' out/time_$n.txt 2>/dev/null)"
               grep -E "^(INPUT|MESH|SKELETON|RESUME|PHASE|PEAK|MEM|RESULT)" out/log_$n.txt 2>/dev/null | cut -c1-500
             done

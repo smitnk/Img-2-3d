@@ -18,7 +18,7 @@ print("BONES", [(b.name, tuple(round(v, 2) for v in b.head_local)) for b in B])
 # character axes in armature space: right = side of hand.R, up = +Z, front = cross(up... ) chosen so right x up x front is right-handed
 rx = 1 if B["hand.R"].head_local.x > 0 else -1
 RIGHT, UP = Vector((rx, 0, 0)), Vector((0, 0, 1))
-FRONT = Vector((0, -1, 0))
+FRONT = Vector((0, 1, 0))
 def v(r, u, f): return (RIGHT * r + UP * u + FRONT * f).normalized()
 def M(r, u, f):  # mirror for left side
     return v(-r, u, f)
@@ -61,7 +61,7 @@ for f, (dirs, (r, u, fw), yaw) in POSES.items():
         p.matrix = Matrix.Translation(h) @ rot @ Matrix.Translation(-h) @ p.matrix
         bpy.context.view_layer.update()
     for p in pb: p.keyframe_insert("rotation_quaternion", frame=f)
-    arm.location = base_loc + Vector((rx * r * 0, 0, u)) + Vector((0, -fw, 0))
+    arm.location = base_loc + Vector((rx * r * 0, 0, u)) + Vector((0, fw, 0))
     arm.rotation_euler = (base_rot.x, base_rot.y, base_rot.z + math.radians(yaw))
     arm.keyframe_insert("location", frame=f); arm.keyframe_insert("rotation_euler", frame=f)
 bpy.ops.object.mode_set(mode="OBJECT")
@@ -71,7 +71,7 @@ mat = bpy.data.materials.new("clay"); mat.use_nodes = True
 bsdf = mat.node_tree.nodes["Principled BSDF"]
 bsdf.inputs["Base Color"].default_value = (.85, .78, .7, 1); bsdf.inputs["Roughness"].default_value = .6
 mesh.data.materials.clear(); mesh.data.materials.append(mat)
-bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, 0))
+bpy.ops.mesh.primitive_plane_add(size=300, location=(0, 0, 0))
 floor = bpy.context.object
 fm = bpy.data.materials.new("floor"); fm.use_nodes = True
 fm.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (.32, .34, .4, 1)
@@ -79,14 +79,14 @@ floor.data.materials.append(fm)
 sc.frame_set(1)
 zmin = min((mesh.matrix_world @ Vector(c)).z for c in mesh.bound_box)
 floor.location.z = zmin
-bpy.ops.object.light_add(type="SUN", rotation=(math.radians(50), 0, math.radians(30))); bpy.context.object.data.energy = 3.5; bpy.context.object.data.angle = math.radians(8)
-bpy.ops.object.light_add(type="AREA", location=(-3, -3, 3)); a = bpy.context.object; a.data.energy = 400; a.data.size = 4
+bpy.ops.object.light_add(type="SUN", rotation=(math.radians(50), 0, math.radians(160))); bpy.context.object.data.energy = 2.6; bpy.context.object.data.angle = math.radians(8)
+bpy.ops.object.light_add(type="AREA", location=(-3, 3, 3)); a = bpy.context.object; a.data.energy = 400; a.data.size = 4
 a.rotation_euler = (Vector((0, 0, 1)) - a.location).to_track_quat("-Z", "Y").to_euler()
 world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True
 world.node_tree.nodes["Background"].inputs[0].default_value = (.12, .14, .2, 1); world.node_tree.nodes["Background"].inputs[1].default_value = .6
-bpy.ops.object.camera_add(location=(3.2, -6.2, 1.6 + zmin + 1)); cam = bpy.context.object; sc.camera = cam
-cam.data.lens = 40
-tgt = Vector((0, -0.6, zmin + 1.0))
+bpy.ops.object.camera_add(location=(2.4, 5.0, zmin + 1.9)); cam = bpy.context.object; sc.camera = cam
+cam.data.lens = 45
+tgt = Vector((0, 0.35, zmin + 0.95))
 cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
 sc.frame_start, sc.frame_end = 1, 120
 sc.render.fps = 24

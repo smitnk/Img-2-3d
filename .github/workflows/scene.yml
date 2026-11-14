@@ -11,7 +11,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Blender
         run: |
-          curl -fsSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz | tar -xJ
+          f=Blender4.2/blender-4.2.3-linux-x64.tar.xz
+          for m in https://download.blender.org/release https://mirror.clarkson.edu/blender/release https://ftp.halifax.rwth-aachen.de/blender/release https://mirrors.ocf.berkeley.edu/blender/release; do
+            curl -fsSL -A "Mozilla/5.0" -o b.tar.xz $m/$f && break; sleep 5; done
+          tar -xJf b.tar.xz
           sudo apt-get -qq install -y libxi6 libxkbcommon0 libsm6 libxrender1 libgl1 ffmpeg > /dev/null
       - name: Preview stills
         run: blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out/prev preview 2>&1 | grep -v "^Fra:" | tail -60

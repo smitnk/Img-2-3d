@@ -4,9 +4,10 @@ on:
 permissions: { contents: write }
 concurrency: { group: scene, cancel-in-progress: true }
 jobs:
-  render:
+  part:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    strategy: { matrix: { r: ["1 30", "31 60", "61 90", "91 120"] } }
     steps:
       - uses: actions/checkout@v4
       - name: Blender
@@ -15,19 +16,21 @@ jobs:
           for m in https://download.blender.org/release https://mirror.clarkson.edu/blender/release https://ftp.halifax.rwth-aachen.de/blender/release https://mirrors.ocf.berkeley.edu/blender/release; do
             curl -fsSL -A "Mozilla/5.0" -o b.tar.xz $m/$f && break; sleep 5; done
           tar -xJf b.tar.xz
-          sudo apt-get -qq install -y libxi6 libxkbcommon0 libsm6 libxrender1 libgl1 ffmpeg > /dev/null
-      - name: Preview stills
-        run: blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out/prev preview 2>&1 | grep -v "^Fra:" | tail -60
-      - name: Push preview
+          sudo apt-get -qq install -y libxi6 libxkbcommon0 libsm6 libxrender1 libgl1 > /dev/null
+      - name: Render
+        run: blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out ${{ matrix.r }} 2>&1 | grep -E "DONE|Error|Traceback" | tail
+      - name: Push
         run: |
-          cd out/prev && git init -q -b scene-out && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm preview
-          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} scene-out:scene-out-preview
-      - name: Animation
-        run: |
-          blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out/anim 2>&1 | grep -E "DONE|Error|Saved: .*120" | tail
-          ffmpeg -y -loglevel error -framerate 24 -i out/anim/f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart action_scene.mp4
-          ls -la action_scene.mp4 && mkdir vid && mv action_scene.mp4 vid/
-      - name: Push video
-        run: |
-          cd vid && git init -q -b scene-out && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm video
-          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} scene-out:scene-out-video
+          n=$(echo "${{ matrix.r }}" | cut -d' ' -f1)
+          cd out && git init -q -b p && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm part
+          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} p:scene-part-$n
+  video:
+    needs: part
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          for n in 1 31 61 91; do git clone -q --depth 1 -b scene-part-$n https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} p$n; cp p$n/*.png .; done
+          ls f_*.png | wc -l
+          ffmpeg -y -loglevel error -framerate 24 -start_number 1 -i f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart vid/action_scene.mp4 || { mkdir -p vid; ffmpeg -y -loglevel error -framerate 24 -start_number 1 -i f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart vid/action_scene.mp4; }
+          cd vid && git init -q -b v && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm video
+          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} v:scene-out-video

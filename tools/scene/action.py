@@ -4,7 +4,7 @@ from mathutils import Vector, Matrix, Quaternion
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 src, out = argv[0], argv[1]
-preview = len(argv) > 2
+preview = len(argv) == 3
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
 arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
@@ -91,12 +91,13 @@ cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
 sc.frame_start, sc.frame_end = 1, 120
 sc.render.fps = 24
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"
-sc.cycles.samples = 8 if preview else 48; sc.cycles.use_denoising = True
+sc.cycles.samples = 8 if preview else 16; sc.cycles.use_denoising = True
 sc.render.resolution_x = sc.render.resolution_y = 540 if preview else 1080
 if preview:
     for f in (1, 18, 30, 44, 56, 66, 84, 99, 108, 120):
         sc.frame_set(f); sc.render.filepath = f"{out}/p_{f:03d}.png"; bpy.ops.render.render(write_still=True)
 else:
+    if len(argv) > 3: sc.frame_start, sc.frame_end = int(argv[2]), int(argv[3])
     sc.render.filepath = f"{out}/f_"; sc.render.image_settings.file_format = "PNG"
     bpy.ops.render.render(animation=True)
 print("DONE")

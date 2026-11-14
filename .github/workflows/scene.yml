@@ -1,6 +1,8 @@
 name: Action scene render
 on:
   push: { branches: [render-scene], paths: ["tools/scene/**", ".github/workflows/scene.yml"] }
+permissions: { contents: write }
+concurrency: { group: scene, cancel-in-progress: true }
 jobs:
   render:
     runs-on: ubuntu-24.04
@@ -13,12 +15,16 @@ jobs:
           sudo apt-get -qq install -y libxi6 libxkbcommon0 libsm6 libxrender1 libgl1 ffmpeg > /dev/null
       - name: Preview stills
         run: blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out/prev preview 2>&1 | grep -v "^Fra:" | tail -60
-      - uses: actions/upload-artifact@v4
-        with: { name: preview, path: out/prev }
+      - name: Push preview
+        run: |
+          cd out/prev && git init -q -b scene-out && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm preview
+          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} scene-out:scene-out-preview
       - name: Animation
         run: |
           blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out/anim 2>&1 | grep -E "DONE|Error|Saved: .*120" | tail
           ffmpeg -y -loglevel error -framerate 24 -i out/anim/f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart action_scene.mp4
-          ls -la action_scene.mp4
-      - uses: actions/upload-artifact@v4
-        with: { name: video, path: action_scene.mp4 }
+          ls -la action_scene.mp4 && mkdir vid && mv action_scene.mp4 vid/
+      - name: Push video
+        run: |
+          cd vid && git init -q -b scene-out && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm video
+          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} scene-out:scene-out-video

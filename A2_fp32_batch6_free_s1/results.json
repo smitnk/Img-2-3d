@@ -1,0 +1,79 @@
+{
+ "variant": "A2_fp32_batch6_free",
+ "config": {
+  "variant": "A2_fp32_batch6_free",
+  "out": "out",
+  "model_dir": "/tmp/hfm/hunyuan3d-paint-v2-0-turbo",
+  "mesh": "/tmp/char.glb",
+  "refs": [
+   "/tmp/hy/assets/example_images/1316.png"
+  ],
+  "mode": "batch",
+  "dtype": "fp32",
+  "quant": "none",
+  "free_dual": 1,
+  "vae_batch": 0,
+  "vae_tile": 0,
+  "steps": 1,
+  "sweeps0": 2,
+  "faces": 40000,
+  "render_size": 1024,
+  "tex_size": 1024,
+  "rot_y180": 1,
+  "vae_decode_probe": 1
+ },
+ "ok": false,
+ "notes": [],
+ "mesh": {
+  "verts_in": 130005,
+  "faces_in": 246305,
+  "faces_used": 39999
+ },
+ "params": {
+  "gen_unet": 965302340,
+  "dual_ref_unet": 865910724,
+  "total": 1831213064,
+  "vae": 83653863
+ },
+ "resident_bytes_dual": 3463642896,
+ "ref_feature_bytes": 46202880,
+ "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 268, in main\n    finish_load(\"unet.\")\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 248, in finish_load\n    return PL.load_weights(unet, st_path, dtype, qmode, prefix=prefix)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/paintlib.py\", line 187, in load_weights\n    mod = model.get_submodule(mp)\n          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/nn/modules/module.py\", line 710, in get_submodule\n    raise AttributeError(\nAttributeError: Attention has no attribute `to_k_ip`\n",
+ "peak_rss_gb": 5.953,
+ "peak_footprint_gb": 4.553,
+ "peak_sampled_rss_gb": 4.553,
+ "time_s": 64.7,
+ "stages": {
+  "prep_mesh_render": {
+   "sampled_peak_rss_gb": 0.915,
+   "peak_footprint_gb": 0.915,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 0.935,
+   "rss_end_gb": 0.826,
+   "time_s": 7.5
+  },
+  "load_vae_encode": {
+   "sampled_peak_rss_gb": 1.786,
+   "peak_footprint_gb": 1.786,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 1.79,
+   "rss_end_gb": 1.112,
+   "time_s": 53.4
+  },
+  "load_dual_ref_features": {
+   "sampled_peak_rss_gb": 4.553,
+   "peak_footprint_gb": 4.553,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 5.953,
+   "rss_end_gb": 2.422,
+   "time_s": 3.8
+  },
+  "load_gen_unet": {
+   "sampled_peak_rss_gb": 0.0,
+   "peak_footprint_gb": 0.0,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 2.426,
+   "rss_end_gb": 2.426,
+   "time_s": 0.0
+  }
+ }
+}

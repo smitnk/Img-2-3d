@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.smitnk.img23d.viewer"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

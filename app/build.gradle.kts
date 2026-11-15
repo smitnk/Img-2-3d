@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.smitnk.img23d"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.smitnk.img23d"

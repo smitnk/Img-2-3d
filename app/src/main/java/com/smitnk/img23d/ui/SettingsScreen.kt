@@ -153,6 +153,17 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 },
             )
 
+            SectionHeader("Rigging")
+            EngineCard(
+                icon = Icons.Rounded.AutoFixHigh, title = "UniRig", summary = "Auto-rig: skeleton + skin weights", size = "≈2.5 GB",
+                details = "MIT licence. Runs inside Blender on the phone. Needs about 2 GB free RAM.",
+                ready = state.unirigPack == PackStatus.Ready,
+                progress = (state.unirigPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.unirigPack as? PackStatus.Failed)?.message, failed = state.unirigPack is PackStatus.Failed,
+                onInstall = vm::installUnirigPack, onRemove = vm::uninstallUnirigPack,
+                onSave = { cb.pickFolder { vm.backupOne("unirig", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("unirig", it) } },
+            )
+
             SectionHeader("Runtime")
             EngineCard(
                 icon = Icons.Rounded.Construction, title = "Blender 4.2.3 LTS", summary = "Procedural models, rigs and clean-up", size = "≈126 MB",

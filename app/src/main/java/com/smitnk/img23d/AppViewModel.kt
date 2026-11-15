@@ -130,6 +130,7 @@ data class UiState(
     val texPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanMvPack: PackStatus = PackStatus.NotInstalled,
+    val unirigPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -329,11 +330,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
         if (hunyuanMvPack.isReady()) _state.update { it.copy(hunyuanMvPack = PackStatus.Ready) }
+        if (unirigPack.isReady()) _state.update { it.copy(unirigPack = PackStatus.Ready) }
         File(app.filesDir, "trellis").deleteRecursively() // TRELLIS.2 was removed (2mv matches it in half the time): free its 2.8 GB
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack)
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack, unirigPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         if (_state.value.packFolder != null) return@launch
@@ -361,7 +363,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
-                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack)
+                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
+                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack)
         }
         if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / hunyuanmv).")
     }
@@ -393,7 +396,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
-                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack)
+                hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
+                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack)
         }
     }
 
@@ -415,6 +419,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun installHunyuanPack() = packTask("hunyuan") {
         runCatching { hunyuanPack.install { st -> _state.update { it.copy(hunyuanPack = st) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
+
+    fun uninstallUnirigPack() = packTask("unirig", replace = true) {
+        withContext(Dispatchers.IO) { unirigPack.uninstall() }
+        _state.update { it.copy(unirigPack = PackStatus.NotInstalled) }
+    }
+
+    fun installUnirigPack() = packTask("unirig") {
+        runCatching { unirigPack.install { st -> _state.update { it.copy(unirigPack = st) } } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(unirigPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun uninstallTexPack() = packTask("texgen", replace = true) {
@@ -668,18 +682,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Rig with UniRig: AI skeleton + skin weights on the phone (~20 min, ~4.3 GB peak). Downloads its ~GB pack on first use. */
+    /** Rig with UniRig: AI skeleton + skin weights on the phone (~20 min, ~4.3 GB peak). Its ~2.5 GB pack installs from Settings (first tap starts it). */
     fun rigUnirig(m: Model) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
+        if (!unirigPack.isReady()) { installUnirigPack(); go(Dest.Settings); return } // one install path: the Settings card shows progress, then tap Rig again
         launchJob("Rig with UniRig", "Blender", 1) { report ->
             val ram = android.app.ActivityManager.MemoryInfo().also {
                 getApplication<Application>().getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it)
             }.totalMem
             if (ram < 6_500_000_000L) throw IllegalStateException("UniRig needs about 4.3 GB of free memory, so a phone with at least 8 GB RAM. This phone has %.1f GB.".format(ram / 1e9))
-            if (!unirigPack.isReady()) {
-                report.stage("Downloading UniRig (~2.5 GB, once)", null)
-                unirigPack.install { st -> if (st is PackStatus.Downloading) report.stage("Downloading UniRig (~2.5 GB, once)", st.done.toFloat() / maxOf(st.total, 1L)) }
-            }
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged"), report) // 2 threads, nice 10 by default: the phone stays usable
             saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")

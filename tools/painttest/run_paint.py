@@ -224,6 +224,7 @@ def main():
         vae = AutoencoderKL.from_pretrained(os.path.join(a.model_dir, "vae"), torch_dtype=dtype).eval()
         if a.vae_tile:
             vae.enable_tiling()
+            vae.tile_sample_min_size, vae.tile_latent_min_size, vae.tile_overlap_factor = 256, 32, 0.25
         with torch.no_grad():
             ref_lat = vae_encode(vae, to_t(refs, dtype), gen, not a.vae_batch)
             nrm_lat = vae_encode(vae, to_t(normals, dtype), gen, not a.vae_batch)

@@ -96,14 +96,21 @@ fun Pill(icon: ImageVector?, text: String, modifier: Modifier = Modifier, tint: 
 }
 
 @Composable
-fun Panel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun Panel(modifier: Modifier = Modifier, flush: Boolean = false, content: @Composable () -> Unit) {
     Card(
         modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-    ) { Column(Modifier.padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) { content() } }
+    ) {
+        // flush: rows (ListItem) bring their own 16dp inset, so the card adds none and callers pad free-form content with [panelPad].
+        if (flush) Column(Modifier.padding(vertical = Space.sm)) { content() }
+        else Column(Modifier.padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) { content() }
+    }
 }
+
+/** Inset for free-form content (sliders, fields, text) inside a flush [Panel]. */
+fun Modifier.panelPad(): Modifier = padding(horizontal = Space.lg, vertical = Space.sm)
 
 /** Small read-only label chip (size, status). [tint] colours the text and leading dot/icon. */
 @Composable

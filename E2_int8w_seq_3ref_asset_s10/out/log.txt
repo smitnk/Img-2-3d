@@ -17,3 +17,7 @@ resident weights GB 0.902
 [step 3/10] t=791 103.2s rss=2.59GB
 [step 4/10] t=692 103.4s rss=2.67GB
 [step 5/10] t=593 103.2s rss=2.68GB
+[step 6/10] t=494 104.1s rss=2.68GB
+[step 7/10] t=395 103.6s rss=2.67GB
+[step 8/10] t=296 103.7s rss=2.62GB
+[step 9/10] t=197 103.0s rss=2.62GB

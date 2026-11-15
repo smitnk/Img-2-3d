@@ -72,7 +72,7 @@
  "peak_rss_gb": 4.096,
  "peak_footprint_gb": 3.997,
  "peak_sampled_rss_gb": 3.997,
- "time_s": 800.2,
+ "time_s": 1214.5,
  "stages": {
   "prep_mesh_render": {
    "sampled_peak_rss_gb": 0.867,
@@ -107,8 +107,8 @@
    "time_s": 2.2
   },
   "denoise": {
-   "sampled_peak_rss_gb": 2.89068603515625,
-   "peak_footprint_gb": 2.89068603515625,
+   "sampled_peak_rss_gb": 2.90411376953125,
+   "peak_footprint_gb": 2.90411376953125,
    "peak_swap_gb": 0.0
   }
  }

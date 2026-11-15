@@ -124,7 +124,48 @@ class GenWrap(nn.Module):
         return (eps,) + tuple(CTX.out[nm].half() for nm in self.names)
 
 
-# ------------------------------------------------------------------ helpers
+# ------------------------------------------------------------------ int8 layers whose dequantisation cannot be hoisted
+# onnxruntime schedules every node that does not depend on the activations first, i.e. Cast(int8)->Mul(scale)->Transpose of ALL
+# weights (4 GB fp32 for the gen UNet) before the first MatMul. Making the int8 weight tensor a Gather whose index depends on the
+# layer's input (+ 0) ties each dequantisation to its own layer, so only one dequantised weight exists at a time.
+class GLinear(nn.Module):
+    def __init__(self, q):
+        super().__init__()
+        self.register_buffer("qw", q.qweight.t().contiguous())  # [in, out] int8 (MatMul layout, no Transpose node)
+        self.register_buffer("scale", q.scale.reshape(1, -1).float())
+        self.register_buffer("ar", torch.arange(q.in_features))
+        self.bias = q.bias
+
+    def forward(self, x):
+        dep = (x.reshape(-1)[0] * 0).long()
+        y = torch.matmul(x, self.qw.index_select(0, self.ar + dep).float() * self.scale)
+        return y if self.bias is None else y + self.bias
+
+
+class GConv2d(nn.Module):
+    def __init__(self, q):
+        super().__init__()
+        self.stride, self.padding, self.dilation, self.groups = q.stride, q.padding, q.dilation, q.groups
+        self.register_buffer("qw", q.qweight)
+        self.register_buffer("scale", q.scale.float())
+        self.register_buffer("ar", torch.arange(q.qweight.shape[0]))
+        self.bias = q.bias
+
+    def forward(self, x):
+        dep = (x.reshape(-1)[0] * 0).long()
+        w = self.qw.index_select(0, self.ar + dep).float() * self.scale
+        return F.conv2d(x, w, self.bias, self.stride, self.padding, self.dilation, self.groups)
+
+
+def gate_quant(model):
+    for _, mod in list(model.named_modules()):
+        for cn, ch in list(mod.named_children()):
+            if isinstance(ch, PL.QLinear):
+                setattr(mod, cn, GLinear(ch))
+            elif isinstance(ch, PL.QConv2d):
+                setattr(mod, cn, GConv2d(ch))
+
+
 def quantize_in_place(model):
     """Random-weight test models: same int8 layers as PL.load_weights(quant='int8w') makes."""
     for name, mod in list(model.named_modules()):
@@ -209,6 +250,7 @@ def main():
         if a.tiny:
             return
         PL.load_weights(unet, st_path, torch.float32, "int8w", prefix=prefix)
+        gate_quant(unet)
 
     if a.tiny:
         quantize_in_place(unet)
@@ -219,6 +261,7 @@ def main():
     # ---------------- reference UNet
     names = prepare(unet.unet_dual, unet.unet_dual)
     prepare(unet.unet, unet.unet)
+    gate_quant(unet)  # no-op until weights are loaded for the real model (see load())
     meta["layers"] = names
     if "ref" in only:
         load("unet_dual.")

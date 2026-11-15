@@ -41,6 +41,8 @@ def parse_args(argv=None):
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--sweeps0", type=int, default=2)
     p.add_argument("--nice", type=int, default=0)
+    p.add_argument("--phase", choices=("all", "prep", "gen", "export"), default="all",
+                   help="all = prep and export each in their own Blender process (their memory goes back to the OS), gen in this one")
     p.add_argument("--save-views", type=int, default=1)
     return p.parse_args(argv)
 
@@ -63,8 +65,9 @@ class Mon:
 
     def _loop(self):
         while not self.stop:
-            if self.cur:
-                s, m = status(), self.st[self.cur]
+            cur = self.cur
+            if cur:
+                s, m = status(), self.st[cur]
                 m["rss"] = max(m["rss"], s["VmRSS"])
                 m["anon"] = max(m["anon"], s["RssAnon"])
                 m["file"] = max(m["file"], s["RssFile"])
@@ -194,6 +197,20 @@ def prepare_mesh(path, faces):
     return ob, Vg, t.reshape(-1, 3), uvc
 
 
+def save_prep_glb(ob, path):
+    import bpy
+    bpy.ops.object.select_all(action="DESELECT")
+    ob.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_yup=True, export_normals=True)
+
+
+def load_prep_glb(path):
+    import bpy
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=path)
+    return [o for o in bpy.context.scene.objects if o.type == "MESH" and len(o.data.vertices) > 100][0]
+
+
 def export_glb(ob, tex_png, out):
     import bpy
     mat = bpy.data.materials.new("paint")
@@ -255,17 +272,46 @@ def main(a, io=None):
     os.makedirs(work, exist_ok=True)
     outdir = os.path.dirname(os.path.abspath(a.out))
     mon, stats, T0 = Mon(), {"threads": a.threads, "steps": a.steps}, time.time()
+    io = io or sys.modules[__name__]
+    prep_glb, prep_npz = os.path.join(work, "prep.glb"), os.path.join(work, "prep.npz")
+    argv_tail = [x for x in sys.argv[sys.argv.index("--") + 1:]] if "--" in sys.argv else sys.argv[1:]
+
+    def sub(phase):  # a fresh Blender process for the mesh / export phases: its memory is returned to the OS afterwards
+        import subprocess
+        base = [x for i, x in enumerate(argv_tail) if x != "--phase" and (i == 0 or argv_tail[i - 1] != "--phase")]
+        cmd = [__import__("bpy").app.binary_path, "-b", "--factory-startup", "--python-exit-code", "1", "--python",
+               os.path.abspath(__file__), "--"] + base + ["--phase", phase]
+        r = subprocess.run(cmd)
+        if r.returncode:
+            raise SystemExit(f"phase {phase} failed ({r.returncode})")
+
+    if a.phase == "prep":
+        mon.begin("mesh_bpy")
+        ob, Vg, F, uvc = io.prepare_mesh(a.mesh, a.faces)
+        np.savez(prep_npz, Vg=Vg, F=F, uvc=uvc)
+        io.save_prep_glb(ob, prep_glb)
+        mon.end()
+        print(f"PEAK prep hwm={status()['VmHWM']:.2f}GB", flush=True)
+        json.dump({"hwm": status()["VmHWM"], "anon": status()["RssAnon"]}, open(os.path.join(work, "peak_prep.json"), "w"))
+        return
+    if a.phase == "export":
+        mon.begin("export_glb")
+        io.export_glb(io.load_prep_glb(prep_glb), os.path.join(outdir, "texture.png"), a.out)
+        mon.end()
+        print(f"PEAK export hwm={status()['VmHWM']:.2f}GB", flush=True)
+        json.dump({"hwm": status()["VmHWM"], "anon": status()["RssAnon"]}, open(os.path.join(work, "peak_export.json"), "w"))
+        return
     meta = json.load(open(os.path.join(a.models, "meta.json")))
     layers = meta["layers"]
     san = lambda n: n.replace(".", "_")  # noqa: E731
     R = ORT(a.models, a.threads, a.pylibs)
     rng = np.random.RandomState(a.seed)
-    io = io or sys.modules[__name__]
 
-    # ---- mesh + views
-    mon.begin("mesh_bpy")
-    ob, Vg, F, uvc = io.prepare_mesh(a.mesh, a.faces)
-    gc.collect()
+    # ---- mesh (own Blender process in --phase all) + views
+    if a.phase == "all":
+        sub("prep")
+    z = np.load(prep_npz)
+    Vg, F, uvc = z["Vg"], z["F"], z["uvc"]
     mon.begin("views")
     Vr, _ = N.to_render_frame(Vg, bool(a.rot_y180))
     views = N.Views(Vr, F, a.render, log=lambda *x: None)
@@ -381,13 +427,20 @@ def main(a, io=None):
     stats["texels_covered"], stats["texels_painted"] = int(cover.sum()), int(trust.sum())
     png = os.path.join(outdir, "texture.png")
     write_png(png, to_u8(tex[::-1]))  # PNG row 0 = top = v 1
-    mon.begin("export_glb")
-    io.export_glb(ob, png, a.out)
     mon.end()
     mon.stop = True
     stats["stages"] = mon.st
     stats["peak_hwm_gb"] = max(m.get("hwm", 0) for m in mon.st.values())
     stats["peak_anon_gb"] = max(m["anon"] for m in mon.st.values())
+    stats["total_time_s"] = round(time.time() - T0, 1)
+    json.dump(stats, open(os.path.join(outdir, "stats.json"), "w"), indent=1)
+    if a.phase == "all":
+        sub("export")
+    for ph in ("prep", "export"):
+        pf = os.path.join(work, f"peak_{ph}.json")
+        if os.path.exists(pf):
+            stats[f"peak_{ph}_hwm_gb"] = round(json.load(open(pf))["hwm"], 3)
+            stats["peak_hwm_gb"] = max(stats["peak_hwm_gb"], stats[f"peak_{ph}_hwm_gb"])
     stats["total_time_s"] = round(time.time() - T0, 1)
     json.dump(stats, open(os.path.join(outdir, "stats.json"), "w"), indent=1)
     print(f"PEAK total hwm={stats['peak_hwm_gb']}GB anon={stats['peak_anon_gb']}GB time={stats['total_time_s']}s", flush=True)

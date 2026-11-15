@@ -2,11 +2,14 @@ package com.smitnk.img23d.ui
 
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -20,28 +23,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Studio brand: hot pink (primary) + electric cyan (tertiary) on ink, built as M3 roles.
-private val Studio = darkColorScheme(
-    primary = Color(0xFFFF8AC4), onPrimary = Color(0xFF5C0034),
-    primaryContainer = Color(0xFF8A1F5A), onPrimaryContainer = Color(0xFFFFD8E8),
-    secondary = Color(0xFFE2BDCD), onSecondary = Color(0xFF422935),
-    secondaryContainer = Color(0xFF5B3F4C), onSecondaryContainer = Color(0xFFFFD8E8),
-    tertiary = Color(0xFF5ED6F2), onTertiary = Color(0xFF00363F),
-    tertiaryContainer = Color(0xFF004E5B), onTertiaryContainer = Color(0xFFA6EEFF),
-    background = Color(0xFF0E0B10), onBackground = Color(0xFFECE0E4),
-    surface = Color(0xFF0E0B10), onSurface = Color(0xFFECE0E4),
-    surfaceVariant = Color(0xFF514348), onSurfaceVariant = Color(0xFFD5C2C8),
-    surfaceContainerLowest = Color(0xFF09070A), surfaceContainerLow = Color(0xFF181316),
-    surfaceContainer = Color(0xFF1E171B), surfaceContainerHigh = Color(0xFF292125),
-    surfaceContainerHighest = Color(0xFF342B30),
-    outline = Color(0xFF9E8C92), outlineVariant = Color(0xFF514348),
+// Studio palette: calm violet (primary) + mint teal (tertiary) on blue-tinted ink; light mirrors it on a warm paper tone.
+private val StudioDark = darkColorScheme(
+    primary = Color(0xFFBFB3FF), onPrimary = Color(0xFF2A1B6B),
+    primaryContainer = Color(0xFF41338A), onPrimaryContainer = Color(0xFFE4DEFF),
+    secondary = Color(0xFFC9C3DC), onSecondary = Color(0xFF312E41),
+    secondaryContainer = Color(0xFF484459), onSecondaryContainer = Color(0xFFE5DFF9),
+    tertiary = Color(0xFF5FD6C4), onTertiary = Color(0xFF00382F),
+    tertiaryContainer = Color(0xFF005045), onTertiaryContainer = Color(0xFF7DF3DF),
+    background = Color(0xFF0F0E14), onBackground = Color(0xFFE6E1EA),
+    surface = Color(0xFF0F0E14), onSurface = Color(0xFFE6E1EA),
+    surfaceVariant = Color(0xFF47464F), onSurfaceVariant = Color(0xFFC8C5D0),
+    surfaceContainerLowest = Color(0xFF0A0A0F), surfaceContainerLow = Color(0xFF16151C),
+    surfaceContainer = Color(0xFF1B1A22), surfaceContainerHigh = Color(0xFF26242D),
+    surfaceContainerHighest = Color(0xFF312F38),
+    outline = Color(0xFF928F9A), outlineVariant = Color(0xFF47464F),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005), errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
 )
 
+private val StudioLight = lightColorScheme(
+    primary = Color(0xFF5B4BC4), onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE4DEFF), onPrimaryContainer = Color(0xFF170065),
+    secondary = Color(0xFF5F5B71), onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE5DFF9), onSecondaryContainer = Color(0xFF1C192B),
+    tertiary = Color(0xFF006B5D), onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFF7DF3DF), onTertiaryContainer = Color(0xFF00201B),
+    background = Color(0xFFFDF8FF), onBackground = Color(0xFF1C1B20),
+    surface = Color(0xFFFDF8FF), onSurface = Color(0xFF1C1B20),
+    surfaceVariant = Color(0xFFE5E0EC), onSurfaceVariant = Color(0xFF47464F),
+    surfaceContainerLowest = Color(0xFFFFFFFF), surfaceContainerLow = Color(0xFFF7F2FA),
+    surfaceContainer = Color(0xFFF1ECF4), surfaceContainerHigh = Color(0xFFECE6EE),
+    surfaceContainerHighest = Color(0xFFE6E1E9),
+    outline = Color(0xFF77757F), outlineVariant = Color(0xFFC8C5D0),
+    error = Color(0xFFBA1A1A), onError = Color(0xFFFFFFFF), errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF410002),
+)
+
+/** Spacing tokens on the 4/8dp grid; use these instead of ad-hoc dp literals. */
+object Space {
+    val xs = 4.dp
+    val sm = 8.dp
+    val md = 12.dp
+    val lg = 16.dp
+    val xl = 24.dp
+    /** Cap for content width on tablets / unfolded foldables. */
+    val maxContent = 720.dp
+}
+
 private val StudioType = Typography(
-    displayMedium = TextStyle(fontWeight = FontWeight.Black, fontSize = 44.sp, lineHeight = 46.sp, letterSpacing = (-1.5).sp),
-    displaySmall = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-1).sp),
-    headlineMedium = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.5).sp),
+    displayMedium = TextStyle(fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp, letterSpacing = (-1).sp),
+    displaySmall = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.5).sp),
+    headlineMedium = TextStyle(fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.5).sp),
     headlineSmall = TextStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
     titleLarge = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
     titleMedium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
@@ -50,21 +81,25 @@ private val StudioType = Typography(
     bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
     labelLarge = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
-    labelMedium = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 1.2.sp),
+    labelMedium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 1.0.sp),
     labelSmall = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 15.sp),
 )
 
 private val StudioShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp),
+    extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp),
 )
 
 val LocalReducedMotion = staticCompositionLocalOf { false }
 
 @Composable
-fun StudioTheme(dynamicColor: Boolean, reduceMotion: Boolean, content: @Composable () -> Unit) {
+fun StudioTheme(dynamicColor: Boolean, reduceMotion: Boolean, darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val ctx = LocalContext.current
-    val scheme = if (dynamicColor && Build.VERSION.SDK_INT >= 31) dynamicDarkColorScheme(ctx) else Studio
+    val scheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= 31 -> if (darkTheme) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
+        darkTheme -> StudioDark
+        else -> StudioLight
+    }
     val systemReduce = remember { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
     CompositionLocalProvider(LocalReducedMotion provides (reduceMotion || systemReduce)) {
         MaterialTheme(colorScheme = scheme, typography = StudioType, shapes = StudioShapes, content = content)

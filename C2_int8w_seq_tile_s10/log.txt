@@ -1,0 +1,19 @@
+[MON] >> prep_mesh_render  rss=0.32GB
+mesh 130005v/246305f -> 31189v/39999f
+[MON] << prep_mesh_render  hwm=0.928GB sampled=0.842GB footprint=0.842GB swap=0.0GB rss_end=0.819GB t=5.9s
+[MON] >> load_vae_encode  rss=0.82GB
+latents torch.Size([1, 1, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64])
+params {'gen_unet': 965302340, 'dual_ref_unet': 865910724, 'total': 1831213064, 'vae': 83653863}
+[MON] << load_vae_encode  hwm=1.343GB sampled=1.343GB footprint=1.343GB swap=0.0GB rss_end=1.191GB t=55.5s
+[MON] >> load_dual_ref_features  rss=1.19GB
+[MON] << load_dual_ref_features  hwm=3.568GB sampled=3.506GB footprint=3.506GB swap=0.0GB rss_end=2.053GB t=7.2s
+[MON] >> load_gen_unet  rss=2.05GB
+unexpected keys {'count': 36, 'examples': ['unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight']}
+resident weights GB 0.902
+[MON] << load_gen_unet  hwm=4.046GB sampled=3.973GB footprint=3.973GB swap=0.0GB rss_end=2.179GB t=2.5s
+[MON] >> denoise  rss=2.18GB
+[step 1/10] t=989 98.5s rss=2.56GB
+[step 2/10] t=890 54.3s rss=2.55GB
+[step 3/10] t=791 54.3s rss=2.58GB
+[step 4/10] t=692 54.1s rss=2.62GB
+[step 5/10] t=593 53.8s rss=2.61GB

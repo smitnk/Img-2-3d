@@ -20,3 +20,11 @@ resident weights GB 3.596
 [step 6/10] t=494 40.4s rss=5.36GB
 [step 7/10] t=395 40.7s rss=5.37GB
 [step 8/10] t=296 41.1s rss=5.31GB
+[step 9/10] t=197 41.9s rss=5.31GB
+[step 10/10] t=98 40.7s rss=5.35GB
+[MON] << denoise  hwm=5.481GB sampled=5.481GB footprint=5.481GB swap=0.0GB rss_end=3.338GB t=437.9s
+[MON] >> vae_decode  rss=3.34GB
+[MON] << vae_decode  hwm=4.089GB sampled=4.078GB footprint=4.078GB swap=0.0GB rss_end=3.339GB t=44.5s
+[MON] >> bake_inpaint  rss=3.34GB
+[MON] << bake_inpaint  hwm=3.363GB sampled=3.363GB footprint=3.363GB swap=0.0GB rss_end=3.363GB t=6.0s
+exit 0

@@ -22,7 +22,7 @@
   "rot_y180": 1,
   "vae_decode_probe": 1
  },
- "ok": false,
+ "ok": true,
  "notes": [],
  "mesh": {
   "verts_in": 130005,
@@ -37,43 +37,115 @@
  },
  "resident_bytes_dual": 868515872,
  "ref_feature_bytes": 46202880,
- "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 268, in main\n    finish_load(\"unet.\")\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 248, in finish_load\n    return PL.load_weights(unet, st_path, dtype, qmode, prefix=prefix)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/paintlib.py\", line 187, in load_weights\n    mod = model.get_submodule(mp)\n          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/nn/modules/module.py\", line 710, in get_submodule\n    raise AttributeError(\nAttributeError: Attention has no attribute `to_k_ip`\n",
- "peak_rss_gb": 3.576,
- "peak_footprint_gb": 3.541,
- "peak_sampled_rss_gb": 3.541,
- "time_s": 66.7,
+ "unexpected_ckpt_keys": {
+  "count": 36,
+  "examples": [
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight"
+  ]
+ },
+ "resident_weight_gb": 0.902,
+ "timesteps": [
+  989
+ ],
+ "peak_rss_gb": 3.994,
+ "peak_footprint_gb": 3.917,
+ "peak_sampled_rss_gb": 3.917,
+ "time_s": 404.7,
  "stages": {
   "prep_mesh_render": {
-   "sampled_peak_rss_gb": 0.909,
-   "peak_footprint_gb": 0.909,
+   "sampled_peak_rss_gb": 0.922,
+   "peak_footprint_gb": 0.922,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 0.952,
-   "rss_end_gb": 0.843,
-   "time_s": 7.5
+   "hwm_gb": 0.937,
+   "rss_end_gb": 0.879,
+   "time_s": 10.4
   },
   "load_vae_encode": {
-   "sampled_peak_rss_gb": 1.787,
-   "peak_footprint_gb": 1.787,
+   "sampled_peak_rss_gb": 1.781,
+   "peak_footprint_gb": 1.781,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 1.791,
-   "rss_end_gb": 1.113,
-   "time_s": 52.5
+   "hwm_gb": 1.781,
+   "rss_end_gb": 1.106,
+   "time_s": 101.4
   },
   "load_dual_ref_features": {
-   "sampled_peak_rss_gb": 3.541,
-   "peak_footprint_gb": 3.541,
+   "sampled_peak_rss_gb": 3.468,
+   "peak_footprint_gb": 3.468,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 3.576,
-   "rss_end_gb": 2.081,
-   "time_s": 6.6
+   "hwm_gb": 3.565,
+   "rss_end_gb": 2.053,
+   "time_s": 11.6
   },
   "load_gen_unet": {
+   "sampled_peak_rss_gb": 3.917,
+   "peak_footprint_gb": 3.917,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 3.994,
+   "rss_end_gb": 2.154,
+   "time_s": 2.5
+  },
+  "denoise": {
+   "sampled_peak_rss_gb": 2.809,
+   "peak_footprint_gb": 2.809,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 2.809,
+   "rss_end_gb": 2.534,
+   "time_s": 164.9
+  },
+  "vae_decode": {
+   "sampled_peak_rss_gb": 3.473,
+   "peak_footprint_gb": 3.473,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 3.473,
+   "rss_end_gb": 2.535,
+   "time_s": 99.9
+  },
+  "bake_inpaint": {
+   "sampled_peak_rss_gb": 2.758,
+   "peak_footprint_gb": 2.758,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 2.759,
+   "rss_end_gb": 2.559,
+   "time_s": 13.8
+  },
+  "probe_vae_decode_batch6": {
    "sampled_peak_rss_gb": 0.0,
    "peak_footprint_gb": 0.0,
-   "peak_swap_gb": 0.0,
-   "hwm_gb": 2.085,
-   "rss_end_gb": 2.085,
-   "time_s": 0.0
+   "peak_swap_gb": 0.0
   }
- }
+ },
+ "step_times_s": [
+  164.8
+ ],
+ "view_times_s": [
+  9.79,
+  10.86,
+  11.94,
+  12.88,
+  13.86,
+  14.98,
+  15.08,
+  15.05,
+  15.1,
+  15.08,
+  15.0,
+  15.13
+ ],
+ "steps": 1,
+ "seq_ctx_gb": 0.258,
+ "view_pixel_std": 20.53,
+ "nan": false,
+ "consistency_std_0_255": 3.91,
+ "consistency_texels": 177297
 }

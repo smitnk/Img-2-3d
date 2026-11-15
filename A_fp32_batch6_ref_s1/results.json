@@ -22,7 +22,7 @@
   "rot_y180": 1,
   "vae_decode_probe": 0
  },
- "ok": false,
+ "ok": true,
  "notes": [],
  "mesh": {
   "verts_in": 130005,
@@ -35,35 +35,89 @@
   "total": 1831213064,
   "vae": 83653863
  },
- "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 271, in main\n    finish_load(None)\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py\", line 248, in finish_load\n    return PL.load_weights(unet, st_path, dtype, qmode, prefix=prefix)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/paintlib.py\", line 187, in load_weights\n    mod = model.get_submodule(mp)\n          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/nn/modules/module.py\", line 710, in get_submodule\n    raise AttributeError(\nAttributeError: Attention has no attribute `to_k_ip`\n",
- "peak_rss_gb": 1.791,
- "peak_footprint_gb": 1.791,
- "peak_sampled_rss_gb": 1.791,
- "time_s": 60.4,
+ "unexpected_ckpt_keys": {
+  "count": 36,
+  "examples": [
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight"
+  ]
+ },
+ "resident_weight_gb": 6.822,
+ "timesteps": [
+  989
+ ],
+ "peak_rss_gb": 11.388,
+ "peak_footprint_gb": 10.965,
+ "peak_sampled_rss_gb": 10.965,
+ "time_s": 176.8,
  "stages": {
   "prep_mesh_render": {
-   "sampled_peak_rss_gb": 0.925,
-   "peak_footprint_gb": 0.925,
+   "sampled_peak_rss_gb": 0.928,
+   "peak_footprint_gb": 0.928,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 0.948,
-   "rss_end_gb": 0.816,
-   "time_s": 7.5
+   "hwm_gb": 0.943,
+   "rss_end_gb": 0.823,
+   "time_s": 9.6
   },
   "load_vae_encode": {
-   "sampled_peak_rss_gb": 1.791,
-   "peak_footprint_gb": 1.791,
+   "sampled_peak_rss_gb": 1.792,
+   "peak_footprint_gb": 1.792,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 1.791,
-   "rss_end_gb": 1.113,
-   "time_s": 52.9
+   "hwm_gb": 1.792,
+   "rss_end_gb": 1.114,
+   "time_s": 59.7
   },
   "load_unet_all": {
-   "sampled_peak_rss_gb": 0.0,
-   "peak_footprint_gb": 0.0,
+   "sampled_peak_rss_gb": 10.965,
+   "peak_footprint_gb": 10.965,
    "peak_swap_gb": 0.0,
-   "hwm_gb": 1.127,
-   "rss_end_gb": 1.127,
-   "time_s": 0.0
+   "hwm_gb": 11.388,
+   "rss_end_gb": 7.938,
+   "time_s": 1.6
+  },
+  "denoise": {
+   "sampled_peak_rss_gb": 9.097,
+   "peak_footprint_gb": 9.097,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 9.099,
+   "rss_end_gb": 4.208,
+   "time_s": 43.7
+  },
+  "vae_decode": {
+   "sampled_peak_rss_gb": 5.136,
+   "peak_footprint_gb": 5.136,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 5.146,
+   "rss_end_gb": 4.208,
+   "time_s": 54.6
+  },
+  "bake_inpaint": {
+   "sampled_peak_rss_gb": 4.231,
+   "peak_footprint_gb": 4.231,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 4.289,
+   "rss_end_gb": 4.231,
+   "time_s": 7.7
   }
- }
+ },
+ "step_times_s": [
+  43.4
+ ],
+ "view_times_s": [],
+ "steps": 1,
+ "seq_ctx_gb": 0.0,
+ "view_pixel_std": 20.46,
+ "nan": false,
+ "consistency_std_0_255": 4.03,
+ "consistency_texels": 177297
 }

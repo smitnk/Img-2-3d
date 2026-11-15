@@ -22,7 +22,7 @@
   "rot_y180": 1,
   "vae_decode_probe": 0
  },
- "ok": false,
+ "ok": true,
  "notes": [],
  "mesh": {
   "verts_in": 130005,
@@ -68,7 +68,7 @@
  "peak_rss_gb": 11.387,
  "peak_footprint_gb": 10.455,
  "peak_sampled_rss_gb": 10.455,
- "time_s": 380.6,
+ "time_s": 516.5,
  "stages": {
   "prep_mesh_render": {
    "sampled_peak_rss_gb": 0.94,
@@ -95,9 +95,47 @@
    "time_s": 1.3
   },
   "denoise": {
-   "sampled_peak_rss_gb": 9.087764739990234,
-   "peak_footprint_gb": 9.087764739990234,
-   "peak_swap_gb": 0.0
+   "sampled_peak_rss_gb": 9.117,
+   "peak_footprint_gb": 9.117,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 9.154,
+   "rss_end_gb": 4.117,
+   "time_s": 398.8
+  },
+  "vae_decode": {
+   "sampled_peak_rss_gb": 5.052,
+   "peak_footprint_gb": 5.052,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 5.055,
+   "rss_end_gb": 4.117,
+   "time_s": 50.3
+  },
+  "bake_inpaint": {
+   "sampled_peak_rss_gb": 4.125,
+   "peak_footprint_gb": 4.125,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 4.192,
+   "rss_end_gb": 4.125,
+   "time_s": 6.0
   }
- }
+ },
+ "step_times_s": [
+  39.6,
+  39.5,
+  39.9,
+  40.1,
+  39.5,
+  40.3,
+  40.3,
+  40.0,
+  39.7,
+  39.6
+ ],
+ "view_times_s": [],
+ "steps": 10,
+ "seq_ctx_gb": 0.0,
+ "view_pixel_std": 17.56,
+ "nan": false,
+ "consistency_std_0_255": 4.7,
+ "consistency_texels": 177297
 }

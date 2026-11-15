@@ -1,0 +1,4 @@
+[MON] >> prep_mesh_render  rss=0.32GB
+mesh 130005v/246305f -> 31189v/39999f
+[MON] << prep_mesh_render  hwm=0.933GB sampled=0.89GB footprint=0.89GB swap=0.0GB rss_end=0.824GB t=10.5s
+[MON] >> load_vae_encode  rss=0.82GB

@@ -22,7 +22,7 @@
   "rot_y180": 1,
   "vae_decode_probe": 1
  },
- "ok": false,
+ "ok": true,
  "notes": [],
  "mesh": {
   "verts_in": 130005,
@@ -67,10 +67,10 @@
   197,
   98
  ],
- "peak_rss_gb": 6.775,
- "peak_footprint_gb": 6.016,
- "peak_sampled_rss_gb": 6.016,
- "time_s": 396.6,
+ "peak_rss_gb": 7.639,
+ "peak_footprint_gb": 7.546,
+ "peak_sampled_rss_gb": 7.546,
+ "time_s": 591.7,
  "stages": {
   "prep_mesh_render": {
    "sampled_peak_rss_gb": 0.894,
@@ -105,9 +105,55 @@
    "time_s": 0.6
   },
   "denoise": {
-   "sampled_peak_rss_gb": 6.0160980224609375,
-   "peak_footprint_gb": 6.0160980224609375,
-   "peak_swap_gb": 0.0
+   "sampled_peak_rss_gb": 6.031,
+   "peak_footprint_gb": 6.031,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 6.087,
+   "rss_end_gb": 3.114,
+   "time_s": 402.3
+  },
+  "vae_decode": {
+   "sampled_peak_rss_gb": 4.035,
+   "peak_footprint_gb": 4.035,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 4.053,
+   "rss_end_gb": 3.116,
+   "time_s": 56.5
+  },
+  "bake_inpaint": {
+   "sampled_peak_rss_gb": 3.138,
+   "peak_footprint_gb": 3.138,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 3.266,
+   "rss_end_gb": 3.138,
+   "time_s": 7.8
+  },
+  "probe_vae_decode_batch6": {
+   "sampled_peak_rss_gb": 7.546,
+   "peak_footprint_gb": 7.546,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 7.639,
+   "rss_end_gb": 3.139,
+   "time_s": 50.2
   }
- }
+ },
+ "step_times_s": [
+  40.0,
+  40.3,
+  40.2,
+  40.2,
+  40.1,
+  40.2,
+  40.2,
+  40.3,
+  40.3,
+  40.1
+ ],
+ "view_times_s": [],
+ "steps": 10,
+ "seq_ctx_gb": 0.0,
+ "view_pixel_std": 17.56,
+ "nan": false,
+ "consistency_std_0_255": 4.7,
+ "consistency_texels": 177297
 }

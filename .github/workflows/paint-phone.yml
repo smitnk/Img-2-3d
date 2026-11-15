@@ -83,7 +83,7 @@ jobs:
             curl -fL -A "Mozilla/5.0" --retry 3 -o /tmp/b.tar.xz $base/Blender4.2/blender-4.2.3-linux-x64.tar.xz && break
           done
           mkdir /tmp/blender && tar xf /tmp/b.tar.xz -C /tmp/blender --strip-components=1 && /tmp/blender/blender -b --factory-startup --version | head -2
-          pip download -q --break-system-packages --no-deps --only-binary=:all: --implementation cp --python-version 311 --abi cp311 \
+          pip download -q --no-deps --only-binary=:all: --implementation cp --python-version 311 --abi cp311 \
             --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 onnxruntime==$ORT_VERSION -d whl
           mkdir pylibs && for f in whl/*.whl; do unzip -q -o $f -d pylibs; done
           pip install -q --break-system-packages pillow numpy

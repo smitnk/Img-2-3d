@@ -1,0 +1,6 @@
+/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py:59: DeprecationWarning: `Scene.dump(concatenate=True)` DEPRECATED FOR REMOVAL APRIL 2025: replace with `Scene.to_geometry()`
+  m = sc.dump(concatenate=True) if isinstance(sc, trimesh.Scene) else sc
+The cache for model files in Transformers v4.22.0 has been updated. Migrating your old cache. This is a one-time only operation. You can interrupt this and resume the migration later on by calling `transformers.utils.move_cache()`.
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+An error occurred while trying to fetch /tmp/hfm/hunyuan3d-paint-v2-0-turbo/vae: Error no file named diffusion_pytorch_model.safetensors found in directory /tmp/hfm/hunyuan3d-paint-v2-0-turbo/vae.
+Defaulting to unsafe serialization. Pass `allow_pickle=False` to raise an error instead.

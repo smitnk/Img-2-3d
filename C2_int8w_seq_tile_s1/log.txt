@@ -19,3 +19,5 @@ resident weights GB 0.902
 [MON] >> bake_inpaint  rss=2.54GB
 [MON] << bake_inpaint  hwm=2.759GB sampled=2.758GB footprint=2.758GB swap=0.0GB rss_end=2.559GB t=13.8s
 [MON] >> probe_vae_decode_batch6  rss=2.56GB
+[MON] << probe_vae_decode_batch6  hwm=7.059GB sampled=7.022GB footprint=7.022GB swap=0.0GB rss_end=2.559GB t=94.3s
+exit 0

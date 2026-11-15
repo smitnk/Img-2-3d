@@ -58,10 +58,10 @@
  "timesteps": [
   989
  ],
- "peak_rss_gb": 3.994,
- "peak_footprint_gb": 3.917,
- "peak_sampled_rss_gb": 3.917,
- "time_s": 404.7,
+ "peak_rss_gb": 7.059,
+ "peak_footprint_gb": 7.022,
+ "peak_sampled_rss_gb": 7.022,
+ "time_s": 499.0,
  "stages": {
   "prep_mesh_render": {
    "sampled_peak_rss_gb": 0.922,
@@ -120,9 +120,12 @@
    "time_s": 13.8
   },
   "probe_vae_decode_batch6": {
-   "sampled_peak_rss_gb": 0.0,
-   "peak_footprint_gb": 0.0,
-   "peak_swap_gb": 0.0
+   "sampled_peak_rss_gb": 7.022,
+   "peak_footprint_gb": 7.022,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 7.059,
+   "rss_end_gb": 2.559,
+   "time_s": 94.3
   }
  },
  "step_times_s": [

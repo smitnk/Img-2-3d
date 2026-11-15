@@ -1,23 +1,63 @@
 [MEM] >> mesh_bpy rss=0.26 anon=0.11 file=0.15 GB
-18:20:48 | INFO: Data are loaded, start creating Blender stuff
-18:20:48 | INFO: Blender create Mesh node Mesh_0
-18:20:48 | INFO: glTF import finished in 0.65s
-Warning: Active object is not a selected mesh
-mesh in: 42 verts, 80 faces
+18:23:59 | INFO: Data are loaded, start creating Blender stuff
+18:23:59 | INFO: Blender create Mesh node Mesh_0
+18:24:00 | INFO: glTF import finished in 0.46s
+imported objects: [('Armature', 'ARMATURE', 0, True), ('Icosphere', 'MESH', 42, True), ('Mesh_0', 'MESH', 130005, True)]
+mesh in: 130005 verts, 246305 faces
+mesh used: 23736 verts, 39999 faces (from 246305)
+PEAK mesh_bpy: hwm=0.584GB sampled_rss=0.574GB anon=0.422GB file=0.153GB t=2.7s
+[MEM] >> views rss=0.44 anon=0.29 file=0.15 GB
+MEM after views: rss=0.43 anon=0.27 file=0.16 hwm=0.53 GB
+PEAK views: hwm=0.528GB sampled_rss=0.511GB anon=0.358GB file=0.155GB t=2.5s
+[MEM] >> vae_encode rss=0.43 anon=0.27 file=0.16 GB
+PEAK vae_encode: hwm=0.728GB sampled_rss=0.728GB anon=0.567GB file=0.162GB t=71.9s
+[MEM] >> ref_unet rss=0.44 anon=0.28 file=0.16 GB
+MEM ref features: rss=0.51 anon=0.35 file=0.16 hwm=2.15 GB
+PEAK ref_unet: hwm=2.149GB sampled_rss=2.135GB anon=1.369GB file=0.972GB t=3.9s
+[MEM] >> denoise rss=0.51 anon=0.35 file=0.16 GB
+[step 1/10] t=989 110.6s rss=1.62 anon=0.55 file=1.07 hwm=2.85
+[step 2/10] t=890 63.6s rss=1.64 anon=0.57 file=1.07 hwm=2.86
+[step 3/10] t=791 63.4s rss=1.65 anon=0.58 file=1.07 hwm=2.86
+[step 4/10] t=692 62.8s rss=1.63 anon=0.56 file=1.07 hwm=2.86
+[step 5/10] t=593 62.9s rss=1.63 anon=0.56 file=1.07 hwm=2.86
+[step 6/10] t=494 62.9s rss=1.65 anon=0.58 file=1.07 hwm=2.86
+[step 7/10] t=395 62.6s rss=1.61 anon=0.55 file=1.07 hwm=2.86
+[step 8/10] t=296 60.2s rss=1.62 anon=0.55 file=1.07 hwm=2.86
+[step 9/10] t=197 62.0s rss=1.63 anon=0.56 file=1.07 hwm=2.86
+[step 10/10] t=98 62.0s rss=1.64 anon=0.57 file=1.07 hwm=2.86
+PEAK denoise: hwm=2.861GB sampled_rss=2.86GB anon=1.792GB file=1.068GB t=675.8s
+Exception in thread Thread-1 (_loop):
 Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
 Traceback (most recent call last):
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/phone/paint_phone.py", line 393, in <module>
-    main(parse_args())
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/phone/paint_phone.py", line 263, in main
-    ob, Vg, F, uvc = io.prepare_mesh(a.mesh, a.faces)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/phone/paint_phone.py", line 186, in prepare_mesh
-    me.uv_layers.active.data.foreach_get("uv", uv)
-    ^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'data'
+  File "/tmp/blender/4.2/python/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[MEM] >> vae_decode rss=0.59 anon=0.43 file=0.16 GB
+    self.run()
+  File "/tmp/blender/4.2/python/lib/python3.11/threading.py", line 982, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/phone/paint_phone.py", line 67, in _loop
+    s, m = status(), self.st[self.cur]
+                     ~~~~~~~^^^^^^^^^^
+KeyError: None
+PEAK vae_decode: hwm=0.866GB sampled_rss=0.0GB anon=0.0GB file=0.0GB t=98.5s
+[MEM] >> bake rss=0.47 anon=0.31 file=0.16 GB
+bake view front: 18193 texels, 0 already painted
+bake view left: 13689 texels, 1901 already painted
+bake view back: 19751 texels, 3323 already painted
+bake view right: 13645 texels, 5408 already painted
+bake view top: 10231 texels, 6908 already painted
+bake view bottom: 8954 texels, 3012 already painted
+PEAK bake: hwm=0.543GB sampled_rss=0.0GB anon=0.0GB file=0.0GB t=5.4s
+[MEM] >> export_glb rss=0.47 anon=0.31 file=0.16 GB
+18:38:20 | INFO: Starting glTF 2.0 export
+18:38:20 | WARNING: Mesh Mesh_0 is not valid, and may be exported wrongly
+18:38:20 | INFO: Extracting primitive: Mesh_0
+18:38:20 | INFO: Primitives created: 1
+18:38:20 | INFO: Finished glTF 2.0 export in 0.06041574478149414 s
+INFO Draco mesh compression is available, use library at /tmp/blender/4.2/python/lib/python3.11/site-packages/libextern_draco.so
 
-Error: script failed, file: '/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/phone/paint_phone.py', exiting.
+PEAK export_glb: hwm=0.48GB sampled_rss=0.0GB anon=0.0GB file=0.0GB t=0.1s
+PEAK total hwm=2.861GB anon=1.792GB time=860.9s
 
 Blender quit
-exit 1
-cgroup memory.peak MB 459
+exit 0
+cgroup memory.peak MB 1951

@@ -6,3 +6,6 @@ local.properties
 /models/
 /out/
 __pycache__/
+*.jks
+*.keystore
+*.p12

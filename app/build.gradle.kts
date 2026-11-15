@@ -30,22 +30,23 @@ android {
     }
 
     signingConfigs {
-        // One fixed key for every CI build, so a new APK installs over the old one and keeps the downloaded engine packs
-        // (a fresh runner-generated debug key forced an uninstall, which wiped them).
-        // shortcut: this key is in the repo (debug-grade, standard "android" passwords); use a private keystore before publishing.
-        create("ci") {
-            storeFile = file("ci-debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        // Private release key comes from CI secrets via env vars; without them, builds fall back to the default debug key.
+        val ksPath = System.getenv("SIGNING_KEYSTORE_PATH")
+        if (!ksPath.isNullOrEmpty()) {
+            create("ci") {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
-        debug { signingConfig = signingConfigs.getByName("ci") }
+        debug { signingConfigs.findByName("ci")?.let { signingConfig = it } }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("ci")
+            signingConfig = signingConfigs.findByName("ci") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

@@ -230,7 +230,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Converts a model for an engine (bx_export preset) in Blender, then hands the file to the save dialog. */
     fun exportPreset(m: Model, preset: ExportPreset) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
-        if (job?.isActive == true) return
+        if (busy) { fail("Busy", BUSY_MSG); return }
         stopPreview()
         _state.update { it.copy(exporting = preset.label) }
         job = viewModelScope.launch {
@@ -497,9 +497,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Quick unrigged build after the user stops editing, so the Builder shows the real character, not just options. */
     fun schedulePreview(delayMs: Long = 1200) {
-        if (!runtime.isReady() || job?.isActive == true) return
+        if (!runtime.isReady() || busy) return
         stopPreview()
-        previewJob = viewModelScope.launch {
+        val self = viewModelScope.launch {
             delay(delayMs)
             _state.update { it.copy(builderPreviewBusy = true) }
             try {
@@ -507,16 +507,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val b = runner.run("character_builder.py", spec.copy(smooth = minOf(spec.smooth, 1)).args(rig = false, blend = false),
                     s.threadCount(), postprocess = false) {}
                 val f = File(getApplication<Application>().cacheDir, "builder-preview.glb")
-                b.glb.copyTo(f, overwrite = true)
+                val tmp = File(f.parentFile, "builder-preview.glb.tmp")
+                b.glb.copyTo(tmp, overwrite = true)
+                java.nio.file.Files.move(tmp.toPath(), f.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING) // viewer never sees a half-written file
                 _state.update { it.copy(builderPreview = f, builderPreviewVersion = it.builderPreviewVersion + 1) }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 // a failed preview is not an error worth a dialog; the real build reports it
             } finally {
-                _state.update { it.copy(builderPreviewBusy = false) }
+                if (previewJob === coroutineContext[Job]) _state.update { it.copy(builderPreviewBusy = false) }
             }
         }
+        previewJob = self
     }
 
     fun importScript(uri: Uri) = viewModelScope.launch {
@@ -694,11 +697,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         saveBlender(b, st.presetName.ifBlank { p.title }, Source.PRESET, detail = "Model Forge · ${p.title}")
     }
 
+    /** True until the last job has fully finished, including after cancel() while it unwinds. */
+    private val busy get() = job?.isCompleted == false
+
     fun cancel() {
+        job?.cancel() // first, so the coroutine sees cancellation before the killed process looks like a failure/success
         tripo?.cancel()
         hunyuan?.cancel()
         runner.cancel()
-        job?.cancel()
+    }
+
+    private fun popRunning() = _state.update { st ->
+        val i = st.stack.lastIndexOf(Dest.Running)
+        if (i < 0) st else st.copy(stack = st.stack.filterIndexed { n, _ -> n != i })
     }
 
     // ---------- internals ----------
@@ -716,13 +727,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun launchJob(title: String, engine: String, steps: Int, block: suspend (Report) -> Model) {
-        if (job?.isActive == true) return // one job at a time, both engines
+        if (busy) { fail("Busy", BUSY_MSG); return } // one job at a time, both engines; a cancelled job still counts until it has fully ended
         stopPreview()
         _state.update { it.copy(run = RunState(title = title, engine = engine, steps = steps), failure = null) }
         go(Dest.Running)
         val svc = android.content.Intent(getApplication(), JobService::class.java).putExtra("title", title)
         getApplication<Application>().startForegroundService(svc)
-        job = viewModelScope.launch {
+        val self = viewModelScope.launch {
+            val me = coroutineContext[Job]
             val report = Report(System.currentTimeMillis())
             val monitor = launch(Dispatchers.Default) {
                 while (isActive) {
@@ -735,21 +747,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val m = withContext(Dispatchers.Default) { block(report) }
                 withContext(Dispatchers.IO) { patchPeak(m, report.peak()) }
                 refreshLibrary()
-                _state.update { it.copy(stack = it.stack.dropLast(1) + Dest.Result(m.id)) }
+                _state.update { st ->
+                    val i = st.stack.lastIndexOf(Dest.Running)
+                    st.copy(stack = (if (i < 0) st.stack else st.stack.filterIndexed { n, _ -> n != i }) + Dest.Result(m.id))
+                }
             } catch (e: CancellationException) {
-                _state.update { it.copy(stack = it.stack.dropLast(1)) }
+                popRunning()
             } catch (e: Throwable) {
                 val msg = if (e is OutOfMemoryError) "Out of memory. Lower the mesh resolution in Settings." else e.message ?: e.toString()
                 val repair = e is BlenderException && _state.value.run.title == "Text to 3D" && s.apiKey.isNotBlank()
-                _state.update { it.copy(stack = it.stack.dropLast(1), failure = Failure("$title failed", msg, repair)) }
+                popRunning()
+                _state.update { it.copy(failure = Failure("$title failed", msg, repair)) }
             } finally {
                 monitor.cancel()
-                getApplication<Application>().stopService(svc)
-                tripo = null
-                hunyuan = null
+                if (job === me) { // only the current job may tear down shared state
+                    getApplication<Application>().stopService(svc)
+                    tripo = null
+                    hunyuan = null
+                }
                 System.gc()
             }
         }
+        job = self
     }
 
     private fun patchPeak(m: Model, peak: Int) {
@@ -858,6 +877,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun savePhoto(m: Model, res: TripoSR.Result) {
         if (res.foreground != null) bitmapOf(res.foreground, res.foregroundSize).compressTo(File(m.dir, "photo.png"))
     }
+
+    private val BUSY_MSG = "Another job is still running or stopping. Try again in a moment."
 
     private fun fail(title: String, msg: String) = _state.update { it.copy(failure = Failure(title, msg)) }
 

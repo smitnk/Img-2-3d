@@ -70,7 +70,6 @@ public final class TripoSR {
 
     /** @param rgba interleaved 0..255 RGBA, w*h*4 */
     public Result run(int[] rgba, int w, int h, Options opt, Listener l) throws OrtException {
-        cancelled.set(false);
         Result res = new Result();
         long t = System.nanoTime();
 

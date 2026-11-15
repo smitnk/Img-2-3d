@@ -3,6 +3,8 @@ package com.smitnk.img23d.blender
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -28,33 +30,34 @@ class BlenderException(message: String, val log: List<String>) : IOException(mes
  */
 class BlenderRunner(private val context: Context, private val runtime: BlenderRuntime) {
     @Volatile private var process: Process? = null
+    private val lock = Mutex() // exec wipes /tmp/forge-job and proot-tmp: runs must not overlap
     val jobIn = File(context.cacheDir, "blender-job-in")
 
     fun cancel() { process?.destroyForcibly() }
 
     /** Runs [script]; then, unless [postprocess] is false, postprocess.py (quality gate + thumbnail) on its GLB. */
-    suspend fun run(script: String, args: List<String>, threads: Int, postprocess: Boolean = true, onLine: (String) -> Unit): BlenderResult {
+    suspend fun run(script: String, args: List<String>, threads: Int, postprocess: Boolean = true, onLine: (String) -> Unit): BlenderResult = lock.withLock {
         val r = exec(script, args, threads, "glb", onLine)
-        if (!postprocess) return r
+        if (!postprocess) return@withLock r
         onLine("Checking quality and rendering a thumbnail…")
         // Best-effort: a model is never lost because its quality check failed.
-        return runCatching {
+        runCatching {
             exec("postprocess.py", listOf("--in", "/tmp/forge-job/${r.glb.name}"), threads, "glb", onLine, clearOut = false)
             val q = File(r.glb.parentFile, "quality.json")
             BlenderResult(r.glb, r.blend, r.info, r.seconds, r.log,
                 q.takeIf { it.isFile }?.let { JSONObject(it.readText()) }, File(r.glb.parentFile, "thumb.png").takeIf { it.isFile })
-        }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; r }
+        }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; coroutineContext.ensureActive(); r }
     }
 
     /** texproject.py --render: writes render_<view>.png files; returns the output folder. */
     suspend fun renderViews(args: List<String>, threads: Int, onLine: (String) -> Unit): File =
-        exec("texproject.py", args, threads, "png", onLine).glb.parentFile!!
+        lock.withLock { exec("texproject.py", args, threads, "png", onLine).glb.parentFile!! }
 
     /** Re-exports [glb] with a bx_export preset; returns the exported file (fbx/glb/stl). */
-    suspend fun export(glb: File, preset: String, name: String, threads: Int, onLine: (String) -> Unit): File {
+    suspend fun export(glb: File, preset: String, name: String, threads: Int, onLine: (String) -> Unit): File = lock.withLock {
         glb.copyTo(File(jobIn.apply { mkdirs() }, "export_in.glb"), overwrite = true)
         val ext = if (preset == "print") "stl" else if (preset.startsWith("unity") || preset.startsWith("unreal") || preset == "roblox") "fbx" else "glb"
-        return exec("export_preset.py", listOf("--in", "/opt/job/export_in.glb", "--preset", preset, "--name", name), threads, ext, onLine).glb
+        exec("export_preset.py", listOf("--in", "/opt/job/export_in.glb", "--preset", preset, "--name", name), threads, ext, onLine).glb
     }
 
     /** proot into the runtime's rootfs with /opt/job bound; [rest] = more binds, then the guest command. */

@@ -34,31 +34,54 @@ open class AssetPack(val dir: File, private val baseUrl: String, val infoName: S
     /** An older pack is installed. */
     fun needsUpdate() = ready.isFile && !isReady()
 
+    /**
+     * Changed files go to dir/.staging first and are verified there; the old pack (and its .ready) stays usable until
+     * everything is downloaded and verified. Only then is .ready removed, the files swapped in, and .ready written last.
+     */
     suspend fun install(onStatus: (PackStatus) -> Unit) = withContext(Dispatchers.IO) {
-        ready.delete()
-        download(baseUrl + infoName, info, null) { _, _ -> }
-        val files = JSONObject(info.readText()).getJSONObject("files")
+        val stage = File(dir, STAGING).apply { mkdirs() }
+        val stagedInfo = File(stage, infoName)
+        download(baseUrl + infoName, stagedInfo, null) { _, _ -> }
+        val files = JSONObject(stagedInfo.readText()).getJSONObject("files")
         val total = files.keys().asSequence().sumOf { files.getJSONObject(it).getLong("bytes") }
         var before = 0L
+        val fresh = mutableListOf<String>()
         for (name in files.keys()) {
             val meta = files.getJSONObject(name)
             require(name.matches(Regex("[A-Za-z0-9_.-]+"))) { "Bad file name in pack info: $name" } // trust boundary
-            val target = File(dir, name)
-            if (target.length() != meta.getLong("bytes") || BlenderRuntime.sha256(target) != meta.getString("sha256")) {
-                download(baseUrl + name, target, meta.getLong("bytes")) { d, _ -> onStatus(PackStatus.Downloading(before + d, total)) }
-                if (BlenderRuntime.sha256(target) != meta.getString("sha256")) {
-                    target.delete()
-                    throw IOException("Checksum mismatch for $name; deleted, please retry")
+            val bytes = meta.getLong("bytes")
+            val sha = meta.getString("sha256")
+            val live = File(dir, name)
+            if (live.length() != bytes || BlenderRuntime.sha256(live) != sha) {
+                val staged = File(stage, name)
+                if (staged.length() != bytes || BlenderRuntime.sha256(staged) != sha) {
+                    download(baseUrl + name, staged, bytes) { d, _ -> onStatus(PackStatus.Downloading(before + d, total)) }
+                    if (BlenderRuntime.sha256(staged) != sha) {
+                        staged.delete()
+                        throw IOException("Checksum mismatch for $name; deleted, please retry")
+                    }
                 }
+                fresh += name
             }
-            before += meta.getLong("bytes")
+            before += bytes
         }
-        // drop leftovers of an older pack version (old model files, unpacked script folders) so they don't waste space or go stale
+        // everything is downloaded and verified: swap in (the old pack stops being ready only now)
+        ready.delete()
+        for (name in fresh) {
+            val live = File(dir, name)
+            live.delete()
+            if (!File(stage, name).renameTo(live)) throw IOException("Cannot move $name into place")
+        }
+        info.delete()
+        if (!stagedInfo.renameTo(info)) throw IOException("Cannot move $infoName into place")
+        // drop leftovers of an older pack version (old model files, unpacked script folders, staging) so they don't waste space or go stale
         val keep = files.keys().asSequence().toSet() + setOf(info.name, ready.name)
         dir.listFiles()?.filter { it.name !in keep }?.forEach { it.deleteRecursively() }
         ready.writeText(info.readText())
         onStatus(PackStatus.Ready)
     }
+
+    companion object { const val STAGING = ".staging" }
 
     fun uninstall() = dir.deleteRecursively().also { dir.mkdirs() }
 }

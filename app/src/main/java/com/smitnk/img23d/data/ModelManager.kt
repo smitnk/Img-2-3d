@@ -34,7 +34,9 @@ class ModelManager(context: Context) {
     val dir: File = File(context.getExternalFilesDir(null) ?: context.filesDir, "models").apply { mkdirs() }
     private val info = File(dir, "model_info.json")
 
-    fun manifest(): List<ModelFile>? {
+    fun manifest(): List<ModelFile>? = manifest(info)
+
+    private fun manifest(info: File): List<ModelFile>? {
         if (!info.isFile) return null
         val files = JSONObject(info.readText()).getJSONObject("files")
         return files.keys().asSequence().map {
@@ -52,21 +54,40 @@ class ModelManager(context: Context) {
     /** After a restore from a backup folder (PackFolder verified every sha256). */
     fun markVerified() = File(dir, VERIFIED).writeText("ok")
 
+    fun unmarkVerified() { File(dir, VERIFIED).delete() }
+
+    /** Changed files are downloaded and verified in .staging first; the old models stay usable until the swap. */
     suspend fun download(onStatus: (ModelStatus) -> Unit) = withContext(Dispatchers.IO) {
-        File(dir, VERIFIED).delete()
-        fetch("model_info.json", info, null) { _, _ -> }
-        val files = manifest() ?: throw IOException("Invalid model_info.json")
+        val stage = File(dir, ".staging").apply { mkdirs() }
+        val stagedInfo = File(stage, "model_info.json")
+        fetch("model_info.json", stagedInfo, null) { _, _ -> }
+        val files = manifest(stagedInfo) ?: throw IOException("Invalid model_info.json")
+        val fresh = mutableListOf<String>()
         for (f in files) {
-            val target = File(dir, f.name)
-            if (target.length() != f.bytes) {
-                fetch(f.name, target, f.bytes) { done, total -> onStatus(ModelStatus.Downloading(f.name, done, total)) }
-            }
+            require(f.name.matches(Regex("[A-Za-z0-9_.-]+"))) { "Bad file name in model info: ${f.name}" } // trust boundary
             onStatus(ModelStatus.Verifying(f.name))
-            if (sha256(target) != f.sha256) {
-                target.delete()
-                throw IOException("Checksum mismatch for ${f.name}; deleted, please retry")
+            val live = File(dir, f.name)
+            if (live.length() == f.bytes && sha256(live) == f.sha256) continue
+            val staged = File(stage, f.name)
+            if (staged.length() != f.bytes || sha256(staged) != f.sha256) {
+                fetch(f.name, staged, f.bytes) { done, total -> onStatus(ModelStatus.Downloading(f.name, done, total)) }
+                onStatus(ModelStatus.Verifying(f.name))
+                if (sha256(staged) != f.sha256) {
+                    staged.delete()
+                    throw IOException("Checksum mismatch for ${f.name}; deleted, please retry")
+                }
             }
+            fresh += f.name
         }
+        File(dir, VERIFIED).delete() // verified: swap in
+        for (name in fresh) {
+            val live = File(dir, name)
+            live.delete()
+            if (!File(stage, name).renameTo(live)) throw IOException("Cannot move $name into place")
+        }
+        info.delete()
+        if (!stagedInfo.renameTo(info)) throw IOException("Cannot move model_info.json into place")
+        stage.deleteRecursively()
         File(dir, VERIFIED).writeText("ok")
         onStatus(ModelStatus.Ready)
     }
@@ -76,7 +97,7 @@ class ModelManager(context: Context) {
 
 
     fun delete() {
-        dir.listFiles()?.forEach { it.delete() }
+        dir.listFiles()?.forEach { it.deleteRecursively() }
     }
 
     companion object {

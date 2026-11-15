@@ -42,7 +42,7 @@ object PackFolder {
         backup(ctx, tree, pack.dir, pack.isReady(), progress)
 
     suspend fun restore(ctx: Context, tree: Uri, pack: AssetPack, progress: (String) -> Unit): Boolean =
-        restore(ctx, tree, pack.dir, pack.infoName, { File(pack.dir, ".ready").writeText(it) }, progress)
+        restore(ctx, tree, pack.dir, pack.infoName, { File(pack.dir, ".ready").writeText(it) }, progress) { File(pack.dir, ".ready").delete() }
 
     /** Copy every file of an installed pack [dir] into <tree>/<dir name>/ (existing same-size files are kept). */
     suspend fun backup(ctx: Context, tree: Uri, dir: File, ready: Boolean, progress: (String) -> Unit) = withContext(Dispatchers.IO) {
@@ -64,7 +64,7 @@ object PackFolder {
      * it ready. Returns false when the folder has no copy of this pack.
      */
     suspend fun restore(ctx: Context, tree: Uri, dir: File, infoName: String, markReady: (String) -> Unit,
-                        progress: (String) -> Unit): Boolean =
+                        progress: (String) -> Unit, unmarkReady: () -> Unit = {}): Boolean =
         withContext(Dispatchers.IO) {
             val root = DocumentsContract.getTreeDocumentId(tree)
             val folder = subfolder(ctx, tree, dir.name, false) // picked the parent (e.g. "Imgto3d model")
@@ -72,6 +72,7 @@ object PackFolder {
                 ?: return@withContext false
             val kids = children(ctx, tree, folder).associateBy { it.name }
             val info = kids[infoName] ?: return@withContext false
+            unmarkReady() // a half-copied restore must not look ready; the marker is written last
             fun copy(c: Child, to: File) {
                 ctx.contentResolver.openInputStream(DocumentsContract.buildDocumentUriUsingTree(tree, c.id))!!
                     .use { inp -> to.outputStream().use { inp.copyTo(it, 1 shl 20) } }

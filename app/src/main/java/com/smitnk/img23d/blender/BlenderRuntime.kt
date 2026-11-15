@@ -47,28 +47,48 @@ class BlenderRuntime(context: Context) {
     /** True when an older runtime is installed and must be updated (e.g. v1 lacked libandroid-shmem). */
     fun needsUpdate() = ready.isFile && !isReady()
 
+    /** The old runtime stays usable until every file is downloaded and verified (bin files wait in .staging); only then it is replaced. */
     suspend fun install(onStatus: (RuntimeStatus) -> Unit) = withContext(Dispatchers.IO) {
-        ready.delete()
-        fetch("runtime_info.json", info, null) { _, _ -> }
-        val files = JSONObject(info.readText()).getJSONObject("files")
+        val stage = File(dir, ".staging").apply { mkdirs() }
+        val stagedInfo = File(stage, "runtime_info.json")
+        fetch("runtime_info.json", stagedInfo, null) { _, _ -> }
+        val files = JSONObject(stagedInfo.readText()).getJSONObject("files")
+        val fresh = mutableListOf<String>()
         for (name in files.keys()) {
             val meta = files.getJSONObject(name)
+            require(name.matches(Regex("[A-Za-z0-9_.-]+"))) { "Bad file name in runtime info: $name" } // trust boundary
             val bytes = meta.getLong("bytes")
-            val target = if (name.endsWith(".tar.gz")) File(downloads, name) else File(bin.apply { mkdirs() }, name)
-            if (target.length() != bytes || sha256(target) != meta.getString("sha256")) {
+            val sha = meta.getString("sha256")
+            val tar = name.endsWith(".tar.gz")
+            val live = if (tar) File(downloads, name) else File(bin, name)
+            val target = if (tar) live else File(stage, name) // the tarball isn't live anywhere, so it needs no staging
+            if (!tar && live.length() == bytes && sha256(live) == sha) continue
+            if (target.length() != bytes || sha256(target) != sha) {
                 fetch(name, target, bytes) { d, t -> onStatus(RuntimeStatus.Downloading(name, d, t)) }
                 onStatus(RuntimeStatus.Verifying(name))
-                if (sha256(target) != meta.getString("sha256")) {
+                if (sha256(target) != sha) {
                     target.delete()
                     throw IOException("Checksum mismatch for $name; deleted, please retry")
                 }
             }
+            if (!tar) fresh += name
+        }
+        // everything is downloaded and verified: only now stop being ready and replace the old runtime
+        ready.delete()
+        bin.mkdirs()
+        for (name in fresh) {
+            val live = File(bin, name)
+            live.delete()
+            if (!File(stage, name).renameTo(live)) throw IOException("Cannot move $name into place")
         }
         for (f in bin.listFiles().orEmpty()) Os.chmod(f.path, "755".toInt(8))
         val tarball = File(downloads, "blender-runtime-arm64.tar.gz")
         rootfs.deleteRecursively()
         extract(tarball, rootfs) { d, t -> onStatus(RuntimeStatus.Extracting(d, t)) }
         tarball.delete() // ~200 MB that is no longer needed once unpacked
+        info.delete()
+        if (!stagedInfo.renameTo(info)) throw IOException("Cannot move runtime_info.json into place")
+        stage.deleteRecursively()
         ready.writeText(info.readText())
         onStatus(RuntimeStatus.Ready)
     }
@@ -163,7 +183,13 @@ internal suspend fun download(url: String, target: File, expected: Long?, progre
 private suspend fun downloadOnce(url: String, target: File, expected: Long?, progress: (Long, Long) -> Unit) {
     val name = target.name
     val part = File(target.path + ".part")
-    val start = if (expected != null) part.length() else 0L
+    var start = if (expected != null) part.length() else 0L
+    if (expected != null && start > expected) { part.delete(); start = 0L } // oversized leftover: a Range request would get HTTP 416
+    if (expected != null && start == expected) { // already complete (e.g. rename failed last time); callers verify the sha256
+        target.delete()
+        if (!part.renameTo(target)) throw IOException("Cannot move $name into place")
+        return
+    }
     val conn = (URL(url).openConnection() as HttpURLConnection).apply {
         instanceFollowRedirects = true
         connectTimeout = 20_000
@@ -172,6 +198,7 @@ private suspend fun downloadOnce(url: String, target: File, expected: Long?, pro
     }
     try {
         val code = conn.responseCode
+        if (code == 416) { part.delete(); throw IOException("Resume rejected by server, restarting $name") } // retried from 0 (message isn't "HTTP 4xx")
         if (code !in 200..299) throw IOException("HTTP $code downloading $name")
         val resumed = code == 206
         val total = expected ?: conn.contentLengthLong

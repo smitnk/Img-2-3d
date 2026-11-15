@@ -44,6 +44,7 @@ import com.smitnk.img23d.data.Source
 import com.smitnk.img23d.data.verifyLocal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -179,8 +180,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- engines ----------
     fun refreshEngines() {
         val st = _state.value
-        val busyB = st.modelStatus is ModelStatus.Downloading || st.modelStatus is ModelStatus.Verifying
-        val busyA = st.runtime is RuntimeStatus.Downloading || st.runtime is RuntimeStatus.Verifying || st.runtime is RuntimeStatus.Extracting
+        // leave in-progress installs alone, and keep a Failed status (and its error text) until the user retries or the engine is ready
+        val busyB = packBusy("models") || st.modelStatus is ModelStatus.Downloading || st.modelStatus is ModelStatus.Verifying ||
+            (st.modelStatus is ModelStatus.Failed && !models.isReady())
+        val busyA = packBusy("runtime") || st.runtime is RuntimeStatus.Downloading || st.runtime is RuntimeStatus.Verifying ||
+            st.runtime is RuntimeStatus.Extracting || (st.runtime is RuntimeStatus.Failed && !runtime.isReady())
         _state.update {
             it.copy(
                 modelStatus = if (busyB) it.modelStatus else if (models.isReady()) ModelStatus.Ready else ModelStatus.Missing(models.dir.path),
@@ -189,7 +193,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun downloadModels() = viewModelScope.launch {
+    /** Running install / uninstall / restore jobs by pack folder name (main thread only): one at a time per pack, so uninstall can cancel an install first. */
+    private val packJobs = HashMap<String, Job>()
+
+    private fun packBusy(key: String) = packJobs[key]?.isActive == true
+
+    /** Runs [block] as [key]'s only job. Ignored (with a message) while that pack is busy or a folder backup/restore runs; [replace] cancels the running job first. */
+    private fun packTask(key: String, replace: Boolean = false, block: suspend () -> Unit) {
+        val old = packJobs[key]?.takeIf { it.isActive }
+        if (old != null && !replace || !replace && _state.value.packFolder != null) {
+            fail("Already in progress", "Wait for the current download or copy to finish.")
+            return
+        }
+        val j = viewModelScope.launch(start = kotlinx.coroutines.CoroutineStart.LAZY) {
+            old?.cancelAndJoin()
+            try { block() } finally { if (packJobs[key] === coroutineContext[Job]) packJobs.remove(key) }
+        }
+        packJobs[key] = j
+        j.start()
+    }
+
+    fun downloadModels() = packTask("models") {
         runCatching { models.download { m -> _state.update { it.copy(modelStatus = m) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(modelStatus = ModelStatus.Failed(e.message ?: e.toString())) } }
     }
@@ -199,14 +223,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             .onFailure { e -> _state.update { it.copy(modelStatus = ModelStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun deleteModels() { models.delete(); refreshEngines() }
+    fun deleteModels() = packTask("models", replace = true) {
+        withContext(Dispatchers.IO) { models.delete() }
+        _state.update { it.copy(modelStatus = ModelStatus.Missing(models.dir.path)) }
+    }
 
-    fun installRuntime() = viewModelScope.launch {
+    fun installRuntime() = packTask("runtime") {
         runCatching { runtime.install { r -> _state.update { it.copy(runtime = r) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(runtime = RuntimeStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun uninstallRuntime() { runtime.uninstall(); refreshEngines() }
+    fun uninstallRuntime() = packTask("runtime", replace = true) {
+        withContext(Dispatchers.IO) { runtime.uninstall() }
+        _state.update { it.copy(runtime = RuntimeStatus.NotInstalled) }
+    }
 
     // ---------- library ----------
     fun refreshLibrary() = viewModelScope.launch(Dispatchers.IO) {
@@ -306,6 +336,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
+        if (_state.value.packFolder != null) return@launch
         runCatching {
             val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
             com.smitnk.img23d.body.PackFolder.backup(getApplication(), tree, models.dir, models.isReady(), show)
@@ -315,10 +346,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun restorePacks(tree: android.net.Uri) = viewModelScope.launch {
+        if (packJobs.values.any { it.isActive } || _state.value.packFolder != null) { fail("Already in progress", "Wait for the current download or copy to finish."); return@launch }
         val found = mutableListOf<String>()
         runCatching {
             val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
-            if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show)) {
+            if (com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show) { models.unmarkVerified() }) {
                 found += "models"
                 _state.update { it.copy(modelStatus = ModelStatus.Ready) }
             }
@@ -335,7 +367,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** One engine's pack to / from a folder: key = its folder name (models, texgen, hunyuan, hunyuanmv, bodypack). */
-    fun backupOne(key: String, tree: android.net.Uri) = viewModelScope.launch {
+    fun backupOne(key: String, tree: android.net.Uri) = packTask(key) {
         val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
         runCatching {
             if (key == "models") {
@@ -350,10 +382,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(packFolder = null) }
     }
 
-    fun restoreOne(key: String, tree: android.net.Uri) = viewModelScope.launch {
+    fun restoreOne(key: String, tree: android.net.Uri) = packTask(key) {
         val show: (String) -> Unit = { t -> _state.update { it.copy(packFolder = t) } }
         runCatching {
-            val ok = if (key == "models") com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show)
+            val ok = if (key == "models") com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, models.dir, "model_info.json", { models.markVerified() }, show) { models.unmarkVerified() }
             else com.smitnk.img23d.body.PackFolder.restore(getApplication(), tree, packs().first { it.dir.name == key }, show)
             if (!ok) error("No saved \"$key\" pack there. Pick the folder you saved to, or its \"$key\" folder.")
         }.onFailure { e -> fail("Load failed", e.message ?: e.toString()) }
@@ -365,25 +397,34 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun uninstallHunyuanPack() { hunyuanPack.uninstall(); _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) } }
+    fun uninstallHunyuanPack() = packTask("hunyuan", replace = true) {
+        withContext(Dispatchers.IO) { hunyuanPack.uninstall() }
+        _state.update { it.copy(hunyuanPack = PackStatus.NotInstalled) }
+    }
 
-    fun uninstallHunyuanMvPack() { hunyuanMvPack.uninstall(); _state.update { it.copy(hunyuanMvPack = PackStatus.NotInstalled) } }
+    fun uninstallHunyuanMvPack() = packTask("hunyuanmv", replace = true) {
+        withContext(Dispatchers.IO) { hunyuanMvPack.uninstall() }
+        _state.update { it.copy(hunyuanMvPack = PackStatus.NotInstalled) }
+    }
 
-    fun installHunyuanMvPack() = viewModelScope.launch {
+    fun installHunyuanMvPack() = packTask("hunyuanmv") {
         runCatching { hunyuanMvPack.install { st -> _state.update { it.copy(hunyuanMvPack = st) } } }
-            .onFailure { e -> _state.update { it.copy(hunyuanMvPack = PackStatus.Failed(e.message ?: e.toString())) } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanMvPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun installHunyuanPack() = viewModelScope.launch {
+    fun installHunyuanPack() = packTask("hunyuan") {
         runCatching { hunyuanPack.install { st -> _state.update { it.copy(hunyuanPack = st) } } }
-            .onFailure { e -> _state.update { it.copy(hunyuanPack = PackStatus.Failed(e.message ?: e.toString())) } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
-    fun uninstallTexPack() { texPack.uninstall(); _state.update { it.copy(texPack = PackStatus.NotInstalled) } }
+    fun uninstallTexPack() = packTask("texgen", replace = true) {
+        withContext(Dispatchers.IO) { texPack.uninstall() }
+        _state.update { it.copy(texPack = PackStatus.NotInstalled) }
+    }
 
-    fun installTexPack() = viewModelScope.launch {
+    fun installTexPack() = packTask("texgen") {
         runCatching { texPack.install { st -> _state.update { it.copy(texPack = st) } } }
-            .onFailure { e -> _state.update { it.copy(texPack = PackStatus.Failed(e.message ?: e.toString())) } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(texPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     /**
@@ -426,9 +467,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun installBodyPack() = viewModelScope.launch {
+    fun installBodyPack() = packTask("bodypack") {
         runCatching { bodyPack.install { st -> _state.update { it.copy(bodyPack = st) } } }
-            .onFailure { e -> _state.update { it.copy(bodyPack = PackStatus.Failed(e.message ?: e.toString())) } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(bodyPack = PackStatus.Failed(e.message ?: e.toString())) } }
         if (bodyPack.isReady()) refreshBodyPreview()
     }
 

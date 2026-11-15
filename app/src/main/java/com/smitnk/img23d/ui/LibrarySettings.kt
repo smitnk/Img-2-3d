@@ -1,6 +1,7 @@
 package com.smitnk.img23d.ui
 
 import android.text.format.DateUtils
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -73,8 +74,8 @@ import com.smitnk.img23d.data.Source
 fun LibraryScreen(state: UiState, vm: AppViewModel) {
     LaunchedEffect(Unit) { vm.refreshLibrary() }
     val list = state.visibleModels
-    LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
+    LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(Space.lg),
+        horizontalArrangement = Arrangement.spacedBy(Space.md), verticalArrangement = Arrangement.spacedBy(Space.md), modifier = Modifier.fillMaxSize()) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Library", style = MaterialTheme.typography.displaySmall)
@@ -98,12 +99,18 @@ fun LibraryScreen(state: UiState, vm: AppViewModel) {
             }
         }
         itemsIndexed(list, key = { _, m -> m.id }) { i, m ->
-            Column(Modifier.staggerIn(i.coerceAtMost(8)).clip(MaterialTheme.shapes.large).clickable(onClickLabel = "Open ${m.name}") { vm.go(Dest.Result(m.id)) }) {
+            val cs = MaterialTheme.colorScheme
+            Column(
+                Modifier.staggerIn(i.coerceAtMost(8)).clip(MaterialTheme.shapes.large).background(cs.surfaceContainerLow)
+                    .clickable(onClickLabel = "Open ${m.name}") { vm.go(Dest.Result(m.id)) },
+            ) {
                 ModelThumb(m, Modifier.fillMaxWidth().aspectRatio(1f))
-                Text(m.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-                Text("${m.source.label} · ${DateUtils.getRelativeTimeSpanString(m.createdAt)}", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("%,d faces".format(m.faces), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                Column(Modifier.padding(horizontal = Space.md, vertical = Space.sm), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(m.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("${m.source.label} · ${DateUtils.getRelativeTimeSpanString(m.createdAt)}", style = MaterialTheme.typography.bodySmall,
+                        color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("%,d faces".format(m.faces), style = MaterialTheme.typography.labelSmall, color = cs.tertiary)
+                }
             }
         }
     }

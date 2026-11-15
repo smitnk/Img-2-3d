@@ -9,6 +9,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.semantics.heading
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -99,34 +103,46 @@ fun RunningScreen(state: UiState, vm: AppViewModel) {
     val spin by rememberInfiniteTransition(label = "orb").animateFloat(0f, 360f, infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Restart), label = "spin")
     val list = rememberLazyListState()
     LaunchedEffect(r.lines.size) { if (r.lines.isNotEmpty()) list.scrollToItem(r.lines.size - 1) }
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    var logOpen by remember { mutableStateOf(true) }
+    Column(Modifier.fillMaxSize().padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(84.dp).rotate(if (reduce) 0f else spin).clip(CircleShape)
+                Modifier.size(64.dp).rotate(if (reduce) 0f else spin).clip(CircleShape)
                     .background(Brush.sweepGradient(listOf(cs.primary, cs.tertiary, cs.primaryContainer, cs.primary))),
                 contentAlignment = Alignment.Center,
-            ) { Box(Modifier.size(66.dp).clip(CircleShape).background(cs.surface)) }
-            Spacer(Modifier.width(16.dp))
+            ) { Box(Modifier.size(50.dp).clip(CircleShape).background(cs.surface)) }
+            Spacer(Modifier.width(Space.lg))
             Column {
-                Text(r.title, style = MaterialTheme.typography.headlineSmall)
+                Text(r.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
                 Text("${r.engine}${if (r.steps > 1) " · step ${r.step} of ${r.steps}" else ""}", style = MaterialTheme.typography.labelMedium, color = cs.primary)
             }
         }
-        Text(r.stage.ifBlank { "Starting…" }, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
+        Text(r.stage.ifBlank { "Starting…" }, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.semantics { contentDescription = "Current stage: ${r.stage}" })
         val f = r.fraction
-        if (f != null) LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth()) else LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (f != null) LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth().heightIn(min = 6.dp)) else LinearProgressIndicator(Modifier.fillMaxWidth().heightIn(min = 6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Pill(Icons.Rounded.Timer, "%.1f s".format(r.elapsedMs / 1000f), Modifier.weight(1f))
             Pill(Icons.Rounded.Memory, "${r.memMb} MB · peak ${r.peakMb}", Modifier.weight(1.4f))
         }
-        Card(Modifier.fillMaxWidth().weight(1f), shape = MaterialTheme.shapes.medium,
+        // Live log: collapsible so the stage and progress stay the focus; collapsed it gives the space back.
+        Card(Modifier.fillMaxWidth().then(if (logOpen) Modifier.weight(1f) else Modifier), shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(containerColor = cs.surfaceContainerLowest), border = BorderStroke(1.dp, cs.outlineVariant)) {
-            if (r.lines.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(if (r.engine == "TripoSR" || r.engine == "Hunyuan3D") "Neural network running on CPU" else "Waiting for Blender output…",
-                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
-            } else LazyColumn(state = list, contentPadding = PaddingValues(12.dp), modifier = Modifier.semantics { contentDescription = "Engine log" }) {
-                items(r.lines) { Text(it, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant) }
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (logOpen) "Collapse log" else "Expand log") { logOpen = !logOpen }
+                    .padding(horizontal = Space.lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Live log · ${r.lines.size} lines", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Icon(if (logOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
+            }
+            if (logOpen) {
+                if (r.lines.isEmpty()) Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Text(if (r.engine == "TripoSR" || r.engine == "Hunyuan3D") "Neural network running on CPU" else "Waiting for Blender output…",
+                        style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                } else LazyColumn(state = list, contentPadding = PaddingValues(Space.md), modifier = Modifier.fillMaxWidth().weight(1f).semantics { contentDescription = "Engine log" }) {
+                    items(r.lines) { Text(it, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant) }
+                }
             }
         }
         OutlinedButton(onClick = vm::cancel, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Cancel") }

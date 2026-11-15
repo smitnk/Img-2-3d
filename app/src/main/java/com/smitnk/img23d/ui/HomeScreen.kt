@@ -13,6 +13,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -72,41 +76,28 @@ fun HomeScreen(state: UiState, vm: AppViewModel, cb: AppCallbacks) {
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(Space.md),
     ) {
         Hero(Modifier.staggerIn(0))
         EngineStrip(state, Modifier.staggerIn(1)) { vm.tab(Dest.Settings) }
 
         SectionHeader("Create")
-        BentoTile(
+        CreateTile(
             "Body Creator", "Detailed face, body & hands · 238 sliders · live preview", Icons.Rounded.Accessibility, Source.BODY.art(),
-            Modifier.fillMaxWidth().height(120.dp).staggerIn(1), tag = "NEW",
+            Modifier.fillMaxWidth().staggerIn(1), tag = "NEW", wide = true,
         ) { vm.go(Dest.Body) }
-        // Asymmetric bento: one tall feature tile beside two stacked tiles, then a wide row.
-        Row(Modifier.fillMaxWidth().height(260.dp).staggerIn(2), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            BentoTile(
-                "Photo → Character", "TripoSR shape, Blender clean-up, rig", Icons.Rounded.Face, Source.CHARACTER.art(),
-                Modifier.weight(1.15f).fillMaxSize(), tag = "BOTH ENGINES",
-            ) { cb.pickImage(PhotoMode.CHARACTER) }
-            Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                BentoTile("Photo → 3D", "Raw TripoSR mesh", Icons.Rounded.AddPhotoAlternate, Source.PHOTO.art(), Modifier.weight(1f).fillMaxWidth(), compact = true) {
-                    cb.pickImage(PhotoMode.MESH)
-                }
-                BentoTile("Builder", "Sliders & styles", Icons.Rounded.Tune, Source.BUILDER.art(), Modifier.weight(1f).fillMaxWidth(), compact = true) {
-                    vm.go(Dest.Builder)
-                }
-            }
+        // Uniform 2-column grid; each row is as tall as its tallest tile so edges line up.
+        TileRow(Modifier.staggerIn(2)) {
+            CreateTile("Photo → 3D", "Raw TripoSR mesh", Icons.Rounded.AddPhotoAlternate, Source.PHOTO.art(), Modifier.weight(1f).fillMaxHeight()) { cb.pickImage(PhotoMode.MESH) }
+            CreateTile("Photo → Character", "Shape, clean-up and rig", Icons.Rounded.Face, Source.CHARACTER.art(), Modifier.weight(1f).fillMaxHeight()) { cb.pickImage(PhotoMode.CHARACTER) }
         }
-        Row(Modifier.fillMaxWidth().height(132.dp).staggerIn(3), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            BentoTile("Python script", "Any AI's bpy code", Icons.Rounded.Code, Source.SCRIPT.art(), Modifier.weight(1f).fillMaxSize(), compact = true) {
-                vm.go(Dest.Script)
-            }
-            BentoTile("Text to 3D", "Optional · API key", Icons.Rounded.AutoAwesome, Source.TEXT.art(), Modifier.weight(1f).fillMaxSize(), compact = true) {
-                vm.go(Dest.Text)
-            }
-            BentoTile("Presets", "7 Forge models", Icons.Rounded.Widgets, Source.PRESET.art(), Modifier.weight(1f).fillMaxSize(), compact = true) {
-                vm.go(Dest.Presets)
-            }
+        TileRow(Modifier.staggerIn(3)) {
+            CreateTile("Builder", "Sliders & styles", Icons.Rounded.Tune, Source.BUILDER.art(), Modifier.weight(1f).fillMaxHeight()) { vm.go(Dest.Builder) }
+            CreateTile("Text to 3D", "Optional · API key", Icons.Rounded.AutoAwesome, Source.TEXT.art(), Modifier.weight(1f).fillMaxHeight()) { vm.go(Dest.Text) }
+        }
+        TileRow(Modifier.staggerIn(3)) {
+            CreateTile("Python script", "Any AI's bpy code", Icons.Rounded.Code, Source.SCRIPT.art(), Modifier.weight(1f).fillMaxHeight()) { vm.go(Dest.Script) }
+            CreateTile("Presets", "7 Forge models", Icons.Rounded.Widgets, Source.PRESET.art(), Modifier.weight(1f).fillMaxHeight()) { vm.go(Dest.Presets) }
         }
 
         if (state.models.isNotEmpty()) {
@@ -166,31 +157,42 @@ private fun EngineDot(name: String, ready: Boolean, modifier: Modifier) {
 }
 
 @Composable
-private fun BentoTile(
+private fun TileRow(modifier: Modifier, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Space.md), content = content)
+}
+
+/** Mode tile: gradient icon badge + title + one-line hint. [wide] lays the badge beside the text for a featured full-width tile. */
+@Composable
+private fun CreateTile(
     title: String, sub: String, icon: ImageVector, colors: List<Color>, modifier: Modifier,
-    compact: Boolean = false, tag: String? = null, onClick: () -> Unit,
+    tag: String? = null, wide: Boolean = false, onClick: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
     Box(
-        modifier.clip(MaterialTheme.shapes.large).background(cs.surfaceContainer)
+        modifier.heightIn(min = if (wide) 88.dp else 120.dp).clip(MaterialTheme.shapes.large).background(cs.surfaceContainer)
+            .border(1.dp, cs.outlineVariant.copy(alpha = 0.6f), MaterialTheme.shapes.large)
             .clickable(onClickLabel = title, onClick = onClick).semantics(mergeDescendants = true) {},
     ) {
-        // Soft gradient glow in the corner gives each mode its own identity.
-        Box(Modifier.matchParentSizeGlow(colors))
-        Column(Modifier.padding(14.dp).fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
-            GradientBadge(colors, icon, size = if (compact) 36 else 52)
-            Column {
-                if (tag != null) Text(tag, style = MaterialTheme.typography.labelMedium, color = colors.first())
-                Text(title, style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.headlineSmall,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+        // Soft corner glow gives each mode its own identity without adding another colour to the palette.
+        Box(Modifier.matchParentSize().background(Brush.linearGradient(listOf(Color.Transparent, Color.Transparent, colors.last().copy(alpha = 0.22f)))))
+        val text: @Composable (Modifier) -> Unit = { m ->
+            Column(m) {
+                if (tag != null) Text(tag, style = MaterialTheme.typography.labelMedium, color = cs.primary)
+                Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
+        if (wide) Row(Modifier.padding(Space.lg), verticalAlignment = Alignment.CenterVertically) {
+            GradientBadge(colors, icon, size = 48)
+            Spacer(Modifier.width(Space.md))
+            text(Modifier.weight(1f))
+        } else Column(Modifier.padding(Space.lg).fillMaxWidth()) {
+            GradientBadge(colors, icon, size = 40)
+            Spacer(Modifier.height(Space.md))
+            text(Modifier)
+        }
     }
 }
-
-private fun Modifier.matchParentSizeGlow(colors: List<Color>) = this.fillMaxSize()
-    .background(Brush.linearGradient(listOf(Color.Transparent, Color.Transparent, colors.last().copy(alpha = 0.32f))))
 
 @Composable
 fun RecentCard(m: Model, onClick: () -> Unit) {

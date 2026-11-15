@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from einops import rearrange
 
 GB = 1 << 30
+UNEXPECTED = []
 
 
 # ---------------------------------------------------------------- RSS monitor
@@ -184,7 +185,14 @@ def load_weights(model, st_path, dtype, quant="none", prefix=None):
             if prefix and not k.startswith(prefix):
                 continue
             mp, pn = k.rsplit(".", 1)
-            mod = model.get_submodule(mp)
+            try:
+                mod = model.get_submodule(mp)
+            except AttributeError:
+                UNEXPECTED.append(k)
+                continue
+            if pn not in mod._parameters and pn not in mod._buffers:
+                UNEXPECTED.append(k)
+                continue
             t = f.get_tensor(k)
             if quant == "int8w" and pn == "weight" and isinstance(mod, (nn.Linear, nn.Conv2d)):
                 q = QLinear(mod) if isinstance(mod, nn.Linear) else QConv2d(mod)

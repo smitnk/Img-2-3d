@@ -272,6 +272,8 @@ def main():
         miss = [n for n, p in list(unet.named_parameters()) + list(unet.named_buffers()) if p is not None and p.device.type == "meta"]
         assert not miss, f"meta tensors left: {miss[:5]}"
         unet.eval()
+        res["unexpected_ckpt_keys"] = {"count": len(PL.UNEXPECTED), "examples": PL.UNEXPECTED[:12]}
+        print("unexpected keys", res["unexpected_ckpt_keys"], flush=True)
         res["resident_weight_gb"] = round(PL.tensor_bytes(unet) / PL.GB, 3)
         print("resident weights GB", res["resident_weight_gb"], flush=True)
 

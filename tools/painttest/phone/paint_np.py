@@ -361,7 +361,7 @@ def prep_reference(img, size=512, border=0.2):
     """float RGB(A) (H,W,C) 0..1 -> (size,size,3): white background, subject cropped + centred with 20 % border
     (Hunyuan's rembg + padding). Photos without alpha: background = colour distance from the border median, grown from the border."""
     if img.shape[2] == 4:
-        alpha = img[..., 3] > 0
+        alpha = img[..., 3] > 0.5
         rgb = img[..., :3] * img[..., 3:4] + (1 - img[..., 3:4])
     else:
         rgb = img[..., :3]

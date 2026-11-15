@@ -125,7 +125,10 @@ def load_image_np(path):
     px = np.empty(w * h * c, np.float32)
     im.pixels.foreach_get(px)
     bpy.data.images.remove(im)
-    return px.reshape(h, w, c)[::-1].copy()
+    px = px.reshape(h, w, c)[::-1]
+    if c == 4 and px[..., 3].min() > 0.999:  # opaque photo saved with an alpha channel
+        px = px[..., :3]
+    return px.copy()
 
 
 def prepare_mesh(path, faces):
@@ -136,13 +139,14 @@ def prepare_mesh(path, faces):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
     bpy.context.view_layer.update()
-    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    print("imported objects:", [(o.name, o.type, len(o.data.vertices) if o.type == "MESH" else 0, o.name in bpy.context.scene.objects) for o in bpy.data.objects], flush=True)
+    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and len(o.data.vertices) > 100]
     for o in meshes:
         if o.parent:
             mw = o.matrix_world.copy()
             o.parent = None
             o.matrix_world = mw
-    for o in [o for o in bpy.data.objects if o.type != "MESH"]:
+    for o in [o for o in bpy.data.objects if o not in meshes]:  # empties, armature bone shapes ...
         bpy.data.objects.remove(o)
     bpy.ops.object.select_all(action="DESELECT")
     for o in meshes:

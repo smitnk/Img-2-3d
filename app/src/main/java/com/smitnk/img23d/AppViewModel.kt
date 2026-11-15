@@ -152,6 +152,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var job: Job? = null
     private var tripo: TripoSR? = null
 
+    private val packJobs = HashMap<String, Job>() // before init: refreshEngines() reads it
     init {
         refreshEngines()
         refreshLibrary()
@@ -194,7 +195,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Running install / uninstall / restore jobs by pack folder name (main thread only): one at a time per pack, so uninstall can cancel an install first. */
-    private val packJobs = HashMap<String, Job>()
 
     private fun packBusy(key: String) = packJobs[key]?.isActive == true
 

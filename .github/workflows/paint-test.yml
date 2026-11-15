@@ -1,0 +1,62 @@
+name: Hunyuan3D-2 Paint CPU test
+on:
+  push:
+    branches: [paint-test]
+    paths: ["tools/painttest/**", ".github/workflows/paint-test.yml"]
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { v: A_fp32_batch6_ref,  args: "--mode batch --dtype fp32 --free_dual 0", probe: 0 }
+          - { v: A2_fp32_batch6_free, args: "--mode batch --dtype fp32 --free_dual 1", probe: 1 }
+          - { v: B_fp32_seq,          args: "--mode seq --dtype fp32 --free_dual 1", probe: 0 }
+          - { v: C1_bf16_seq,         args: "--mode seq --dtype bf16 --free_dual 1", probe: 0 }
+          - { v: C2_int8w_seq_tile,   args: "--mode seq --dtype fp32 --quant int8w --free_dual 1 --vae_tile 1", probe: 1 }
+          - { v: C3_int8w_batch6,     args: "--mode batch --dtype fp32 --quant int8w --free_dual 1", probe: 0 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disk + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2
+          sudo sysctl vm.swappiness=1; free -g; df -h /; lscpu | grep -E "Model name|Flags" | cut -c1-400
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install
+        run: |
+          pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers==0.32.2" einops safetensors accelerate numba trimesh xatlas fast-simplification opencv-python-headless scipy pillow numpy
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+          git fetch -q --depth 1 origin render-scene && git show FETCH_HEAD:tools/scene/char.glb > /tmp/char.glb
+      - name: Download paint-turbo weights
+        run: |
+          python - <<'P'
+          from huggingface_hub import snapshot_download
+          p = snapshot_download("tencent/Hunyuan3D-2", local_dir="/tmp/hfm", allow_patterns=[
+            "hunyuan3d-paint-v2-0-turbo/unet/config.json","hunyuan3d-paint-v2-0-turbo/unet/diffusion_pytorch_model.safetensors",
+            "hunyuan3d-paint-v2-0-turbo/vae/*","hunyuan3d-paint-v2-0-turbo/scheduler/*","hunyuan3d-paint-v2-0-turbo/model_index.json"])
+          P
+          du -sh /tmp/hfm/hunyuan3d-paint-v2-0-turbo/*; ls -la /tmp/hfm/hunyuan3d-paint-v2-0-turbo/unet
+      - name: Run
+        env: { GH_TOKEN: "${{ github.token }}", REPO: "${{ github.repository }}" }
+        run: |
+          STEPS=$(cat tools/painttest/STEPS); mkdir -p out
+          PROBEARG=""; [ "${{ matrix.probe }}" = "1" ] && PROBEARG="--vae_decode_probe 1"
+          (while sleep 420; do cp -r out /tmp/live 2>/dev/null; tools/painttest/push_out.sh "${{ matrix.v }}_s${STEPS}" /tmp/live >/dev/null 2>&1; done) &
+          set +e
+          /usr/bin/time -v python -u tools/painttest/run_paint.py --variant ${{ matrix.v }} --out out --steps $STEPS ${{ matrix.args }} $PROBEARG > out/log.txt 2> out/time.txt
+          echo "exit $?" >> out/log.txt
+          tail -5 out/time.txt; grep -E "Maximum resident|Elapsed" out/time.txt
+          tail -30 out/log.txt
+      - name: Push results
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}", REPO: "${{ github.repository }}" }
+        run: |
+          STEPS=$(cat tools/painttest/STEPS); grep -E "Maximum resident|Elapsed" out/time.txt > out/maxrss.txt || true
+          tools/painttest/push_out.sh "${{ matrix.v }}_s${STEPS}" out

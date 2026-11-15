@@ -1,0 +1,115 @@
+{
+ "variant": "E2_int8w_seq_3ref_asset",
+ "config": {
+  "variant": "E2_int8w_seq_3ref_asset",
+  "out": "out",
+  "model_dir": "/tmp/hfm/hunyuan3d-paint-v2-0-turbo",
+  "mesh": "/tmp/hy/assets/1.glb",
+  "refs": [
+   "/tmp/hy/assets/example_mv_images/1/front.png",
+   "/tmp/hy/assets/example_mv_images/1/left.png",
+   "/tmp/hy/assets/example_mv_images/1/back.png"
+  ],
+  "mode": "seq",
+  "dtype": "fp32",
+  "quant": "int8w",
+  "free_dual": 1,
+  "vae_batch": 0,
+  "vae_tile": 1,
+  "steps": 10,
+  "sweeps0": 2,
+  "faces": 40000,
+  "render_size": 1024,
+  "tex_size": 1024,
+  "rot_y180": 0,
+  "vae_decode_probe": 0
+ },
+ "ok": false,
+ "notes": [],
+ "mesh": {
+  "verts_in": 19996,
+  "faces_in": 40000,
+  "faces_used": 40000
+ },
+ "params": {
+  "gen_unet": 965302340,
+  "dual_ref_unet": 865910724,
+  "total": 1831213064,
+  "vae": 83653863
+ },
+ "resident_bytes_dual": 868515872,
+ "ref_feature_bytes": 138608640,
+ "unexpected_ckpt_keys": {
+  "count": 36,
+  "examples": [
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight",
+   "unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight"
+  ]
+ },
+ "resident_weight_gb": 0.902,
+ "timesteps": [
+  989,
+  890,
+  791,
+  692,
+  593,
+  494,
+  395,
+  296,
+  197,
+  98
+ ],
+ "peak_rss_gb": 4.096,
+ "peak_footprint_gb": 3.997,
+ "peak_sampled_rss_gb": 3.997,
+ "time_s": 800.2,
+ "stages": {
+  "prep_mesh_render": {
+   "sampled_peak_rss_gb": 0.867,
+   "peak_footprint_gb": 0.867,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 0.867,
+   "rss_end_gb": 0.758,
+   "time_s": 9.9
+  },
+  "load_vae_encode": {
+   "sampled_peak_rss_gb": 1.257,
+   "peak_footprint_gb": 1.257,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 1.257,
+   "rss_end_gb": 1.076,
+   "time_s": 161.7
+  },
+  "load_dual_ref_features": {
+   "sampled_peak_rss_gb": 3.396,
+   "peak_footprint_gb": 3.396,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 3.498,
+   "rss_end_gb": 2.253,
+   "time_s": 21.8
+  },
+  "load_gen_unet": {
+   "sampled_peak_rss_gb": 3.997,
+   "peak_footprint_gb": 3.997,
+   "peak_swap_gb": 0.0,
+   "hwm_gb": 4.096,
+   "rss_end_gb": 2.257,
+   "time_s": 2.2
+  },
+  "denoise": {
+   "sampled_peak_rss_gb": 2.89068603515625,
+   "peak_footprint_gb": 2.89068603515625,
+   "peak_swap_gb": 0.0
+  }
+ }
+}

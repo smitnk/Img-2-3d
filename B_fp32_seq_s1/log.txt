@@ -1,25 +1,21 @@
 [MON] >> prep_mesh_render  rss=0.32GB
 mesh 130005v/246305f -> 31189v/39999f
-[MON] << prep_mesh_render  hwm=0.93GB sampled=0.923GB footprint=0.923GB swap=0.0GB rss_end=0.864GB t=13.8s
-[MON] >> load_vae_encode  rss=0.86GB
+[MON] << prep_mesh_render  hwm=0.94GB sampled=0.928GB footprint=0.928GB swap=0.0GB rss_end=0.831GB t=10.3s
+[MON] >> load_vae_encode  rss=0.83GB
 latents torch.Size([1, 1, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64])
 params {'gen_unet': 965302340, 'dual_ref_unet': 865910724, 'total': 1831213064, 'vae': 83653863}
-[MON] << load_vae_encode  hwm=1.797GB sampled=1.781GB footprint=1.781GB swap=0.0GB rss_end=1.107GB t=101.0s
+[MON] << load_vae_encode  hwm=1.78GB sampled=1.781GB footprint=1.781GB swap=0.0GB rss_end=1.106GB t=101.0s
 [MON] >> load_dual_ref_features  rss=1.11GB
-[MON] << load_dual_ref_features  hwm=5.943GB sampled=5.852GB footprint=5.852GB swap=0.0GB rss_end=2.407GB t=7.4s
-[MON] >> load_gen_unet  rss=2.41GB
-Traceback (most recent call last):
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py", line 268, in main
-    finish_load("unet.")
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py", line 248, in finish_load
-    return PL.load_weights(unet, st_path, dtype, qmode, prefix=prefix)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/paintlib.py", line 187, in load_weights
-    mod = model.get_submodule(mp)
-          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 710, in get_submodule
-    raise AttributeError(
-AttributeError: Attention has no attribute `to_k_ip`
-
-[MON] << load_gen_unet  hwm=2.411GB sampled=0.0GB footprint=0.0GB swap=0.0GB rss_end=2.411GB t=0.0s
-exit 1
+[MON] << load_dual_ref_features  hwm=5.942GB sampled=5.555GB footprint=5.555GB swap=0.0GB rss_end=2.392GB t=7.2s
+[MON] >> load_gen_unet  rss=2.39GB
+unexpected keys {'count': 36, 'examples': ['unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.0.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.0.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.1.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.1.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.2.attentions.0.transformer_blocks.0.transformer.attn2.to_v_ip.weight', 'unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_k_ip.weight', 'unet.down_blocks.2.attentions.1.transformer_blocks.0.transformer.attn2.to_v_ip.weight']}
+resident weights GB 3.596
+[MON] << load_gen_unet  hwm=6.806GB sampled=5.742GB footprint=5.742GB swap=0.0GB rss_end=4.966GB t=0.6s
+[MON] >> denoise  rss=4.97GB
+[step 1/1] t=989 152.9s rss=5.32GB
+[MON] << denoise  hwm=5.435GB sampled=5.436GB footprint=5.436GB swap=0.0GB rss_end=3.305GB t=153.2s
+[MON] >> vae_decode  rss=3.30GB
+[MON] << vae_decode  hwm=3.806GB sampled=3.806GB footprint=3.806GB swap=0.0GB rss_end=3.306GB t=90.5s
+[MON] >> bake_inpaint  rss=3.31GB
+[MON] << bake_inpaint  hwm=3.331GB sampled=3.331GB footprint=3.331GB swap=0.0GB rss_end=3.331GB t=13.8s
+exit 0

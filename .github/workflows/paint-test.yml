@@ -2,7 +2,7 @@ name: Hunyuan3D-2 Paint CPU test
 on:
   push:
     branches: [paint-test]
-    paths: ["tools/painttest/**", ".github/workflows/paint-test.yml"]
+    paths: ["tools/painttest/*.py", "tools/painttest/STEPS", "tools/painttest/push_out.sh", "tools/painttest/cr_shim/**", ".github/workflows/paint-test.yml"]
 permissions:
   contents: write
 jobs:

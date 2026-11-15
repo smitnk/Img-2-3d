@@ -1,0 +1,154 @@
+name: Hunyuan3D-2 Paint on the phone (ONNX export, 2 GB / 2-core run, pack)
+# tools/painttest/phone/STAGE lists what to do: "export" (torch -> ONNX, parity check, upload to release hunyuanpaint-wip),
+# "run" (Blender 4.2.3 + onnxruntime under a 2 GB cgroup cap and 2 cores, results -> branch paint-phone-out), "pack" (release hunyuanpaint-v1).
+on:
+  push:
+    branches: [paint-test]
+    paths: ["tools/painttest/phone/**", ".github/workflows/paint-phone.yml", "tools/painttest/paintlib.py", "tools/painttest/refs/**"]
+permissions:
+  contents: write
+env:
+  GH_TOKEN: ${{ github.token }}
+  REPO: ${{ github.repository }}
+  ORT_VERSION: 1.20.0
+jobs:
+  cfg:
+    runs-on: ubuntu-24.04
+    outputs: { stage: "${{ steps.s.outputs.stage }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - id: s
+        run: echo "stage=$(cat tools/painttest/phone/STAGE)" >> $GITHUB_OUTPUT
+
+  export:
+    needs: cfg
+    if: contains(needs.cfg.outputs.stage, 'export')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disk + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo fallocate -l 16G /swap2 && sudo chmod 600 /swap2 && sudo mkswap /swap2 >/dev/null && sudo swapon /swap2; free -g; df -h /
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install
+        run: |
+          pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install "transformers==4.46.3" "huggingface-hub<1.0" "diffusers==0.32.2" einops safetensors accelerate numba trimesh xatlas opencv-python-headless scipy pillow numpy onnx onnxruntime==$ORT_VERSION
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+      - name: Download paint-turbo weights
+        run: |
+          python - <<'P'
+          from huggingface_hub import snapshot_download
+          snapshot_download("tencent/Hunyuan3D-2", local_dir="/tmp/hfm", allow_patterns=[
+            "hunyuan3d-paint-v2-0-turbo/unet/config.json","hunyuan3d-paint-v2-0-turbo/unet/diffusion_pytorch_model.safetensors",
+            "hunyuan3d-paint-v2-0-turbo/vae/*","hunyuan3d-paint-v2-0-turbo/scheduler/*"])
+          P
+      - name: Export ONNX (int8 weight-only UNets, chunked attention, parity vs torch)
+        run: |
+          mkdir -p onnx out
+          python -u tools/painttest/phone/export_onnx.py --model_dir /tmp/hfm/hunyuan3d-paint-v2-0-turbo --out onnx 2>&1 | grep -v -i "TracerWarning\|assert \|^  if " | tee out/export_log.txt
+          ls -la onnx | tee -a out/export_log.txt
+      - name: Upload to release hunyuanpaint-wip
+        run: |
+          gh release view hunyuanpaint-wip >/dev/null 2>&1 || gh release create hunyuanpaint-wip --prerelease --title "hunyuanpaint work files" --notes "intermediate ONNX export (CI cache), see hunyuanpaint-v1 for the published pack"
+          for f in onnx/*; do gh release upload hunyuanpaint-wip --clobber "$f"; done
+      - name: Push log
+        if: always()
+        run: tools/painttest/phone/push_branch.sh export out
+
+  run:
+    needs: [cfg, export]
+    if: ${{ !cancelled() && contains(needs.cfg.outputs.stage, 'run') && (needs.export.result == 'success' || needs.export.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { v: owner, refs: "tools/painttest/refs/front.png tools/painttest/refs/back.png" }
+          - { v: hyref, refs: "/tmp/hy/assets/example_images/1316.png" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inputs (ONNX pack, mesh, Blender 4.2.3, onnxruntime for Blender's Python 3.11)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 libxxf86vm1 libxfixes3 xz-utils >/dev/null
+          mkdir models && gh release download hunyuanpaint-wip -D models -R $REPO
+          ls -la models
+          git clone -q --depth 1 https://github.com/Tencent-Hunyuan/Hunyuan3D-2 /tmp/hy
+          git fetch -q --depth 1 origin render-scene && git show FETCH_HEAD:tools/scene/char.glb > /tmp/char.glb
+          for base in https://download.blender.org/release https://mirror.clarkson.edu/blender/release https://ftp.halifax.rwth-aachen.de/blender/release; do
+            curl -fL -A "Mozilla/5.0" --retry 3 -o /tmp/b.tar.xz $base/Blender4.2/blender-4.2.3-linux-x64.tar.xz && break
+          done
+          mkdir /tmp/blender && tar xf /tmp/b.tar.xz -C /tmp/blender --strip-components=1 && /tmp/blender/blender -b --factory-startup --version | head -2
+          pip download -q --break-system-packages --no-deps --only-binary=:all: --implementation cp --python-version 311 --abi cp311 \
+            --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 onnxruntime==$ORT_VERSION -d whl
+          mkdir pylibs && for f in whl/*.whl; do unzip -q -o $f -d pylibs; done
+          pip install -q --break-system-packages pillow numpy
+      - name: Run in Blender (2 cores, 2 GB cgroup cap)
+        run: |
+          mkdir -p out && STEPS=$(cat tools/painttest/STEPS)
+          REFS=""; for r in ${{ matrix.refs }}; do REFS="$REFS $(readlink -f $r)"; done
+          cat > run.sh <<EOS
+          #!/bin/bash
+          /usr/bin/time -v -o $PWD/out/time.txt /tmp/blender/blender -b --factory-startup --python-exit-code 1 --python $PWD/tools/painttest/phone/paint_phone.py -- \
+            --mesh /tmp/char.glb --refs $REFS --out $PWD/out/textured.glb --models $PWD/models --pylibs $PWD/pylibs --threads 2 --steps \$1
+          rc=\$?
+          echo "exit \$rc"
+          cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup); [ -f \$cg/memory.peak ] && echo "cgroup memory.peak MB \$(( \$(cat \$cg/memory.peak) / 1048576 ))"
+          exit \$rc
+          EOS
+          chmod +x run.sh
+          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then
+            echo "cgroup cap 2G: yes" | tee out/limits.txt; LIM="sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1"
+          else echo "cgroup cap: unavailable (peak RSS is reported instead)" | tee out/limits.txt; LIM="sudo taskset -c 0,1"; fi
+          ( while sleep 60; do echo "MON $(date +%T) rss_mb=$(ps -C blender -o rss= | sort -n | tail -1 | awk '{print int($1/1024)}')"; done ) > out/mon.txt 2>&1 &
+          set +e
+          timeout 330m $LIM ./run.sh 10 > out/log.txt 2>&1
+          echo "run exit $?"; tail -40 out/log.txt; grep -E "Maximum resident|Elapsed" out/time.txt | tee out/maxrss.txt
+      - name: Preview renders + comparison with the torch C2 output
+        if: always()
+        run: |
+          [ -f out/texture.png ] && python tools/painttest/phone/render_preview.py out
+          git fetch -q --depth 1 origin paint-test-out && git show FETCH_HEAD:C2_int8w_seq_tile_s10/render_4views.png > out/torch_C2_render_4views.png 2>/dev/null || true
+          git show FETCH_HEAD:C2_int8w_seq_tile_s10/texture.png > out/torch_C2_texture.png 2>/dev/null || true
+      - name: Push results
+        if: always()
+        run: tools/painttest/phone/push_branch.sh "${{ matrix.v }}" out
+
+  pack:
+    needs: [cfg]
+    if: contains(needs.cfg.outputs.stage, 'pack')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Assemble pack
+        run: |
+          mkdir pack models && gh release download hunyuanpaint-wip -D pack -R $REPO
+          pip download -q --no-deps --only-binary=:all: --implementation cp --python-version 312 --abi cp312 \
+            --platform manylinux2014_aarch64 --platform manylinux_2_17_aarch64 --platform manylinux_2_27_aarch64 --platform manylinux_2_28_aarch64 \
+            onnxruntime==$ORT_VERSION -d whl
+          mkdir py py/pylibs && for f in whl/*.whl; do unzip -q -o $f -d py/pylibs; done
+          cp tools/painttest/phone/paint_phone.py tools/painttest/phone/paint_np.py py/
+          (cd py && zip -qr ../pack/hunyuanpaint_py.zip .)
+          curl -fsSL https://raw.githubusercontent.com/Tencent-Hunyuan/Hunyuan3D-2/main/LICENSE -o pack/LICENSE-Hunyuan3D-2.txt
+          echo "Hunyuan3D-2 paint-turbo (tencent/Hunyuan3D-2, Tencent Hunyuan Community License: see LICENSE-Hunyuan3D-2.txt, restrictions apply incl. territory and non-commercial scale limits). ONNX graphs exported by tools/painttest/phone/export_onnx.py in $REPO (UNets int8 weight-only); hunyuanpaint_py.zip = onnxruntime $ORT_VERSION cp312 aarch64 (unpacked) + paint_phone.py / paint_np.py." > pack/SOURCE.txt
+          cd pack
+          for f in *; do [[ "$f" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "bad name $f"; exit 1; }; [ $(stat -c %s "$f") -lt 2147483648 ] || { echo "$f too big"; exit 1; }; done
+          python3 - <<'PY'
+          import hashlib, json, os
+          files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir(".")) if f != "hunyuanpaint_info.json"}
+          json.dump({"version": 1, "model": "Hunyuan3D-2 paint turbo", "files": files}, open("hunyuanpaint_info.json", "w"), indent=1)
+          print(sum(f["bytes"] for f in files.values()) / 2**30, "GB"); [print(k, v["bytes"]) for k, v in files.items()]
+          PY
+      - name: Publish release hunyuanpaint-v1
+        run: |
+          cd pack
+          gh release view hunyuanpaint-v1 >/dev/null 2>&1 || gh release create hunyuanpaint-v1 --title "Hunyuan3D-2 Paint for phones v1" --notes "Hunyuan3D-2 paint turbo as ONNX (int8 weight-only UNets) + onnxruntime lib + phone scripts. Run: see tools/painttest/phone/paint_phone.py"
+          for f in $(ls | grep -v '^hunyuanpaint_info.json$'); do gh release upload hunyuanpaint-v1 --clobber "$f"; done
+          gh release upload hunyuanpaint-v1 --clobber hunyuanpaint_info.json

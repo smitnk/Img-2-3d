@@ -1,0 +1,23 @@
+[MON] >> prep_mesh_render  rss=0.32GB
+mesh 130005v/246305f -> 31189v/39999f
+[MON] << prep_mesh_render  hwm=0.948GB sampled=0.925GB footprint=0.925GB swap=0.0GB rss_end=0.816GB t=7.5s
+[MON] >> load_vae_encode  rss=0.82GB
+latents torch.Size([1, 1, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64]) torch.Size([1, 6, 4, 64, 64])
+params {'gen_unet': 965302340, 'dual_ref_unet': 865910724, 'total': 1831213064, 'vae': 83653863}
+[MON] << load_vae_encode  hwm=1.791GB sampled=1.791GB footprint=1.791GB swap=0.0GB rss_end=1.113GB t=52.9s
+[MON] >> load_unet_all  rss=1.11GB
+Traceback (most recent call last):
+  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py", line 271, in main
+    finish_load(None)
+  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/run_paint.py", line 248, in finish_load
+    return PL.load_weights(unet, st_path, dtype, qmode, prefix=prefix)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/painttest/paintlib.py", line 187, in load_weights
+    mod = model.get_submodule(mp)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 710, in get_submodule
+    raise AttributeError(
+AttributeError: Attention has no attribute `to_k_ip`
+
+[MON] << load_unet_all  hwm=1.127GB sampled=0.0GB footprint=0.0GB swap=0.0GB rss_end=1.127GB t=0.0s
+exit 1

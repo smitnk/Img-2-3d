@@ -19,6 +19,8 @@ jobs:
           - { v: C1_bf16_seq,         args: "--mode seq --dtype bf16 --free_dual 1", probe: 0 }
           - { v: C2_int8w_seq_tile,   args: "--mode seq --dtype fp32 --quant int8w --free_dual 1 --vae_tile 1", probe: 1 }
           - { v: C3_int8w_batch6,     args: "--mode batch --dtype fp32 --quant int8w --free_dual 1", probe: 0 }
+          - { v: E1_int8w_seq_1ref_asset, args: "--mode seq --quant int8w --free_dual 1 --vae_tile 1 --mesh /tmp/hy/assets/1.glb --rot_y180 0 --refs /tmp/hy/assets/example_mv_images/1/front.png", probe: 0 }
+          - { v: E2_int8w_seq_3ref_asset, args: "--mode seq --quant int8w --free_dual 1 --vae_tile 1 --mesh /tmp/hy/assets/1.glb --rot_y180 0 --refs /tmp/hy/assets/example_mv_images/1/front.png /tmp/hy/assets/example_mv_images/1/left.png /tmp/hy/assets/example_mv_images/1/back.png", probe: 0 }
     steps:
       - uses: actions/checkout@v4
       - name: Disk + swap

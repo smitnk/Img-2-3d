@@ -29,7 +29,7 @@ import paintlib as PL  # noqa: E402  (QLinear / QConv2d / load_weights / quant_i
 
 MAX_REF, MAX_VIEW = 4, 6
 VAE_ENC_TILE, VAE_DEC_TILE = 320, 24
-BUDGET = 16_000_000  # floats of one attention-score chunk (64 MB)
+BUDGET = 8_000_000  # floats of one attention-score chunk (32 MB)
 
 
 # ------------------------------------------------------------------ chunked attention + block forward
@@ -69,8 +69,11 @@ def block_forward(self, hidden_states, attention_mask=None, encoder_hidden_state
     h = self.attn1(norm) + hidden_states
     CTX.out[ln] = norm
     if CTX.mode == "gen":
-        h = self.attn_refview(norm, encoder_hidden_states=CTX.ref[ln]) + h
-        h = self.attn_multiview(norm, encoder_hidden_states=torch.cat([norm, CTX.mv[ln]], 1)) + h
+        # fp16 cache inputs are tied to this block's activations (+0) so onnxruntime does not convert / project the features of
+        # all 16 layers up front (they would all be alive at once)
+        dep = (norm.reshape(-1)[0] * 0).half()
+        h = self.attn_refview(norm, encoder_hidden_states=(CTX.ref[ln] + dep).float()) + h
+        h = self.attn_multiview(norm, encoder_hidden_states=torch.cat([norm, (CTX.mv[ln] + dep).float()], 1)) + h
     h = self.attn2(self.norm2(h), encoder_hidden_states=encoder_hidden_states) + h
     return self.ff(self.norm3(h)) + h
 
@@ -117,8 +120,8 @@ class GenWrap(nn.Module):
     def forward(self, lat, nrm, pos, t, cam, *feats):
         n = len(self.names)
         CTX.mode, CTX.out = "gen", {}
-        CTX.ref = {k: f.float() for k, f in zip(self.names, feats[:n])}  # features travel as fp16
-        CTX.mv = {k: f.float() for k, f in zip(self.names, feats[n:])}
+        CTX.ref = dict(zip(self.names, feats[:n]))  # features travel as fp16 (cast to fp32 per block)
+        CTX.mv = dict(zip(self.names, feats[n:]))
         x = torch.cat([lat, nrm, pos], 1)
         eps = self.u(x, t, encoder_hidden_states=self.prompt, class_labels=cam + 5, return_dict=False)[0]
         return (eps,) + tuple(CTX.out[nm].half() for nm in self.names)

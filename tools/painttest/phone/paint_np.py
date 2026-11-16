@@ -457,17 +457,20 @@ def _cdf_match(src, dst, strength):
     return lambda x: x + strength * (np.interp(x, s, d) - x)
 
 
-def match_colours(gen, masks, refs, ref_masks, mode="chroma", strength=1.0, lstrength=0.5):
+def match_colours(gen, masks, refs, ref_masks, mode="chroma", strength=1.0, lstrength=0.5, ref_views=None):
     """Pull the colour statistics of every generated view (foreground only) towards the reference photos.
     The turbo model returns paler, lower-saturation colours than its reference (and grey backgrounds); the photos are the ground truth.
-    View 0 (front) is matched to reference 0, view 2 (back) to reference 1 when there are two, other views to the pooled references.
+    ref_views = the label (front/left/back/right) of each reference; a view with a photo of its own label is matched to that photo, any
+    other view to the pooled references (a single photo: to that photo). Default labels: front, back.
     mode 'chroma': L histogram-matched (lstrength), a/b scaled radially so the mean chroma and the chroma spread follow the reference
     (hue preserved); mode 'cdf': L, a, b histogram-matched independently."""
     rl = [srgb2lab(r)[m] for r, m in zip(refs, ref_masks)]
     pooled = np.concatenate(rl)
+    labels = list(ref_views) if ref_views else ["front", "back"][:len(rl)] + [""] * max(0, len(rl) - 2)
     out = []
     for i, (img, m) in enumerate(zip(gen, masks)):
-        tgt = rl[0] if (i == 0 or len(rl) == 1) else (rl[1] if i == 2 else pooled)
+        own = labels.index(VNAMES[i]) if VNAMES[i] in labels[:len(rl)] else -1
+        tgt = rl[own] if own >= 0 else (rl[0] if len(rl) == 1 else pooled)
         lab = srgb2lab(img)
         src = lab[m]
         if not len(src):

@@ -32,7 +32,12 @@ def parse_args(argv=None):
     p.add_argument("--out", required=True)
     p.add_argument("--models", required=True)
     p.add_argument("--pylibs", default=None)
-    p.add_argument("--threads", type=int, default=2)
+    p.add_argument("--threads", type=int, default=0, help="onnxruntime intra-op threads; 0 = auto (one per big core, at least 2) and pin to the fastest cores")
+    p.add_argument("--pin", type=int, default=1, help="restrict this process to the fastest --threads cores (big.LITTLE phones: keeps the work off the little cores)")
+    p.add_argument("--spin", type=int, default=0, help="onnxruntime intra-op thread spinning (session.intra_op.allow_spinning)")
+    p.add_argument("--opt", choices=("all", "extended", "basic"), default="all", help="onnxruntime graph optimisation level (session creation time vs speed)")
+    p.add_argument("--ref-views", nargs="+", default=None,
+                   help="view label of each --refs photo (front/left/back/right); default: first = front, second = back when there are two")
     p.add_argument("--work", default=None)
     p.add_argument("--steps", type=int, default=10, help="turbo is distilled for 10 (timesteps 29,26..2); other counts are spread over the same range")
     p.add_argument("--guidance", type=float, default=None,
@@ -50,12 +55,56 @@ def parse_args(argv=None):
     p.add_argument("--rot-y180", type=int, default=1, help="1 for meshes from Hunyuan3D shape generation (as the torch test)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--sweeps0", type=int, default=2)
-    p.add_argument("--nice", type=int, default=0)
+    p.add_argument("--nice", type=int, default=0, help="positive = lower priority (the scheduler then prefers the little cores: leave at 0)")
     p.add_argument("--mmap-threshold", type=int, default=1048576, help="glibc M_MMAP_THRESHOLD (0 = leave malloc alone)")
     p.add_argument("--phase", choices=("all", "prep", "gen", "export"), default="all",
                    help="all = prep and export each in their own Blender process (their memory goes back to the OS), gen in this one")
     p.add_argument("--save-views", type=int, default=1)
     return p.parse_args(argv)
+
+
+# ------------------------------------------------------------------ cpu plan (big.LITTLE)
+# rough relative single-thread speed per GHz of the Arm cores found in phones (only the ratios matter)
+_PART_IPC = {0xd03: .3, 0xd04: .3, 0xd05: .4, 0xd46: .45, 0xd80: .5, 0xd09: .8, 0xd0a: 1.0, 0xd0b: 1.3, 0xd0d: 1.5, 0xd41: 1.7, 0xd44: 2.0,
+             0xd47: 1.8, 0xd48: 2.3, 0xd4d: 2.0, 0xd4e: 2.6, 0xd81: 2.2, 0xd82: 2.8, 0xd4b: 1.7, 0xd07: .6, 0xd08: .9}
+
+
+def cpu_perf():
+    """{cpu: relative speed} for the cpus this process may run on (max frequency x per-core IPC; equal when unknown)."""
+    try:
+        cpus = sorted(os.sched_getaffinity(0))
+    except Exception:
+        return {i: 1.0 for i in range(os.cpu_count() or 2)}
+    part, cur = {}, None
+    try:
+        for l in open("/proc/cpuinfo"):
+            k, _, v = l.partition(":")
+            k, v = k.strip(), v.strip()
+            if k == "processor":
+                cur = int(v)
+            elif k == "CPU part" and cur is not None:
+                part[cur] = int(v, 16)
+    except Exception:
+        pass
+    freq = {}
+    for c in cpus:
+        try:
+            freq[c] = int(open(f"/sys/devices/system/cpu/cpu{c}/cpufreq/cpuinfo_max_freq").read()) / 1e6
+        except Exception:
+            pass
+    allf = len(freq) == len(cpus)
+    return {c: _PART_IPC.get(part.get(c), 1.0) * (freq[c] if allf else 1.0) for c in cpus}
+
+
+def plan_cpus(threads, pin):
+    """-> (threads, cpus to pin to or None). Auto = one thread per big core (>= half the fastest core's speed), 2..6."""
+    perf = cpu_perf()
+    order = sorted(perf, key=lambda c: (-perf[c], c))
+    big = [c for c in order if perf[c] >= 0.5 * perf[order[0]]]
+    n = threads if threads > 0 else max(2, min(len(big), 6))
+    n = min(n, len(order))
+    print(f"CPU plan: perf={ {c: round(v, 1) for c, v in perf.items()} } big={big} -> threads={n}{' pinned to ' + str(sorted(order[:n])) if pin else ''}", flush=True)
+    return n, (sorted(order[:n]) if pin and len(set(perf.values())) > 1 else None)
 
 
 # ------------------------------------------------------------------ memory monitor
@@ -130,8 +179,14 @@ def to_u8(x):
 # ------------------------------------------------------------------ Blender side
 def load_image_np(path):
     """image file -> float32 (H,W,C) 0..1, row 0 = top. Raw file values (Non-Color)."""
-    import bpy
     import numpy as np
+    try:
+        import bpy
+    except ImportError:  # CI benchmark on a runner without Blender (--phase gen only)
+        from PIL import Image
+        im = Image.open(path)
+        px = np.asarray(im.convert("RGBA" if im.mode in ("RGBA", "LA", "P") else "RGB"), np.float32) / 255
+        return px[..., :3].copy() if px.shape[2] == 4 and px[..., 3].min() > 0.999 else px.copy()
     im = bpy.data.images.load(path)
     im.colorspace_settings.name = "Non-Color"
     w, h = im.size
@@ -251,17 +306,37 @@ class ORT:
                 sys.path.insert(0, p)
         import onnxruntime as ort
         self.ort, self.models, self.threads = ort, models, threads
+        self.spin, self.opt, self.profile, self.create_s = 0, "all", False, 0.0
 
     def session(self, name):
         ort = self.ort
         so = ort.SessionOptions()
         so.intra_op_num_threads, so.inter_op_num_threads = self.threads, 1
+        so.add_session_config_entry("session.intra_op.allow_spinning", "1" if self.spin else "0")
+        so.graph_optimization_level = {"all": ort.GraphOptimizationLevel.ORT_ENABLE_ALL, "extended": ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
+                                       "basic": ort.GraphOptimizationLevel.ORT_ENABLE_BASIC}[self.opt]
+        so.enable_profiling = self.profile
         so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         so.enable_cpu_mem_arena = False  # free every intermediate at once instead of pooling it
         so.enable_mem_pattern = False
         so.log_severity_level = 3
         so.add_session_config_entry("optimization.disable_specified_optimizers", "ConstantFolding")
-        return ort.InferenceSession(os.path.join(self.models, name), so, providers=["CPUExecutionProvider"])
+        t0 = time.time()
+        sess = ort.InferenceSession(os.path.join(self.models, name), so, providers=["CPUExecutionProvider"])
+        self.create_s += time.time() - t0
+        return sess
+
+    def op_times(self, sess):
+        """profiling on: {op_type: ms} of the runs since the session was made (and the profile file removed)."""
+        f, tot = sess.end_profiling(), {}
+        try:
+            for e in json.load(open(f)):
+                if e.get("cat") == "Node" and e.get("name", "").endswith("_kernel_time"):
+                    op = e.get("args", {}).get("op_name", "?")
+                    tot[op] = tot.get(op, 0) + e["dur"] / 1000.0
+        finally:
+            os.remove(f)
+        return tot
 
 
 _LIBC = None
@@ -304,6 +379,12 @@ def main(a, io=None):
             os.nice(a.nice)
         except OSError:
             pass
+    a.threads, cpus = plan_cpus(a.threads, a.pin)
+    if cpus:
+        try:
+            os.sched_setaffinity(0, cpus)  # threads started later inherit it
+        except Exception as e:
+            print("pinning failed:", e, flush=True)
     work = a.work or os.path.join(os.path.dirname(os.path.abspath(a.out)), ".paint_work")
     os.makedirs(work, exist_ok=True)
     outdir = os.path.dirname(os.path.abspath(a.out))
@@ -341,6 +422,7 @@ def main(a, io=None):
     layers = meta["layers"]
     san = lambda n: n.replace(".", "_")  # noqa: E731
     R = ORT(a.models, a.threads, a.pylibs)
+    R.spin, R.opt, R.profile = a.spin, a.opt, bool(os.environ.get("PAINT_PROFILE"))
     tune_malloc(a.mmap_threshold)
     rng = np.random.RandomState(a.seed)
 
@@ -416,9 +498,11 @@ def main(a, io=None):
     cache = {n: np.zeros((6,) + tuple(shapes[n]), np.float16) for n in layers}  # [view, L, C]
     have = [[False] * 6 for _ in segs]
     in_ref = {f"ref_{san(n)}": ref_feats[i] for i, n in enumerate(layers)}
-    step_t, seg_t = [], []
+    step_t, seg_t, create_t, prof = [], [], [], {}
+    prof_on = R.profile
     for si, t in enumerate(sched.ts):
-        t0 = time.time()
+        t0, c0 = time.time(), R.create_s
+        R.profile = prof_on and si == 1  # PAINT_PROFILE=1: op-type time table of the second step
         eps = np.zeros_like(lat)
         for sw in range(a.sweeps0 if si == 0 else 1):
             states = [None] * 6
@@ -444,6 +528,9 @@ def main(a, io=None):
                         cache[n][v] = o[ns + i][0]
                     have[k][v] = True
                     del o
+                if R.profile:
+                    for op, ms in R.op_times(sess).items():
+                        prof[op] = prof.get(op, 0) + ms
                 del sess
                 trim()
                 seg_t.append(round(time.time() - ts_, 1))
@@ -452,9 +539,13 @@ def main(a, io=None):
             del states
         lat = sched.step(eps, si, lat, rng)
         step_t.append(round(time.time() - t0, 1))
+        create_t.append(round(R.create_s - c0, 1))
         s = status()
-        print(f"[step {si + 1}/{len(sched.ts)}] t={t} {step_t[-1]}s rss={s['VmRSS']:.2f} anon={s['RssAnon']:.2f} file={s['RssFile']:.2f} hwm={s['VmHWM']:.2f}", flush=True)
-    stats["step_times_s"], stats["segment_times_s"] = step_t, seg_t
+        print(f"[step {si + 1}/{len(sched.ts)}] t={t} {step_t[-1]}s (session creation {create_t[-1]}s) threads={a.threads} rss={s['VmRSS']:.2f} anon={s['RssAnon']:.2f} file={s['RssFile']:.2f} hwm={s['VmHWM']:.2f}", flush=True)
+    stats["step_times_s"], stats["segment_times_s"], stats["session_create_s"] = step_t, seg_t, create_t
+    if prof:
+        stats["op_ms_step2"] = {k: round(v) for k, v in sorted(prof.items(), key=lambda kv: -kv[1])[:15]}
+        print("op time (ms, step 2, sum over segments/views):", stats["op_ms_step2"], flush=True)
     del cache, ref_feats, in_ref
     gc.collect()
     trim()
@@ -479,7 +570,7 @@ def main(a, io=None):
         print("note: --guidance has no effect with the turbo model", flush=True)
     fgm = [views.r[i][0][::2, ::2] >= 0 for i in range(6)]  # 1024 raster -> 512 view grid
     if a.colour != "off":
-        gen = N.match_colours(gen, fgm, refs, [N.ref_foreground(r) for r in refs], a.colour, a.colour_strength, a.colour_l)
+        gen = N.match_colours(gen, fgm, refs, [N.ref_foreground(r) for r in refs], a.colour, a.colour_strength, a.colour_l, a.ref_views)
     if a.sharpen > 0:
         gen = [N.sharpen(g, m, a.sharpen) for g, m in zip(gen, fgm)]
     if a.save_views:
@@ -498,6 +589,7 @@ def main(a, io=None):
     tex, trust = N.bake(views, gen, Pt, Nt, cover, log=lambda *x: print(*x, flush=True), power=a.power, relax=bool(a.relax))
     del Pt, Nt
     tex, known = N.fill(tex, trust, 64)
+    stats["vertices"], stats["triangles"] = int(len(Vg)), int(len(F))
     stats["texels_covered"], stats["texels_painted"] = int(cover.sum()), int(trust.sum())
     png = os.path.join(outdir, "texture.png")
     write_png(png, to_u8(tex[::-1]))  # PNG row 0 = top = v 1

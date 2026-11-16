@@ -118,6 +118,84 @@ jobs:
         if: always()
         run: tools/painttest/phone/push_branch.sh "${{ matrix.v }}" out
 
+  prep:
+    needs: [cfg]
+    if: contains(needs.cfg.outputs.stage, 'arm')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mesh prep in Blender (decimate + UV), artifact for the aarch64 jobs
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 libxxf86vm1 libxfixes3 xz-utils >/dev/null
+          git fetch -q --depth 1 origin render-scene && git show FETCH_HEAD:tools/scene/char.glb > /tmp/char.glb
+          for base in https://download.blender.org/release https://mirror.clarkson.edu/blender/release https://ftp.halifax.rwth-aachen.de/blender/release; do
+            curl -fL -A "Mozilla/5.0" --retry 3 -o /tmp/b.tar.xz $base/Blender4.2/blender-4.2.3-linux-x64.tar.xz && break
+          done
+          mkdir /tmp/blender && tar xf /tmp/b.tar.xz -C /tmp/blender --strip-components=1
+          mkdir -p work out
+          /tmp/blender/blender -b --factory-startup --python-exit-code 1 --python $PWD/tools/painttest/phone/paint_phone.py -- \
+            --mesh /tmp/char.glb --refs $PWD/tools/painttest/refs/front.png --out $PWD/out/textured.glb --models /tmp --work $PWD/work --phase prep
+          ls -la work
+      - uses: actions/upload-artifact@v4
+        with: { name: prep, path: work/prep.npz }
+
+  arm:
+    needs: [cfg, prep]
+    if: ${{ !cancelled() && contains(needs.cfg.outputs.stage, 'arm') && needs.prep.result == 'success' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # v: output dir; cpus: taskset list; extra: more paint_phone.py flags
+          - { v: arm_t2,       cpus: "0,1",   extra: "--threads 2" }
+          - { v: arm_t4,       cpus: "0-3",   extra: "--threads 4" }
+          - { v: arm_t4_spin,  cpus: "0-3",   extra: "--threads 4 --spin 1" }
+          - { v: arm_t2_basic, cpus: "0,1",   extra: "--threads 2 --opt basic" }
+          - { v: arm_t4_prof,  cpus: "0-3",   extra: "--threads 4", prof: "1" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: prep, path: work }
+      - name: Inputs (ONNX pack, onnxruntime aarch64)
+        run: |
+          mkdir models && gh release download hunyuanpaint-wip -D models -R $REPO
+          python3 -m venv /tmp/v && /tmp/v/bin/pip install -q numpy pillow onnxruntime==$ORT_VERSION
+          lscpu | grep -E "Model name|^CPU\(s\)|Flags" | cut -c1-300 | tee -a out_limits.txt || true
+          grep -o -E "asimddp|i8mm|bf16|sve2|fphp|asimdhp" /proc/cpuinfo | sort | uniq -c | tee -a out_limits.txt
+      - name: Run (cgroup 2 GB cap, taskset)
+        env: { PAINT_PROFILE: "${{ matrix.prof }}" }
+        run: |
+          mkdir -p out && cp out_limits.txt out/limits.txt
+          REFS="$(readlink -f tools/painttest/refs/front.png) $(readlink -f tools/painttest/refs/back.png)"
+          cat > run.sh <<EOS
+          #!/bin/bash
+          /usr/bin/time -v -o $PWD/out/time.txt /tmp/v/bin/python $PWD/tools/painttest/phone/paint_phone.py --phase gen \
+            --mesh x --refs $REFS --ref-views front back --out $PWD/out/textured.glb --models $PWD/models --work $PWD/work \
+            --steps 10 --pin 0 ${{ matrix.extra }}
+          rc=\$?
+          echo "exit \$rc"
+          cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup); [ -f \$cg/memory.peak ] && echo "cgroup memory.peak MB \$(( \$(cat \$cg/memory.peak) / 1048576 ))"
+          exit \$rc
+          EOS
+          chmod +x run.sh
+          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then
+            echo "cgroup cap 2G: yes" | tee -a out/limits.txt; LIM="sudo --preserve-env=PAINT_PROFILE systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c ${{ matrix.cpus }}"
+          else echo "cgroup cap: unavailable" | tee -a out/limits.txt; LIM="sudo --preserve-env=PAINT_PROFILE taskset -c ${{ matrix.cpus }}"; fi
+          set +e
+          timeout 110m $LIM ./run.sh > out/log.txt 2>&1
+          echo "run exit $?"; grep -E "CPU plan|\[step|PEAK total|op time|memory.peak|exit " out/log.txt; tail -5 out/log.txt; grep -E "Maximum resident|Elapsed" out/time.txt | tee out/maxrss.txt
+      - name: Preview renders
+        if: always()
+        run: |
+          sudo chown -R "$USER" out; git fetch -q --depth 1 origin paint-phone-out && mkdir -p /tmp/base && for f in texture.png mesh_uv.npz; do git show FETCH_HEAD:owner_v2/$f > /tmp/base/$f; done
+          [ -f out/texture.png ] && /tmp/v/bin/python tools/painttest/phone/render_preview.py out /tmp/base
+      - name: Push results
+        if: always()
+        run: tools/painttest/phone/push_branch.sh "${{ matrix.v }}" out
+
   pack:
     needs: [cfg]
     if: contains(needs.cfg.outputs.stage, 'pack')

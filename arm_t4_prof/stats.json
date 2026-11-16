@@ -1,0 +1,273 @@
+{
+ "threads": 4,
+ "steps": 10,
+ "step_times_s": [
+  291.7,
+  165.9,
+  160.6,
+  161.8,
+  158.5,
+  158.2,
+  159.0,
+  159.4,
+  161.5,
+  160.8
+ ],
+ "segment_times_s": [
+  47.1,
+  3.5,
+  9.4,
+  68.3,
+  61.9,
+  3.5,
+  10.1,
+  88.0,
+  62.5,
+  3.6,
+  10.3,
+  89.5,
+  60.6,
+  3.3,
+  9.7,
+  86.9,
+  60.7,
+  3.4,
+  9.9,
+  87.7,
+  60.1,
+  3.4,
+  9.7,
+  85.3,
+  58.8,
+  3.3,
+  9.6,
+  86.6,
+  59.8,
+  3.3,
+  9.8,
+  86.2,
+  60.0,
+  3.4,
+  9.8,
+  86.2,
+  60.5,
+  3.3,
+  9.8,
+  87.8,
+  60.1,
+  3.3,
+  9.8,
+  87.6
+ ],
+ "session_create_s": [
+  10.5,
+  5.4,
+  5.2,
+  5.2,
+  5.3,
+  5.1,
+  5.2,
+  5.3,
+  5.2,
+  5.2
+ ],
+ "op_ms_step2": {
+  "MatMul": 90534,
+  "Softmax": 19625,
+  "Conv": 13586,
+  "Cast": 3202,
+  "Transpose": 2068,
+  "FusedMatMul": 1735,
+  "Mul": 1295,
+  "Slice": 1075,
+  "Add": 1057,
+  "Concat": 510,
+  "Gelu": 401,
+  "InstanceNormalization": 363,
+  "Gather": 347,
+  "QuickGelu": 162,
+  "LayerNormalization": 162
+ },
+ "vertices": 23736,
+ "triangles": 39999,
+ "texels_covered": 98950,
+ "texels_painted": 74584,
+ "stages": {
+  "views": {
+   "rss": 0.198,
+   "anon": 0.174,
+   "file": 0.025,
+   "hwm": 0.217,
+   "time_s": 2.8
+  },
+  "vae_encode": {
+   "rss": 0.474,
+   "anon": 0.319,
+   "file": 0.155,
+   "hwm": 0.475,
+   "time_s": 159.3
+  },
+  "ref_unet": {
+   "rss": 1.006,
+   "anon": 0.731,
+   "file": 0.333,
+   "hwm": 1.044,
+   "time_s": 14.5
+  },
+  "denoise": {
+   "rss": 1.36,
+   "anon": 1.048,
+   "file": 0.345,
+   "hwm": 1.367,
+   "time_s": 1737.3
+  },
+  "vae_decode": {
+   "rss": 0.466,
+   "anon": 0.254,
+   "file": 0.212,
+   "hwm": 0.466,
+   "time_s": 197.1
+  },
+  "colour": {
+   "rss": 0.237,
+   "anon": 0.205,
+   "file": 0.032,
+   "hwm": 0.249,
+   "time_s": 0.9
+  },
+  "bake": {
+   "rss": 0.291,
+   "anon": 0.259,
+   "file": 0.032,
+   "hwm": 0.29,
+   "time_s": 5.9
+  }
+ },
+ "peak_hwm_gb": 1.367,
+ "peak_anon_gb": 1.048,
+ "total_time_s": 2117.9,
+ "colour_metrics": {
+  "front_chroma_render": 16.416,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 1.01,
+  "front_L_render": 51.021,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 14.212,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.812,
+   0.494,
+   0.276
+  ],
+  "front_orange_deltaE": 2.064,
+  "front_orange_chroma_ratio": 0.987,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.411,
+   0.458,
+   0.433
+  ],
+  "front_green_deltaE": 2.773,
+  "front_green_chroma_ratio": 0.851,
+  "back_chroma_render": 14.143,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 1.032,
+  "back_L_render": 52.031,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 15.125,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.86,
+   0.598,
+   0.415
+  ],
+  "back_orange_deltaE": 10.808,
+  "back_orange_chroma_ratio": 0.85,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.472,
+   0.477,
+   0.458
+  ],
+  "back_green_deltaE": 5.563,
+  "back_green_chroma_ratio": 0.499
+ },
+ "colour_metrics_before": {
+  "front_chroma_render": 16.416,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 1.01,
+  "front_L_render": 51.021,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 14.212,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.812,
+   0.494,
+   0.276
+  ],
+  "front_orange_deltaE": 2.065,
+  "front_orange_chroma_ratio": 0.987,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.411,
+   0.458,
+   0.433
+  ],
+  "front_green_deltaE": 2.773,
+  "front_green_chroma_ratio": 0.851,
+  "back_chroma_render": 14.143,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 1.032,
+  "back_L_render": 52.031,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 15.124,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.86,
+   0.598,
+   0.415
+  ],
+  "back_orange_deltaE": 10.808,
+  "back_orange_chroma_ratio": 0.85,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.472,
+   0.477,
+   0.458
+  ],
+  "back_green_deltaE": 5.563,
+  "back_green_chroma_ratio": 0.499
+ }
+}

@@ -127,6 +127,82 @@ class GenWrap(nn.Module):
         return (eps,) + tuple(CTX.out[nm].half() for nm in self.names)
 
 
+class GenSeg(nn.Module):
+    """A run of UNet units (down i / mid / up i) of the generation UNet: the whole model is cut into a few graphs whose weights
+    are mapped one at a time, so little of the 0.9 GB of int8 weights is resident at once (the runner goes segment by segment
+    over all 6 views; the cross-view dependency is per layer only, so this order gives the same result as view by view)."""
+
+    def __init__(self, unet2d, prompt, units, names, first, last, n_in_skips):
+        super().__init__()
+        self.u, self.units, self.names, self.first, self.last, self.nin = unet2d, units, names, first, last, n_in_skips
+        self.register_buffer("prompt", prompt)
+
+    def forward(self, *a):
+        u, eh = self.u, self.prompt
+        a = list(a)
+        if self.first:
+            lat, nrm, pos, t, cam = a[:5]
+            a = a[5:]
+            emb = u.time_embedding(u.time_proj(t).to(lat.dtype)) + u.class_embedding(cam + 5).to(lat.dtype)
+            sample = u.conv_in(torch.cat([lat, nrm, pos], 1))
+            skips = [sample]
+        else:
+            sample, emb = a[0], a[1]
+            skips = [x.float() for x in a[2:2 + self.nin]]
+            a = a[2 + self.nin:]
+        n = len(self.names)
+        CTX.mode, CTX.out = "gen", {}
+        CTX.ref, CTX.mv = dict(zip(self.names, a[:n])), dict(zip(self.names, a[n:2 * n]))
+        for kind, i in self.units:
+            if kind == "down":
+                blk = u.down_blocks[i]
+                if getattr(blk, "has_cross_attention", False):
+                    sample, res = blk(hidden_states=sample, temb=emb, encoder_hidden_states=eh)
+                else:
+                    sample, res = blk(hidden_states=sample, temb=emb)
+                skips += list(res)
+            elif kind == "mid":
+                sample = u.mid_block(sample, emb, encoder_hidden_states=eh)
+            else:
+                blk = u.up_blocks[i]
+                k = len(blk.resnets)
+                res, skips = tuple(skips[-k:]), skips[:-k]
+                if getattr(blk, "has_cross_attention", False):
+                    sample = blk(hidden_states=sample, temb=emb, res_hidden_states_tuple=res, encoder_hidden_states=eh, upsample_size=None)
+                else:
+                    sample = blk(hidden_states=sample, temb=emb, res_hidden_states_tuple=res, upsample_size=None)
+        owns = tuple(CTX.out[nm].half() for nm in self.names)
+        if self.last:
+            return (u.conv_out(u.conv_act(u.conv_norm_out(sample))),) + owns
+        return (sample, emb) + tuple(x.half() for x in skips) + owns
+
+
+def unit_layers(unit, names):
+    kind, i = unit
+    pre = {"down": f"down_{i}_", "mid": "mid_", "up": f"up_{i}_"}[kind]
+    return [n for n in names if n.startswith(pre)]
+
+
+def unit_params(u, unit):
+    kind, i = unit
+    mod = {"down": lambda: u.down_blocks[i], "mid": lambda: u.mid_block, "up": lambda: u.up_blocks[i]}[kind]()
+    return sum(p.numel() for p in mod.parameters()) + sum(b.numel() for n, b in mod.named_buffers() if n.endswith("qw"))
+
+
+def plan_segments(u, nseg):
+    units = [("down", i) for i in range(len(u.down_blocks))] + [("mid", 0)] + [("up", i) for i in range(len(u.up_blocks))]
+    w = [unit_params(u, x) for x in units]
+    tot, segs, cur, acc = sum(w), [], [], 0
+    for x, wi in zip(units, w):
+        if cur and acc + wi / 2 > tot / nseg * (len(segs) + 1) and len(segs) < nseg - 1:
+            segs.append(cur)
+            cur = []
+        cur.append(x)
+        acc += wi
+    segs.append(cur)
+    return segs, dict(zip(units, w))
+
+
 # ------------------------------------------------------------------ int8 layers whose dequantisation cannot be hoisted
 # onnxruntime schedules every node that does not depend on the activations first, i.e. Cast(int8)->Mul(scale)->Transpose of ALL
 # weights (4 GB fp32 for the gen UNet) before the first MatMul. Making the int8 weight tensor a Gather whose index depends on the
@@ -223,6 +299,7 @@ def main():
     ap.add_argument("--tiny", type=int, default=0, help="random small test model instead of the checkpoint")
     ap.add_argument("--parity", type=int, default=1)
     ap.add_argument("--only", default="ref,gen,vae")
+    ap.add_argument("--segments", type=int, default=4, help="number of gen_seg*.onnx graphs")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     torch.manual_seed(0)
@@ -298,42 +375,96 @@ def main():
         shapes = meta.get("ref_shapes")
         if shapes is None:  # derive from the architecture (token count per layer)
             raise SystemExit("run with ref first (needs shapes)")
-        gw = GenWrap(unet.unet, prompt_gen, names, MAX_REF).eval()
+        gw = GenWrap(unet.unet, prompt_gen, names, MAX_REF).eval()  # monolithic torch reference for the parity check only
+        segs, w = plan_segments(unet.unet, a.segments)
+        print("segments:", [[f"{k}{i}" for k, i in sg] for sg in segs], "params(M):",
+              [round(sum(w[x] for x in sg) / 1e6) for sg in segs], flush=True)
         nref, nov = 2, 3
         lat = torch.randn(1, 4, 64, 64)
         nrm, pos = torch.randn(1, 4, 64, 64), torch.randn(1, 4, 64, 64)
         t = torch.tensor([593], dtype=torch.long)
         cam = torch.tensor([2], dtype=torch.long)
-        rf = [torch.randn(1, nref * shapes[n][0], shapes[n][1]).half() for n in names]
-        mv = [torch.randn(1, nov * shapes[n][0], shapes[n][1]).half() for n in names]
-        in_names = ["lat", "nrm", "pos", "t", "cam"] + [f"ref_{san(n)}" for n in names] + [f"mv_{san(n)}" for n in names]
-        out_names = ["eps"] + [f"own_{san(n)}" for n in names]
-        dyn = {f"ref_{san(n)}": {1: "lr"} for n in names}
-        dyn.update({f"mv_{san(n)}": {1: "lo"} for n in names})
-        p = os.path.join(a.out, "gen_unet.onnx")
-        args = (lat, nrm, pos, t, cam, *rf, *mv)
+
+        def rand_feats(nm, nr, no):
+            return ([torch.randn(1, nr * shapes[n][0], shapes[n][1]).half() if nr else torch.zeros(1, 0, shapes[n][1]).half() for n in nm],
+                    [torch.randn(1, no * shapes[n][0], shapes[n][1]).half() if no else torch.zeros(1, 0, shapes[n][1]).half() for n in nm])
+        rf, mv = rand_feats(names, nref, nov)
+        full_args = (lat, nrm, pos, t, cam, *rf, *mv)
         with torch.no_grad():
-            ref_out = gw(*args)
-            export(gw, args, p, in_names, out_names, dyn)
-        if a.parity:
-            s = ort_session(p)
-            feed = {k: v.numpy() for k, v in zip(in_names, args)}
-            o = s.run(None, feed)
-            r = rel(o[0], ref_out[0].numpy())
-            print("PARITY gen_unet eps (maxrel, l2rel):", r, flush=True)
-            meta["parity_gen_l2"] = r[1]
-            # different n_refs / zero cached views through the dynamic axes
-            args2 = list(args)
-            for i, n in enumerate(names):
-                args2[5 + i] = torch.randn(1, 1 * shapes[n][0], shapes[n][1]).half()
-                args2[5 + len(names) + i] = torch.zeros(1, 0, shapes[n][1]).half()
+            ref_out = gw(*full_args)
+        meta["segments"] = []
+        nskip = 0
+        gsegs = []
+        for k, sg in enumerate(segs):
+            first, last = k == 0, k == len(segs) - 1
+            lnames = [n for x in sg for n in unit_layers(x, names)]
+            nin = nskip
+            for kind, i in sg:  # skip-connection bookkeeping (diffusers: conv_in output, every resnet(+attn) and downsampler output)
+                if kind == "down":
+                    blk = unet.unet.down_blocks[i]
+                    nskip += len(blk.resnets) + (1 if blk.downsamplers else 0) + (1 if i == 0 else 0)
+                elif kind == "up":
+                    nskip -= len(unet.unet.up_blocks[i].resnets)
+            gs = GenSeg(unet.unet, prompt_gen, sg, lnames, first, last, nin).eval()
+            gsegs.append(gs)
+            meta["segments"].append({"file": f"gen_seg{k}.onnx", "layers": lnames, "first": first, "last": last, "n_in_skips": nin,
+                                     "n_out_skips": nskip})
+        # dry run in torch (monolith-equivalent chain) to get example state tensors, then export every segment
+        state, p_files = None, []
+        for k, gs in enumerate(gsegs):
+            sm = meta["segments"][k]
+            lnames = sm["layers"]
+            sr, sv = [rf[names.index(n)] for n in lnames], [mv[names.index(n)] for n in lnames]
+            if gs.first:
+                args = (lat, nrm, pos, t, cam, *sr, *sv)
+                in_names = ["lat", "nrm", "pos", "t", "cam"]
+            else:
+                args = (*state, *sr, *sv)
+                in_names = ["i_h", "i_emb"] + [f"i_sk{j}" for j in range(sm["n_in_skips"])]
+            in_names += [f"ref_{san(n)}" for n in lnames] + [f"mv_{san(n)}" for n in lnames]
+            out_state = ["eps"] if gs.last else ["h", "emb"] + [f"sk{j}" for j in range(sm["n_out_skips"])]
+            out_names = out_state + [f"own_{san(n)}" for n in lnames]
+            dyn = {f"ref_{san(n)}": {1: "lr"} for n in lnames}
+            dyn.update({f"mv_{san(n)}": {1: "lo"} for n in lnames})
+            p = os.path.join(a.out, sm["file"])
             with torch.no_grad():
-                ref2 = gw(*args2)
-            o2 = s.run(None, {k: v.numpy() for k, v in zip(in_names, args2)})
-            r2 = rel(o2[0], ref2[0].numpy())
-            print("PARITY gen_unet eps 1 ref / 0 cached views:", r2, flush=True)
+                outs = gs(*args)
+                export(gs, args, p, in_names, out_names, dyn)
+            sm["in_state"] = in_names[:len(in_names) - 2 * len(lnames)]
+            sm["out_state"] = out_state
+            state = outs[:len(out_state)]
+            p_files.append((p, in_names, args, outs, out_names))
+            del gs
+        gsegs = None
+        meta["n_segments"] = len(segs)
+        if a.parity:
+            def chain(feeds_rf, feeds_mv):
+                st, eps = None, None
+                for (p, in_names, args, outs, out_names), sm in zip(p_files, meta["segments"]):
+                    s = ort_session(p)
+                    ln = sm["layers"]
+                    feed = {}
+                    if sm["first"]:
+                        feed.update({k: v.numpy() for k, v in zip(["lat", "nrm", "pos", "t", "cam"], (lat, nrm, pos, t, cam))})
+                    else:
+                        feed.update(dict(zip(sm["in_state"], st)))
+                    feed.update({f"ref_{san(n)}": feeds_rf[names.index(n)].numpy() for n in ln})
+                    feed.update({f"mv_{san(n)}": feeds_mv[names.index(n)].numpy() for n in ln})
+                    o = s.run(None, feed)
+                    del s
+                    st = o[:len(sm["out_state"])]
+                    if sm["last"]:
+                        eps = o[0]
+                return eps
+            r = rel(chain(rf, mv), ref_out[0].numpy())
+            print("PARITY gen_unet (segments chained) eps (maxrel, l2rel):", r, flush=True)
+            meta["parity_gen_l2"] = r[1]
+            rf2, mv2 = rand_feats(names, 1, 0)
+            with torch.no_grad():
+                ref2 = gw(lat, nrm, pos, t, cam, *rf2, *mv2)
+            r2 = rel(chain(rf2, mv2), ref2[0].numpy())
+            print("PARITY gen_unet 1 ref / 0 cached views:", r2, flush=True)
             meta["parity_gen_dyn_l2"] = r2[1]
-            del s
         del gw
 
     # ---------------- VAE

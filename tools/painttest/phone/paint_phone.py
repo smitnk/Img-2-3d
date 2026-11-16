@@ -10,7 +10,8 @@ Pipeline (same maths as the torch C2 variant of tools/painttest/run_paint.py, on
   numpy: 6 orthographic views -> normal + position maps (software rasteriser, paint_np.py)
   vae_enc (320 px tiles): references, normal, position maps -> latents          [session freed]
   ref_unet (once per reference) -> 16 features per reference, kept as fp16      [session freed]
-  gen_unet, ONE view per call, 10 LCM steps, other views' features cached      [session freed]
+  gen_seg0..3 (the generation UNet cut in 4), ONE view per call, segment by segment over the 6 views,
+    10 LCM steps, other views' features cached; one segment mapped at a time                          [session freed]
   vae_dec (24x24 latent tiles, 8 latent overlap, blended) -> 6 views of 512 px                   [session freed]
   numpy gather bake (cos^4 weights, depth test) + UV fill -> texture, bpy material + GLB export.
 Memory: onnxruntime memory-maps the .onnx.data weights, arena and mem-pattern off, ConstantFolding disabled (the int8 weights are
@@ -41,6 +42,7 @@ def parse_args(argv=None):
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--sweeps0", type=int, default=2)
     p.add_argument("--nice", type=int, default=0)
+    p.add_argument("--mmap-threshold", type=int, default=1048576, help="glibc M_MMAP_THRESHOLD (0 = leave malloc alone)")
     p.add_argument("--phase", choices=("all", "prep", "gen", "export"), default="all",
                    help="all = prep and export each in their own Blender process (their memory goes back to the OS), gen in this one")
     p.add_argument("--save-views", type=int, default=1)
@@ -253,6 +255,31 @@ class ORT:
         return ort.InferenceSession(os.path.join(self.models, name), so, providers=["CPUExecutionProvider"])
 
 
+_LIBC = None
+
+
+def tune_malloc(mmap_threshold):
+    """glibc keeps freed heap and raises its mmap threshold while running, so RSS stays at the peak of the previous call;
+    a fixed threshold makes big temporaries mmap'd (returned to the OS on free)."""
+    global _LIBC
+    try:
+        import ctypes
+        _LIBC = ctypes.CDLL("libc.so.6")
+        if mmap_threshold:
+            _LIBC.mallopt(-3, int(mmap_threshold))  # M_MMAP_THRESHOLD (also stops its dynamic growth)
+            _LIBC.mallopt(-1, 131072)  # M_TRIM_THRESHOLD
+    except Exception as e:  # non-glibc libc: harmless
+        print("malloc tuning unavailable:", e, flush=True)
+
+
+def trim():
+    if _LIBC is not None:
+        try:
+            _LIBC.malloc_trim(0)
+        except Exception:
+            pass
+
+
 def log_mem(tag):
     s = status()
     print(f"MEM {tag}: rss={s['VmRSS']:.2f} anon={s['RssAnon']:.2f} file={s['RssFile']:.2f} hwm={s['VmHWM']:.2f} GB", flush=True)
@@ -305,6 +332,7 @@ def main(a, io=None):
     layers = meta["layers"]
     san = lambda n: n.replace(".", "_")  # noqa: E731
     R = ORT(a.models, a.threads, a.pylibs)
+    tune_malloc(a.mmap_threshold)
     rng = np.random.RandomState(a.seed)
 
     # ---- mesh (own Blender process in --phase all) + views
@@ -358,45 +386,58 @@ def main(a, io=None):
     gc.collect()
     log_mem("ref features")
 
-    # ---- generation
+    # ---- generation: segment by segment over all 6 views (one gen_seg graph mapped at a time)
     mon.begin("denoise")
-    sess = R.session("gen_unet.onnx")
+    segs = meta["segments"]
     sched = N.LCM(a.steps)
     cams = N.camera_info()
     lat = rng.standard_normal((6, 4, 64, 64)).astype(np.float32)
     shapes = meta["ref_shapes"]
     cache = {n: np.zeros((6,) + tuple(shapes[n]), np.float16) for n in layers}  # [view, L, C]
-    have = [False] * 6
+    have = [[False] * 6 for _ in segs]
     in_ref = {f"ref_{san(n)}": ref_feats[i] for i, n in enumerate(layers)}
-    step_t, view_t = [], []
+    step_t, seg_t = [], []
     for si, t in enumerate(sched.ts):
         t0 = time.time()
         eps = np.zeros_like(lat)
         for sw in range(a.sweeps0 if si == 0 else 1):
+            states = [None] * 6
+            for k, sm in enumerate(segs):
+                ts_ = time.time()
+                sess = R.session(sm["file"])
+                for v in range(6):
+                    others = [j for j in range(6) if j != v and have[k][j]]
+                    if sm["first"]:
+                        feed = {"lat": lat[v:v + 1], "nrm": nrm_lat[v], "pos": pos_lat[v], "t": np.array([t], np.int64),
+                                "cam": np.array([cams[v]], np.int64)}
+                    else:
+                        feed = dict(zip(sm["in_state"], states[v]))
+                    for n in sm["layers"]:
+                        feed[f"ref_{san(n)}"] = in_ref[f"ref_{san(n)}"]
+                        feed[f"mv_{san(n)}"] = (np.concatenate([cache[n][j][None] for j in others], 1) if others
+                                                else np.zeros((1, 0, shapes[n][1]), np.float16))
+                    o = sess.run(None, feed)
+                    del feed
+                    ns = len(sm["out_state"])
+                    states[v] = o[:ns]
+                    for i, n in enumerate(sm["layers"]):
+                        cache[n][v] = o[ns + i][0]
+                    have[k][v] = True
+                    del o
+                del sess
+                trim()
+                seg_t.append(round(time.time() - ts_, 1))
             for v in range(6):
-                others = [j for j in range(6) if j != v and have[j]]
-                feed = {"lat": lat[v:v + 1], "nrm": nrm_lat[v], "pos": pos_lat[v], "t": np.array([t], np.int64),
-                        "cam": np.array([cams[v]], np.int64)}
-                feed.update(in_ref)
-                for n in layers:
-                    feed[f"mv_{san(n)}"] = (np.concatenate([cache[n][j][None] for j in others], 1) if others
-                                            else np.zeros((1, 0, shapes[n][1]), np.float16))
-                tv = time.time()
-                o = sess.run(None, feed)
-                del feed
-                eps[v] = o[0][0]
-                for i, n in enumerate(layers):
-                    cache[n][v] = o[1 + i][0]
-                have[v] = True
-                view_t.append(round(time.time() - tv, 1))
-                del o
+                eps[v] = states[v][0][0]
+            del states
         lat = sched.step(eps, si, lat, rng)
         step_t.append(round(time.time() - t0, 1))
         s = status()
         print(f"[step {si + 1}/{len(sched.ts)}] t={t} {step_t[-1]}s rss={s['VmRSS']:.2f} anon={s['RssAnon']:.2f} file={s['RssFile']:.2f} hwm={s['VmHWM']:.2f}", flush=True)
-    stats["step_times_s"], stats["view_times_s"] = step_t, view_t
-    del sess, cache, ref_feats, in_ref
+    stats["step_times_s"], stats["segment_times_s"] = step_t, seg_t
+    del cache, ref_feats, in_ref
     gc.collect()
+    trim()
 
     # ---- VAE decode (tiled, blended)
     mon.begin("vae_decode")

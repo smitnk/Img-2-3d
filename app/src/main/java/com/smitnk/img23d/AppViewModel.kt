@@ -665,7 +665,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val input = File(runner.jobIn.apply { mkdirs() }, "input.glb")
                 input.outputStream().buffered().use { res.mesh.writeGlb(it) }
                 report.step(2, "Blender")
-                val b = blender("refine_mesh.py", refineArgs("Photo character"), report)
+                val b = blender("refine_mesh.py", refineArgs("Photo character", fine = useHunyuan), report)
                 saveBlender(b, "Photo character", Source.CHARACTER, res.timingsMs, thumb = thumb, detail = "$engine + Blender refine")
                     .also { savePhoto(it, res) }
             }
@@ -876,10 +876,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun blender(script: String, args: List<String>, report: Report): BlenderResult =
         runner.run(script, args, s.threadCount()) { report.line(it) }
 
-    private fun refineArgs(name: String) = buildList {
+    /** fine: Hunyuan meshes (~246k faces at 256³) carry far more detail than TripoSR's; the 0.008 voxel + 4 smoothing
+     *  defaults (tuned for TripoSR) melt goggles/face into a blob (48k faces), so cap them for Hunyuan characters. */
+    private fun refineArgs(name: String, fine: Boolean = false) = buildList {
+        val voxel = if (fine) minOf(s.refineVoxel, 0.004f) else s.refineVoxel
+        val smooth = if (fine) minOf(s.refineSmooth, 1) else s.refineSmooth
         addAll(listOf("--in", "/opt/job/input.glb", "--name", name,
-            "--height", s.refineHeight.toString(), "--voxel", s.refineVoxel.toString(),
-            "--smooth", s.refineSmooth.toString(), "--decimate", s.refineDecimate.toString()))
+            "--height", s.refineHeight.toString(), "--voxel", voxel.toString(),
+            "--smooth", smooth.toString(), "--decimate", s.refineDecimate.toString()))
         if (!s.vertexColors) add("--no-colors")
         if (s.refineRig) add("--rig")
         if (s.vertexColors) addAll(listOf("--texture", "1024")) // UV texture for engines that ignore vertex colours

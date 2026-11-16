@@ -1,0 +1,256 @@
+{
+ "threads": 2,
+ "steps": 10,
+ "step_times_s": [
+  382.4,
+  213.6,
+  212.0,
+  214.0,
+  211.1,
+  214.6,
+  214.8,
+  213.5,
+  213.8,
+  215.2
+ ],
+ "segment_times_s": [
+  60.5,
+  5.1,
+  14.0,
+  88.0,
+  79.5,
+  5.3,
+  15.1,
+  114.8,
+  79.1,
+  5.2,
+  14.9,
+  114.4,
+  78.1,
+  5.2,
+  14.9,
+  113.9,
+  80.1,
+  5.3,
+  15.0,
+  113.6,
+  77.9,
+  5.2,
+  14.9,
+  113.0,
+  79.5,
+  5.3,
+  15.0,
+  114.8,
+  79.1,
+  5.2,
+  15.0,
+  115.4,
+  79.2,
+  5.2,
+  15.0,
+  114.0,
+  79.4,
+  5.3,
+  15.0,
+  114.1,
+  79.7,
+  5.3,
+  15.1,
+  115.3
+ ],
+ "session_create_s": [
+  11.0,
+  5.4,
+  5.4,
+  5.5,
+  5.3,
+  5.4,
+  5.5,
+  5.4,
+  5.4,
+  5.5
+ ],
+ "vertices": 23736,
+ "triangles": 39999,
+ "texels_covered": 98950,
+ "texels_painted": 74584,
+ "stages": {
+  "views": {
+   "rss": 0.197,
+   "anon": 0.174,
+   "file": 0.025,
+   "hwm": 0.217,
+   "time_s": 2.7
+  },
+  "vae_encode": {
+   "rss": 0.436,
+   "anon": 0.281,
+   "file": 0.155,
+   "hwm": 0.436,
+   "time_s": 290.5
+  },
+  "ref_unet": {
+   "rss": 1.037,
+   "anon": 0.761,
+   "file": 0.333,
+   "hwm": 1.036,
+   "time_s": 21.4
+  },
+  "denoise": {
+   "rss": 1.326,
+   "anon": 1.013,
+   "file": 0.345,
+   "hwm": 1.334,
+   "time_s": 2305.2
+  },
+  "vae_decode": {
+   "rss": 0.435,
+   "anon": 0.223,
+   "file": 0.212,
+   "hwm": 0.438,
+   "time_s": 395.3
+  },
+  "colour": {
+   "rss": 0.208,
+   "anon": 0.176,
+   "file": 0.032,
+   "hwm": 0.222,
+   "time_s": 1.4
+  },
+  "bake": {
+   "rss": 0.253,
+   "anon": 0.221,
+   "file": 0.032,
+   "hwm": 0.252,
+   "time_s": 6.4
+  }
+ },
+ "peak_hwm_gb": 1.334,
+ "peak_anon_gb": 1.013,
+ "total_time_s": 3022.8,
+ "colour_metrics": {
+  "front_chroma_render": 16.537,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 1.017,
+  "front_L_render": 47.941,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 25.667,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.55,
+   0.458,
+   0.412
+  ],
+  "front_orange_deltaE": 39.093,
+  "front_orange_chroma_ratio": 0.251,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.59,
+   0.468,
+   0.444
+  ],
+  "front_green_deltaE": 20.417,
+  "front_green_chroma_ratio": 1.969,
+  "back_chroma_render": 14.53,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 1.06,
+  "back_L_render": 50.198,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 23.078,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.57,
+   0.464,
+   0.427
+  ],
+  "back_orange_deltaE": 35.165,
+  "back_orange_chroma_ratio": 0.282,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.587,
+   0.464,
+   0.395
+  ],
+  "back_green_deltaE": 21.797,
+  "back_green_chroma_ratio": 3.013
+ },
+ "colour_metrics_before": {
+  "front_chroma_render": 16.416,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 1.01,
+  "front_L_render": 51.021,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 14.212,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.812,
+   0.494,
+   0.276
+  ],
+  "front_orange_deltaE": 2.065,
+  "front_orange_chroma_ratio": 0.987,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.411,
+   0.458,
+   0.433
+  ],
+  "front_green_deltaE": 2.773,
+  "front_green_chroma_ratio": 0.851,
+  "back_chroma_render": 14.143,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 1.032,
+  "back_L_render": 52.031,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 15.124,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.86,
+   0.598,
+   0.415
+  ],
+  "back_orange_deltaE": 10.808,
+  "back_orange_chroma_ratio": 0.85,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.472,
+   0.477,
+   0.458
+  ],
+  "back_green_deltaE": 5.563,
+  "back_green_chroma_ratio": 0.499
+ }
+}

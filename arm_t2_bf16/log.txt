@@ -1,0 +1,37 @@
+CPU plan: perf={0: 1.0, 1: 1.0} big=[0, 1] -> threads=2
+[MEM] >> views rss=0.05 anon=0.02 file=0.02 GB
+MEM after views: rss=0.16 anon=0.13 file=0.03 hwm=0.22 GB
+PEAK views: hwm=0.217GB sampled_rss=0.197GB anon=0.174GB file=0.025GB t=2.7s
+[MEM] >> vae_encode rss=0.16 anon=0.13 file=0.03 GB
+PEAK vae_encode: hwm=0.436GB sampled_rss=0.436GB anon=0.281GB file=0.155GB t=290.5s
+[MEM] >> ref_unet rss=0.14 anon=0.11 file=0.03 GB
+MEM ref features: rss=0.18 anon=0.14 file=0.03 hwm=1.04 GB
+PEAK ref_unet: hwm=1.036GB sampled_rss=1.037GB anon=0.761GB file=0.333GB t=21.4s
+[MEM] >> denoise rss=0.18 anon=0.14 file=0.03 GB
+[step 1/10] t=989 382.4s (session creation 11.0s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 2/10] t=890 213.6s (session creation 5.4s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 3/10] t=791 212.0s (session creation 5.4s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 4/10] t=692 214.0s (session creation 5.5s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 5/10] t=593 211.1s (session creation 5.3s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 6/10] t=494 214.6s (session creation 5.4s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 7/10] t=395 214.8s (session creation 5.5s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 8/10] t=296 213.5s (session creation 5.4s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 9/10] t=197 213.8s (session creation 5.4s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+[step 10/10] t=98 215.2s (session creation 5.5s) threads=2 rss=0.30 anon=0.27 file=0.03 hwm=1.33
+PEAK denoise: hwm=1.334GB sampled_rss=1.326GB anon=1.013GB file=0.345GB t=2305.2s
+[MEM] >> vae_decode rss=0.13 anon=0.09 file=0.03 GB
+PEAK vae_decode: hwm=0.438GB sampled_rss=0.435GB anon=0.223GB file=0.212GB t=395.3s
+[MEM] >> colour rss=0.17 anon=0.14 file=0.03 GB
+PEAK colour: hwm=0.222GB sampled_rss=0.208GB anon=0.176GB file=0.032GB t=1.4s
+[MEM] >> bake rss=0.18 anon=0.15 file=0.03 GB
+bake view front: 18193 texels, 0 already painted
+bake view left: 13689 texels, 1901 already painted
+bake view back: 19751 texels, 3323 already painted
+bake view right: 13645 texels, 5408 already painted
+bake view top: 10231 texels, 6908 already painted
+bake view bottom: 8954 texels, 3012 already painted
+bake relaxed pass: 10673 of 35039 unpainted texels
+PEAK bake: hwm=0.252GB sampled_rss=0.253GB anon=0.221GB file=0.032GB t=6.4s
+PEAK total hwm=1.334GB anon=1.013GB time=3022.8s
+exit 0
+cgroup memory.peak MB 1058

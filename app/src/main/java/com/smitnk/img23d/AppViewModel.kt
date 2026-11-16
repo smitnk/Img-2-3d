@@ -493,7 +493,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (ai) report.step(3, "Blender")
             val b = blender("texproject.py", listOf("--in", "/opt/job/input.glb", "--views", "/opt/job/tex/views.json", "--res", "2048", "--facing", facing), report)
             saveBlender(b, "${m.name} painted", m.source, thumbFile = m.thumbnail, detail = "AI-painted texture of ${m.name}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+                .also { n -> m.copyPhotosTo(n) }
         }
     }
 
@@ -651,6 +651,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (!useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
         if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
+        viewCutouts = emptyMap()
         launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D",
             if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
             val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report, useMv, views) else tripoSR(bmp, report)
@@ -678,7 +679,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("refine_mesh.py", refineArgs("${m.name} refined"), report)
             saveBlender(b, "${m.name} refined", Source.REFINED, thumbFile = m.thumbnail, detail = "Blender refine of ${m.name}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+                .also { n -> m.copyPhotosTo(n) }
         }
     }
 
@@ -694,7 +695,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val label = when (use) { "LOW_POLY" -> "low poly"; "ANIMATION" -> "animation"; else -> "game" }
             val b = blender("smart_mesh.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} $label", "--use", use, "--faces", faces.toString()), report)
             saveBlender(b, "${m.name} $label", Source.REFINED, thumbFile = m.thumbnail, detail = "Smart Mesh ($label, ${faces / 1000}k quads, CurioMesh) of ${m.name}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+                .also { n -> m.copyPhotosTo(n) }
         }
     }
 
@@ -710,7 +711,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged"), report) // 2 threads, nice 10 by default: the phone stays usable
             saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+                .also { n -> m.copyPhotosTo(n) }
         }
     }
 
@@ -721,7 +722,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun paintHunyuan(m: Model, photos: List<Uri>? = null) {
         if (!runtime.isReady()) { go(Dest.Settings); return }
         if (!hunyuanPaintPack.isReady()) { installHunyuanPaintPack(); go(Dest.Settings); return }
-        if (photos == null && m.photo == null) { fail("Paint with Hunyuan", "This model has no saved photo. Choose 1 to 4 photos of it instead."); return }
+        if (photos == null && m.photos.isEmpty()) { fail("Paint with Hunyuan", "This model has no saved photo. Choose 1 to 4 photos of it instead."); return }
         launchJob("Paint with Hunyuan", "Blender", 1) { report ->
             val ram = android.app.ActivityManager.MemoryInfo().also {
                 getApplication<Application>().getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it)
@@ -730,16 +731,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val dir = runner.jobIn.apply { mkdirs() }
             m.glb.copyTo(File(dir, "input.glb"), overwrite = true)
             dir.listFiles { f -> f.name.startsWith("ref") }?.forEach { it.delete() }
+            // the model's own photos: every view it was made from (front first, then left / back / right) with its label, so the
+            // colour transfer maps a back photo to the back view; picked photos carry no labels (the script assumes front, back)
+            val own = if (photos == null) m.photos else emptyList()
             val refs = withContext(Dispatchers.IO) {
-                if (photos == null) listOf(File(dir, "ref0.png").also { m.photo!!.copyTo(it, overwrite = true) })
+                if (photos == null) own.mapIndexed { i, (_, f) -> File(dir, "ref$i.png").also { f.copyTo(it, overwrite = true) } }
                 else photos.take(4).mapIndexed { i, u -> File(dir, "ref$i.png").also { decode(u).compressTo(it) } }
             }
-            val b = runner.run("hunyuan_paint.py", listOf("--mesh", "/opt/job/input.glb", "--refs") + refs.map { "/opt/job/${it.name}" } + listOf("--name", "${m.name} painted (Hunyuan)"), s.threadCount()) { l ->
+            val b = runner.run("hunyuan_paint.py", listOf("--mesh", "/opt/job/input.glb", "--refs") + refs.map { "/opt/job/${it.name}" } +
+                (if (own.isNotEmpty()) listOf("--ref-views") + own.map { it.first } else emptyList()) +
+                (if (s.threads > 0) listOf("--threads", s.threads.toString()) else emptyList()) + // 0 = auto: the script picks the big cores
+                listOf("--name", "${m.name} painted (Hunyuan)"), s.threadCount()) { l ->
                 report.line(l)
                 Regex("""\[step (\d+)/(\d+)\]""").find(l)?.let { r -> report.stage("Painting: step ${r.groupValues[1]} of ${r.groupValues[2]}", r.groupValues[1].toFloat() / r.groupValues[2].toFloat()) }
             }
-            saveBlender(b, "${m.name} painted (Hunyuan)", m.source, thumbFile = m.thumbnail, detail = "Hunyuan Paint all-sides texture of ${m.name}, ${refs.size} photo${if (refs.size == 1) "" else "s"}")
-                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+            saveBlender(b, "${m.name} painted (Hunyuan)", m.source, thumbFile = m.thumbnail, detail = "Hunyuan Paint all-sides texture of ${m.name}, ${refs.size} photo${if (refs.size == 1) "" else "s"}${if (own.isNotEmpty()) " (" + own.joinToString("+") { it.first } + ")" else ""}")
+                .also { n -> m.copyPhotosTo(n) }
         }
     }
 
@@ -951,6 +958,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
             Triple(v, px, b)
         }
+        viewCutouts = extra.associate { (v, px, b) -> v to cutoutBitmap(px, b.width, b.height) } // saved with the model for Hunyuan Paint
         res.mesh = hs.run((listOf(rgba) + extra.map { it.second }).toTypedArray(), (listOf(w) + extra.map { it.third.width }).toIntArray(),
             (listOf(h) + extra.map { it.third.height }).toIntArray(), (listOf(0) + extra.map { it.first }).toIntArray(), s.hunyuanOctree, System.nanoTime()) { stage, f -> report.stage(stage, if (f > 0f && f < 1f) f else null) }
         res.timingsMs.putAll(hs.timingsMs)
@@ -975,8 +983,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun Bitmap.compressTo(f: File) = f.outputStream().use { compress(Bitmap.CompressFormat.PNG, 100, it) }
 
+    /** The extra Hunyuan3D-2mv views (slot 1 left, 2 back, 3 right) with the background removed, saved by [savePhoto]. */
+    @Volatile private var viewCutouts: Map<Int, Bitmap> = emptyMap()
+
+    private fun cutoutBitmap(rgba: IntArray, w: Int, h: Int): Bitmap = Bitmap.createBitmap(
+        IntArray(w * h) { i -> (rgba[i * 4 + 3] shl 24) or (rgba[i * 4] shl 16) or (rgba[i * 4 + 1] shl 8) or rgba[i * 4 + 2] }, w, h, Bitmap.Config.ARGB_8888)
+
     private fun savePhoto(m: Model, res: TripoSR.Result) {
         if (res.foreground != null) bitmapOf(res.foreground, res.foregroundSize).compressTo(File(m.dir, "photo.png"))
+        val extra = viewCutouts
+        viewCutouts = emptyMap()
+        extra.forEach { (slot, bmp) -> Model.PHOTO_FILES.getOrNull(slot)?.let { bmp.compressTo(File(m.dir, it.second)) } }
     }
 
     private val BUSY_MSG = "Another job is still running or stopping. Try again in a moment."

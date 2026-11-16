@@ -113,7 +113,7 @@ class UnirigPack(context: Context) : AssetPack(File(context.filesDir, "unirig"),
 
 /** Hunyuan3D-2 Paint (turbo, int8 ONNX; Tencent Hunyuan 3D 2.0 Community License) for all-sides texturing, release hunyuanpaint-v1. */
 class HunyuanPaintPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanpaint"), BuildConfig.HUNYUANPAINT_BASE_URL, "hunyuanpaint_info.json",
-    2, "hunyuanpaint_py.zip") // v2: --steps / --guidance in the scripts
+    3, "hunyuanpaint_py.zip") // v2: --steps / --guidance in the scripts, v3: auto big-core threads + pinning, no nice, --ref-views, triangle count in stats
 
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")

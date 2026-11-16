@@ -32,7 +32,18 @@ data class Model(
     val script get() = File(dir, "script.py").takeIf { it.isFile }
     /** The cut-out source photo (TripoSR models and what was made from them): the front view for Paint texture. */
     val photo get() = File(dir, "photo.png").takeIf { it.isFile }
+    /** Every saved source view as (label, file), front first, then left / back / right: what Hunyuan Paint gets as its references. */
+    val photos: List<Pair<String, File>> get() = PHOTO_FILES.mapNotNull { (label, name) -> File(dir, name).takeIf { it.isFile }?.let { label to it } }
     val totalMs get() = timingsMs.values.sum()
+
+    companion object {
+        /** View label -> file name in the model folder. Hunyuan3D-2mv view slots: 0 front (photo.png), 1 left, 2 back, 3 right. */
+        val PHOTO_FILES = listOf("front" to "photo.png", "left" to "photo_left.png", "back" to "photo_back.png", "right" to "photo_right.png")
+        val VIEW_LABELS = listOf("front", "left", "back", "right")
+    }
+
+    /** Copies every saved source view of this model into [to] (a model made from it keeps its photos). */
+    fun copyPhotosTo(to: Model) = photos.forEach { (label, f) -> f.copyTo(File(to.dir, PHOTO_FILES.first { it.first == label }.second), overwrite = true) }
 }
 
 /** bx_audit.deliverable result for a Blender model (game profile). */

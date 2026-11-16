@@ -241,7 +241,7 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     Icon(Icons.Rounded.Palette, null); Spacer(Modifier.width(8.dp)); Text(if (ready) "Paint with Hunyuan (all sides, 15–40 min)" else "Paint with Hunyuan: download AI (~2 GB)")
                 }
                 androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    if (m.photo != null) androidx.compose.material3.DropdownMenuItem(text = { Text("Use the photo it was made from") }, onClick = { open = false; vm.paintHunyuan(m) })
+                    if (m.photo != null) androidx.compose.material3.DropdownMenuItem(text = { Text(if (m.photos.size > 1) "Use the ${m.photos.size} photos it was made from" else "Use the photo it was made from") }, onClick = { open = false; vm.paintHunyuan(m) })
                     androidx.compose.material3.DropdownMenuItem(text = { Text("Choose 1–4 photos (front first)") }, onClick = { open = false; cb.pickPhotos { vm.paintHunyuan(m, it) } })
                 }
             }

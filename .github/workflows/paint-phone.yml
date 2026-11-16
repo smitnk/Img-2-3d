@@ -112,7 +112,7 @@ jobs:
       - name: Preview renders + comparison with the torch C2 output
         if: always()
         run: |
-          git fetch -q --depth 1 origin paint-phone-out && mkdir -p /tmp/base && for f in texture.png mesh_uv.npz; do git show FETCH_HEAD:owner/$f > /tmp/base/$f; done
+          sudo chown -R "$USER" out; git fetch -q --depth 1 origin paint-phone-out && mkdir -p /tmp/base && for f in texture.png mesh_uv.npz; do git show FETCH_HEAD:owner/$f > /tmp/base/$f; done
           [ -f out/texture.png ] && python tools/painttest/phone/render_preview.py out /tmp/base
       - name: Push results
         if: always()

@@ -18,6 +18,7 @@ import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
 import com.smitnk.img23d.body.CurioPack
+import com.smitnk.img23d.body.HunyuanPaintPack
 import com.smitnk.img23d.body.UnirigPack
 import com.smitnk.img23d.body.HunyuanMvPack
 import com.smitnk.img23d.body.HunyuanPack
@@ -131,6 +132,7 @@ data class UiState(
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanMvPack: PackStatus = PackStatus.NotInstalled,
     val unirigPack: PackStatus = PackStatus.NotInstalled,
+    val hunyuanPaintPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -321,6 +323,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val hunyuanMvPack = HunyuanMvPack(app)
     val curioPack = CurioPack(app)
     val unirigPack = UnirigPack(app)
+    val hunyuanPaintPack = HunyuanPaintPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -331,11 +334,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
         if (hunyuanMvPack.isReady()) _state.update { it.copy(hunyuanMvPack = PackStatus.Ready) }
         if (unirigPack.isReady()) _state.update { it.copy(unirigPack = PackStatus.Ready) }
+        if (hunyuanPaintPack.isReady()) _state.update { it.copy(hunyuanPaintPack = PackStatus.Ready) }
         File(app.filesDir, "trellis").deleteRecursively() // TRELLIS.2 was removed (2mv matches it in half the time): free its 2.8 GB
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack, unirigPack)
+    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack, unirigPack, hunyuanPaintPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         if (_state.value.packFolder != null) return@launch
@@ -364,7 +368,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
-                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack)
+                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
+                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack)
         }
         if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / hunyuanmv).")
     }
@@ -397,7 +402,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
-                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack)
+                unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
+                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack)
         }
     }
 
@@ -429,6 +435,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun installUnirigPack() = packTask("unirig") {
         runCatching { unirigPack.install { st -> _state.update { it.copy(unirigPack = st) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(unirigPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
+
+    fun uninstallHunyuanPaintPack() = packTask("hunyuanpaint", replace = true) {
+        withContext(Dispatchers.IO) { hunyuanPaintPack.uninstall() }
+        _state.update { it.copy(hunyuanPaintPack = PackStatus.NotInstalled) }
+    }
+
+    fun installHunyuanPaintPack() = packTask("hunyuanpaint") {
+        runCatching { hunyuanPaintPack.install { st -> _state.update { it.copy(hunyuanPaintPack = st) } } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanPaintPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun uninstallTexPack() = packTask("texgen", replace = true) {
@@ -694,6 +710,35 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
             val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged"), report) // 2 threads, nice 10 by default: the phone stays usable
             saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")
+                .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
+        }
+    }
+
+    /**
+     * Hunyuan Paint: all-sides AI texture from 1-4 photos (front first), ~15-40 min, ~1.6 GB peak, inside Blender on the phone.
+     * [photos] null = the photo the model was made from. Its ~2 GB pack installs from Settings (first tap starts it).
+     */
+    fun paintHunyuan(m: Model, photos: List<Uri>? = null) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        if (!hunyuanPaintPack.isReady()) { installHunyuanPaintPack(); go(Dest.Settings); return }
+        if (photos == null && m.photo == null) { fail("Paint with Hunyuan", "This model has no saved photo. Choose 1 to 4 photos of it instead."); return }
+        launchJob("Paint with Hunyuan", "Blender", 1) { report ->
+            val ram = android.app.ActivityManager.MemoryInfo().also {
+                getApplication<Application>().getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it)
+            }.totalMem
+            if (ram < 5_000_000_000L) throw IllegalStateException("Hunyuan Paint needs about 2 GB of free memory, so a phone with at least 6 GB RAM. This phone has %.1f GB.".format(ram / 1e9))
+            val dir = runner.jobIn.apply { mkdirs() }
+            m.glb.copyTo(File(dir, "input.glb"), overwrite = true)
+            dir.listFiles { f -> f.name.startsWith("ref") }?.forEach { it.delete() }
+            val refs = withContext(Dispatchers.IO) {
+                if (photos == null) listOf(File(dir, "ref0.png").also { m.photo!!.copyTo(it, overwrite = true) })
+                else photos.take(4).mapIndexed { i, u -> File(dir, "ref$i.png").also { decode(u).compressTo(it) } }
+            }
+            val b = runner.run("hunyuan_paint.py", listOf("--mesh", "/opt/job/input.glb", "--refs") + refs.map { "/opt/job/${it.name}" } + listOf("--name", "${m.name} painted (Hunyuan)"), s.threadCount()) { l ->
+                report.line(l)
+                Regex("""\[step (\d+)/(\d+)\]""").find(l)?.let { r -> report.stage("Painting: step ${r.groupValues[1]} of ${r.groupValues[2]}", r.groupValues[1].toFloat() / r.groupValues[2].toFloat()) }
+            }
+            saveBlender(b, "${m.name} painted (Hunyuan)", m.source, thumbFile = m.thumbnail, detail = "Hunyuan Paint all-sides texture of ${m.name}, ${refs.size} photo${if (refs.size == 1) "" else "s"}")
                 .also { n -> m.photo?.copyTo(File(n.dir, "photo.png"), overwrite = true) }
         }
     }

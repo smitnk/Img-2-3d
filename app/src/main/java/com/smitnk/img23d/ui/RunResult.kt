@@ -234,6 +234,17 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     })
                 }
             }
+            if (m.source != Source.BODY) Column {
+                var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+                val ready = vm.state.collectAsState().value.hunyuanPaintPack == PackStatus.Ready
+                OutlinedButton(onClick = { if (ready) open = true else vm.paintHunyuan(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Icon(Icons.Rounded.Palette, null); Spacer(Modifier.width(8.dp)); Text(if (ready) "Paint with Hunyuan (all sides, 15–40 min)" else "Paint with Hunyuan: download AI (~2 GB)")
+                }
+                androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    if (m.photo != null) androidx.compose.material3.DropdownMenuItem(text = { Text("Use the photo it was made from") }, onClick = { open = false; vm.paintHunyuan(m) })
+                    androidx.compose.material3.DropdownMenuItem(text = { Text("Choose 1–4 photos (front first)") }, onClick = { open = false; cb.pickPhotos { vm.paintHunyuan(m, it) } })
+                }
+            }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER) OutlinedButton(onClick = { vm.refine(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Refine in Blender")
             }

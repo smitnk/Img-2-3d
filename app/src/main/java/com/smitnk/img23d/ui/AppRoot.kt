@@ -43,6 +43,7 @@ import com.smitnk.img23d.data.Settings
 class AppCallbacks(
     val pickImage: (PhotoMode) -> Unit,
     val pickScript: () -> Unit,
+    val pickPhotos: ((List<android.net.Uri>) -> Unit) -> Unit,
     val export: (Model, Boolean) -> Unit,
     val share: (Model) -> Unit,
     val pickFolder: ((android.net.Uri) -> Unit) -> Unit,

@@ -218,7 +218,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir(".")) if f != "hunyuanpaint_info.json"}
-          json.dump({"version": 2, "model": "Hunyuan3D-2 paint turbo", "files": files}, open("hunyuanpaint_info.json", "w"), indent=1)
+          json.dump({"version": 3, "model": "Hunyuan3D-2 paint turbo", "files": files}, open("hunyuanpaint_info.json", "w"), indent=1)
           print(sum(f["bytes"] for f in files.values()) / 2**30, "GB"); [print(k, v["bytes"]) for k, v in files.items()]
           PY
       - name: Publish release hunyuanpaint-v1

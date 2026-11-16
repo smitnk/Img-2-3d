@@ -113,8 +113,7 @@ jobs:
         if: always()
         run: |
           [ -f out/texture.png ] && python tools/painttest/phone/render_preview.py out
-          git fetch -q --depth 1 origin paint-test-out && git show FETCH_HEAD:C2_int8w_seq_tile_s10/render_4views.png > out/torch_C2_render_4views.png 2>/dev/null || true
-          git show FETCH_HEAD:C2_int8w_seq_tile_s10/texture.png > out/torch_C2_texture.png 2>/dev/null || true
+          git fetch -q --depth 1 origin paint-test-out && for f in render_4views.png texture.png; do git show FETCH_HEAD:C2_int8w_seq_tile_s10/$f > out/torch_C2_$f.tmp && mv out/torch_C2_$f.tmp out/torch_C2_$f; done || rm -f out/*.tmp
       - name: Push results
         if: always()
         run: tools/painttest/phone/push_branch.sh "${{ matrix.v }}" out

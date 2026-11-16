@@ -34,7 +34,16 @@ def parse_args(argv=None):
     p.add_argument("--pylibs", default=None)
     p.add_argument("--threads", type=int, default=2)
     p.add_argument("--work", default=None)
-    p.add_argument("--steps", type=int, default=10)
+    p.add_argument("--steps", type=int, default=10, help="turbo is distilled for 10 (timesteps 29,26..2); other counts are spread over the same range")
+    p.add_argument("--guidance", type=float, default=None,
+                   help="no-op for turbo: it is guidance-distilled (no CFG pass and no guidance-embedding input in the exported graphs)")
+    p.add_argument("--colour", choices=("cdf", "chroma", "off"), default="cdf",
+                   help="pull each generated view's Lab colour statistics (foreground) towards the reference photos")
+    p.add_argument("--colour-strength", type=float, default=1.0, help="a/b channels (0..1)")
+    p.add_argument("--colour-l", type=float, default=0.5, help="lightness (0..1)")
+    p.add_argument("--sharpen", type=float, default=0.6, help="unsharp-mask amount on the lightness of the generated views (0 = off)")
+    p.add_argument("--power", type=float, default=4.0, help="bake view weight = cos^power")
+    p.add_argument("--relax", type=int, default=1, help="second bake pass for texels the strict pass left unpainted")
     p.add_argument("--faces", type=int, default=40000)
     p.add_argument("--tex", type=int, default=1024)
     p.add_argument("--render", type=int, default=1024)
@@ -464,6 +473,19 @@ def main(a, io=None):
     del sess
     gc.collect()
 
+    # ---- colour fidelity + sharpness of the generated views (before the bake)
+    mon.begin("colour")
+    if a.guidance is not None:
+        print("note: --guidance has no effect with the turbo model", flush=True)
+    fgm = [views.r[i][0][::2, ::2] >= 0 for i in range(6)]  # 1024 raster -> 512 view grid
+    if a.colour != "off":
+        gen = N.match_colours(gen, fgm, refs, [N.ref_foreground(r) for r in refs], a.colour, a.colour_strength, a.colour_l)
+    if a.sharpen > 0:
+        gen = [N.sharpen(g, m, a.sharpen) for g, m in zip(gen, fgm)]
+    if a.save_views:
+        for v in range(6):
+            write_png(os.path.join(outdir, f"viewc_{v}_{N.VNAMES[v]}.png"), to_u8(gen[v]))
+
     # ---- bake
     mon.begin("bake")
     T = a.tex
@@ -473,7 +495,7 @@ def main(a, io=None):
     corner_v = F.reshape(-1)
     vn = views.vn
     (Pt, Nt), cover = N.uv_raster(Vuv, Fuv, [Vr[corner_v], vn[corner_v]], T)
-    tex, trust = N.bake(views, gen, Pt, Nt, cover, log=lambda *x: print(*x, flush=True))
+    tex, trust = N.bake(views, gen, Pt, Nt, cover, log=lambda *x: print(*x, flush=True), power=a.power, relax=bool(a.relax))
     del Pt, Nt
     tex, known = N.fill(tex, trust, 64)
     stats["texels_covered"], stats["texels_painted"] = int(cover.sum()), int(trust.sum())

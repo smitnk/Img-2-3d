@@ -192,15 +192,20 @@ def uv_raster(Vuv, Fuv, attrs, tex):
     return [interp(a, Fuv, fid, bary, 0.0) for a in attrs], fid >= 0
 
 
-def bake(views, gen_imgs, Pt, Nt, cover, log=print, angle=75):
+def bake(views, gen_imgs, Pt, Nt, cover, log=print, angle=75, power=4, relax=True):
     """Gather bake. Pt/Nt (tex,tex,3) texel position / normal (render frame), cover bool mask.
-    views: Views; gen_imgs: list of (512,512,3) floats 0..1 (png orientation). Returns texture (tex,tex,3), trust mask."""
+    views: Views; gen_imgs: list of (512,512,3) floats 0..1 (png orientation). Returns texture (tex,tex,3), trust mask.
+    Pass 1: strict visibility (eroded silhouette, no depth edges, angle < `angle`), weights VWEIGHTS * cos^power.
+    Pass 2 (relax): texels no view painted in pass 1 (silhouette / depth-edge / grazing-angle texels, which used to be
+    smeared by the UV fill into grey-brown patches) take the colour of the views that still see them (cos > 0.02, no edge exclusion)."""
     T = Pt.shape[0]
     idx = np.nonzero(cover)
     P, N = Pt[idx], Nt[idx]
     N = N / np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
     acc = np.zeros((len(P), 3), np.float32)
     wsum = np.zeros(len(P), np.float32)
+    acc2 = np.zeros((len(P), 3), np.float32)
+    wsum2 = np.zeros(len(P), np.float32)
     cthr = math.cos(math.radians(angle))
     R = views.res
     for i, (e, a) in enumerate(zip(ELEVS, AZIMS)):
@@ -218,8 +223,9 @@ def bake(views, gen_imgs, Pt, Nt, cover, log=print, angle=75):
         cosv = N @ look  # the frame change mirrors the mesh, so vertex normals point inward (same as Hunyuan's lookat=(0,0,-1) test)
         px = np.clip(np.round(sx - 0.5).astype(np.int64), 0, R - 1)
         py = np.clip(np.round(sy - 0.5).astype(np.int64), 0, R - 1)
-        ok = good[py, px] & (cosv > cthr) & (z - dep[py, px] < 0.01)
-        w = np.where(ok, VWEIGHTS[i] * np.clip(cosv, 0, 1) ** 4, 0).astype(np.float32)
+        dz = z - dep[py, px]
+        ok = good[py, px] & (cosv > cthr) & (dz < 0.01)
+        w = np.where(ok, VWEIGHTS[i] * np.clip(cosv, 0, 1) ** power, 0).astype(np.float32)
         # colour: bilinear from the generated (S x S, same orientation as the raster) view
         img = gen_imgs[i]
         S = img.shape[0]
@@ -230,6 +236,11 @@ def bake(views, gen_imgs, Pt, Nt, cover, log=print, angle=75):
         fu, fv = (u - u0)[:, None], (v - v0)[:, None]
         col = (img[v0, u0] * (1 - fu) * (1 - fv) + img[v0, u0 + 1] * fu * (1 - fv) + img[v0 + 1, u0] * (1 - fu) * fv
                + img[v0 + 1, u0 + 1] * fu * fv)
+        if relax:
+            ok2 = vis[py, px] & (cosv > 0.02) & (dz < 0.02)
+            w2 = np.where(ok2, np.clip(cosv, 0, 1) ** 2 * (0.2 + VWEIGHTS[i]), 0).astype(np.float32)
+            acc2 += col * w2[:, None]
+            wsum2 += w2
         painted = wsum > 0
         view_sum, painted_sum = (w > 0).sum(), ((w > 0) & painted).sum()
         log(f"bake view {VNAMES[i]}: {int(view_sum)} texels, {int(painted_sum)} already painted")
@@ -237,6 +248,10 @@ def bake(views, gen_imgs, Pt, Nt, cover, log=print, angle=75):
             continue
         acc += col * w[:, None]
         wsum += w
+    if relax:
+        miss = (wsum <= 1e-8) & (wsum2 > 1e-8)
+        log(f"bake relaxed pass: {int(miss.sum())} of {int((wsum <= 1e-8).sum())} unpainted texels")
+        acc[miss], wsum[miss] = acc2[miss], wsum2[miss]
     tex = np.zeros((T, T, 3), np.float32)
     trust = np.zeros((T, T), bool)
     good = wsum > 1e-8
@@ -281,9 +296,11 @@ class LCM:
             al = np.concatenate([ac[:1], ac[1:] / ac[:-1]])
             betas = 1 - al
         self.ac = np.cumprod(1.0 - betas)
-        bsz = max(1, 30 // steps)
         ddim = (np.arange(1, 31) * (train // 30)).round().astype(np.int64) - 1
-        self.ts = [int(ddim[i]) for i in list(range(29, 0, -bsz))[:steps]]
+        # Hunyuan3D-2 turbo is consistency-distilled on exactly range(29, 0, -3) of the 30 DDIM timesteps (10 steps). Other step
+        # counts are spread evenly over the same 29 .. 2 range (steps = 10 reproduces the original list).
+        idx = np.unique(np.round(np.linspace(29, 2, steps)).astype(int))[::-1]
+        self.ts = [int(ddim[i]) for i in idx]
 
     def step(self, out, i, x, rng):
         t = self.ts[i]
@@ -405,3 +422,88 @@ def prep_reference(img, size=512, border=0.2):
     oy, ox = (sq - h - 2 * bh) // 2 + bh, (sq - w - 2 * bw) // 2 + bw
     canvas[oy:oy + h, ox:ox + w] = rgb
     return np.clip(resize_area(canvas, size), 0, 1)
+
+
+# ------------------------------------------------------------------ colour fidelity (Lab)
+_M = np.array([[0.4124564, 0.3575761, 0.1804375], [0.2126729, 0.7151522, 0.0721750], [0.0193339, 0.1191920, 0.9503041]])
+_W = np.array([0.95047, 1.0, 1.08883])
+
+
+def srgb2lab(rgb):
+    c = np.clip(rgb, 0, 1).astype(np.float32)
+    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    xyz = (lin @ _M.T.astype(np.float32)) / _W.astype(np.float32)
+    f = np.where(xyz > 216 / 24389, np.cbrt(xyz), (24389 / 27 * xyz + 16) / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], -1).astype(np.float32)
+
+
+def lab2srgb(lab):
+    fy = (lab[..., 0] + 16) / 116
+    f = np.stack([fy + lab[..., 1] / 500, fy, fy - lab[..., 2] / 200], -1)
+    xyz = np.where(f ** 3 > 216 / 24389, f ** 3, (116 * f - 16) / (24389 / 27)) * _W
+    lin = np.clip(xyz @ np.linalg.inv(_M).T, 0, 1)
+    return np.where(lin <= 0.0031308, lin * 12.92, 1.055 * np.maximum(lin, 1e-9) ** (1 / 2.4) - 0.055).astype(np.float32)
+
+
+def ref_foreground(ref):
+    """reference prepared by prep_reference (white background): foreground = anything not (nearly) white."""
+    return np.abs(ref - 1.0).max(-1) > 0.05
+
+
+def _cdf_match(src, dst, strength):
+    """per-channel histogram matching of the 1-D samples src to dst, blended by strength (0..1); returns a lookup (x -> y)."""
+    q = np.linspace(0, 100, 101)
+    s, d = np.percentile(src, q), np.percentile(dst, q)
+    return lambda x: x + strength * (np.interp(x, s, d) - x)
+
+
+def match_colours(gen, masks, refs, ref_masks, mode="chroma", strength=1.0, lstrength=0.5):
+    """Pull the colour statistics of every generated view (foreground only) towards the reference photos.
+    The turbo model returns paler, lower-saturation colours than its reference (and grey backgrounds); the photos are the ground truth.
+    View 0 (front) is matched to reference 0, view 2 (back) to reference 1 when there are two, other views to the pooled references.
+    mode 'chroma': L histogram-matched (lstrength), a/b scaled radially so the mean chroma and the chroma spread follow the reference
+    (hue preserved); mode 'cdf': L, a, b histogram-matched independently."""
+    rl = [srgb2lab(r)[m] for r, m in zip(refs, ref_masks)]
+    pooled = np.concatenate(rl)
+    out = []
+    for i, (img, m) in enumerate(zip(gen, masks)):
+        tgt = rl[0] if (i == 0 or len(rl) == 1) else (rl[1] if i == 2 else pooled)
+        lab = srgb2lab(img)
+        src = lab[m]
+        if not len(src):
+            out.append(img)
+            continue
+        if mode == "cdf":
+            for c in range(3):
+                lab[..., c] = _cdf_match(src[:, c], tgt[:, c], strength if c else lstrength)(lab[..., c])
+        else:
+            lab[..., 0] = _cdf_match(src[:, 0], tgt[:, 0], lstrength)(lab[..., 0])
+            cs, ct = np.hypot(src[:, 1], src[:, 2]), np.hypot(tgt[:, 1], tgt[:, 2])
+            f = _cdf_match(cs, ct, strength)  # chroma quantile map
+            ch = np.hypot(lab[..., 1], lab[..., 2])
+            g = np.where(ch > 1e-3, f(ch) / np.maximum(ch, 1e-3), 1.0)
+            lab[..., 1] *= g
+            lab[..., 2] *= g
+        out.append(np.where(m[..., None], lab2srgb(lab), img))
+    return out
+
+
+def gauss_blur(img, sigma):
+    """separable gaussian on (H,W,C) float32."""
+    r = max(1, int(math.ceil(3 * sigma)))
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
+    k = (k / k.sum()).astype(np.float32)
+    pad = np.pad(img, ((r, r), (0, 0), (0, 0)), mode="edge")
+    out = sum(k[i] * pad[i:i + img.shape[0]] for i in range(2 * r + 1))
+    pad = np.pad(out, ((0, 0), (r, r), (0, 0)), mode="edge")
+    return sum(k[i] * pad[:, i:i + img.shape[1]] for i in range(2 * r + 1)).astype(np.float32)
+
+
+def sharpen(img, mask, amount=0.6, sigma=1.2):
+    """unsharp mask on Lab lightness only (no colour fringes), foreground pixels only."""
+    if amount <= 0:
+        return img
+    lab = srgb2lab(img)
+    L = lab[..., :1]
+    lab[..., :1] = np.clip(L + amount * (L - gauss_blur(L, sigma)), 0, 100)
+    return np.where(mask[..., None], lab2srgb(lab), img)

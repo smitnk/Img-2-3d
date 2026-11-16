@@ -69,8 +69,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { v: owner, refs: "tools/painttest/refs/front.png tools/painttest/refs/back.png" }
-          - { v: hyref, refs: "/tmp/hy/assets/example_images/1316.png" }
+          - { v: owner_v2, steps: 10, refs: "tools/painttest/refs/front.png tools/painttest/refs/back.png" }
+          - { v: owner_v2_s20, steps: 20, refs: "tools/painttest/refs/front.png tools/painttest/refs/back.png" }
     steps:
       - uses: actions/checkout@v4
       - name: Inputs (ONNX pack, mesh, Blender 4.2.3, onnxruntime for Blender's Python 3.11)
@@ -107,13 +107,13 @@ jobs:
           else echo "cgroup cap: unavailable (peak RSS is reported instead)" | tee out/limits.txt; LIM="sudo taskset -c 0,1"; fi
           ( while sleep 60; do echo "MON $(date +%T) rss_mb=$(ps -C blender -o rss= | sort -n | tail -1 | awk '{print int($1/1024)}')"; done ) > out/mon.txt 2>&1 &
           set +e
-          timeout 330m $LIM ./run.sh 10 > out/log.txt 2>&1
+          timeout 330m $LIM ./run.sh ${{ matrix.steps }} > out/log.txt 2>&1
           echo "run exit $?"; tail -40 out/log.txt; grep -E "Maximum resident|Elapsed" out/time.txt | tee out/maxrss.txt
       - name: Preview renders + comparison with the torch C2 output
         if: always()
         run: |
-          [ -f out/texture.png ] && python tools/painttest/phone/render_preview.py out
-          git fetch -q --depth 1 origin paint-test-out && for f in render_4views.png texture.png; do git show FETCH_HEAD:C2_int8w_seq_tile_s10/$f > out/torch_C2_$f.tmp && mv out/torch_C2_$f.tmp out/torch_C2_$f; done || rm -f out/*.tmp
+          git fetch -q --depth 1 origin paint-phone-out && mkdir -p /tmp/base && for f in texture.png mesh_uv.npz; do git show FETCH_HEAD:owner/$f > /tmp/base/$f; done
+          [ -f out/texture.png ] && python tools/painttest/phone/render_preview.py out /tmp/base
       - name: Push results
         if: always()
         run: tools/painttest/phone/push_branch.sh "${{ matrix.v }}" out
@@ -143,7 +143,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os
           files = {f: {"bytes": os.path.getsize(f), "sha256": hashlib.sha256(open(f, "rb").read()).hexdigest()} for f in sorted(os.listdir(".")) if f != "hunyuanpaint_info.json"}
-          json.dump({"version": 1, "model": "Hunyuan3D-2 paint turbo", "files": files}, open("hunyuanpaint_info.json", "w"), indent=1)
+          json.dump({"version": 2, "model": "Hunyuan3D-2 paint turbo", "files": files}, open("hunyuanpaint_info.json", "w"), indent=1)
           print(sum(f["bytes"] for f in files.values()) / 2**30, "GB"); [print(k, v["bytes"]) for k, v in files.items()]
           PY
       - name: Publish release hunyuanpaint-v1

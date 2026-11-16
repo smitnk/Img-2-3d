@@ -35,6 +35,7 @@ def parse_args(argv=None):
     p.add_argument("--threads", type=int, default=0, help="onnxruntime intra-op threads; 0 = auto (one per big core, at least 2) and pin to the fastest cores")
     p.add_argument("--pin", type=int, default=1, help="restrict this process to the fastest --threads cores (big.LITTLE phones: keeps the work off the little cores)")
     p.add_argument("--spin", type=int, default=0, help="onnxruntime intra-op thread spinning (session.intra_op.allow_spinning)")
+    p.add_argument("--bf16", type=int, default=0, help="onnxruntime aarch64: fp32 GEMM/Conv through the bf16 BFMMLA kernels (Armv8.6 / Armv9 cores; ignored where unsupported)")
     p.add_argument("--opt", choices=("all", "extended", "basic"), default="all", help="onnxruntime graph optimisation level (session creation time vs speed)")
     p.add_argument("--ref-views", nargs="+", default=None,
                    help="view label of each --refs photo (front/left/back/right); default: first = front, second = back when there are two")
@@ -306,7 +307,7 @@ class ORT:
                 sys.path.insert(0, p)
         import onnxruntime as ort
         self.ort, self.models, self.threads = ort, models, threads
-        self.spin, self.opt, self.profile, self.create_s = 0, "all", False, 0.0
+        self.spin, self.opt, self.profile, self.create_s, self.bf16 = 0, "all", False, 0.0, 0
 
     def session(self, name):
         ort = self.ort
@@ -316,6 +317,8 @@ class ORT:
         so.graph_optimization_level = {"all": ort.GraphOptimizationLevel.ORT_ENABLE_ALL, "extended": ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
                                        "basic": ort.GraphOptimizationLevel.ORT_ENABLE_BASIC}[self.opt]
         so.enable_profiling = self.profile
+        if self.bf16:
+            so.add_session_config_entry("mlas.enable_gemm_fastmath_arm64_bfloat16", "1")
         so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         so.enable_cpu_mem_arena = False  # free every intermediate at once instead of pooling it
         so.enable_mem_pattern = False
@@ -422,7 +425,7 @@ def main(a, io=None):
     layers = meta["layers"]
     san = lambda n: n.replace(".", "_")  # noqa: E731
     R = ORT(a.models, a.threads, a.pylibs)
-    R.spin, R.opt, R.profile = a.spin, a.opt, bool(os.environ.get("PAINT_PROFILE"))
+    R.spin, R.opt, R.profile, R.bf16 = a.spin, a.opt, bool(os.environ.get("PAINT_PROFILE")), a.bf16
     tune_malloc(a.mmap_threshold)
     rng = np.random.RandomState(a.seed)
 

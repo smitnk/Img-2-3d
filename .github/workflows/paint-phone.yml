@@ -150,11 +150,8 @@ jobs:
       matrix:
         include:
           # v: output dir; cpus: taskset list; extra: more paint_phone.py flags
-          - { v: arm_t2,       cpus: "0,1",   extra: "--threads 2" }
-          - { v: arm_t4,       cpus: "0-3",   extra: "--threads 4" }
-          - { v: arm_t4_spin,  cpus: "0-3",   extra: "--threads 4 --spin 1" }
-          - { v: arm_t2_basic, cpus: "0,1",   extra: "--threads 2 --opt basic" }
-          - { v: arm_t4_prof,  cpus: "0-3",   extra: "--threads 4", prof: "1" }
+          - { v: arm_t4_bf16, cpus: "0-3", extra: "--threads 4 --bf16 1" }
+          - { v: arm_t2_bf16, cpus: "0,1", extra: "--threads 2 --bf16 1" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

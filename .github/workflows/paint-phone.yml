@@ -55,6 +55,7 @@ jobs:
         run: |
           gh release view hunyuanpaint-wip >/dev/null 2>&1 || gh release create hunyuanpaint-wip --prerelease --title "hunyuanpaint work files" --notes "intermediate ONNX export (CI cache), see hunyuanpaint-v1 for the published pack"
           for f in onnx/*; do gh release upload hunyuanpaint-wip --clobber "$f"; done
+          for f in $(gh release view hunyuanpaint-wip --json assets -q '.assets[].name'); do [ -e "onnx/$f" ] || gh release delete-asset hunyuanpaint-wip "$f" -y; done  # stale graphs of older layouts
       - name: Push log
         if: always()
         run: tools/painttest/phone/push_branch.sh export out

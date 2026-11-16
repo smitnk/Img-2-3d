@@ -9,7 +9,7 @@ Pipeline (same maths as the torch C2 variant of tools/painttest/run_paint.py, on
   bpy: import, merge, Decimate to --faces, Smart UV Project
   numpy: 6 orthographic views -> normal + position maps (software rasteriser, paint_np.py)
   vae_enc (320 px tiles): references, normal, position maps -> latents          [session freed]
-  ref_unet (once per reference) -> 16 features per reference, kept as fp16      [session freed]
+  ref_seg0..3 (once per reference) -> 16 features per reference, kept as fp16  [one segment mapped at a time]
   gen_seg0..3 (the generation UNet cut in 4), ONE view per call, segment by segment over the 6 views,
     10 LCM steps, other views' features cached; one segment mapped at a time                          [session freed]
   vae_dec (24x24 latent tiles, 8 latent overlap, blended) -> 6 views of 512 px                   [session freed]
@@ -377,12 +377,23 @@ def main(a, io=None):
     gc.collect()
     del normals, poss
 
-    # ---- reference UNet -> features (fp16), all refs concatenated per layer
+    # ---- reference UNet (4 segment graphs, one mapped at a time) -> features (fp16), all refs concatenated per layer
     mon.begin("ref_unet")
-    sess = R.session("ref_unet.onnx")
-    outs = [sess.run(None, {"lat": l}) for l in ref_lat]
-    ref_feats = [np.concatenate([o[i] for o in outs], 1) for i in range(len(layers))]
-    del sess, outs, ref_lat
+    feats = {n: [None] * len(ref_lat) for n in layers}
+    states = [None] * len(ref_lat)
+    for sm in meta["ref_segments"]:
+        sess = R.session(sm["file"])
+        for r in range(len(ref_lat)):
+            o = sess.run(None, {"lat": ref_lat[r]} if sm["first"] else dict(zip(sm["in_state"], states[r])))
+            ns = len(sm["out_state"])
+            states[r] = o[:ns]
+            for i, n in enumerate(sm["layers"]):
+                feats[n][r] = o[ns + i]
+            del o
+        del sess
+        trim()
+    ref_feats = [np.concatenate(feats[n], 1) for n in layers]
+    del feats, states, ref_lat
     gc.collect()
     log_mem("ref features")
 

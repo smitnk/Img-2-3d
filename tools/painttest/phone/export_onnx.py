@@ -132,15 +132,21 @@ class GenSeg(nn.Module):
     are mapped one at a time, so little of the 0.9 GB of int8 weights is resident at once (the runner goes segment by segment
     over all 6 views; the cross-view dependency is per layer only, so this order gives the same result as view by view)."""
 
-    def __init__(self, unet2d, prompt, units, names, first, last, n_in_skips):
+    def __init__(self, unet2d, prompt, units, names, first, last, n_in_skips, ref=False):
         super().__init__()
-        self.u, self.units, self.names, self.first, self.last, self.nin = unet2d, units, names, first, last, n_in_skips
+        self.u, self.units, self.names, self.first, self.last, self.nin, self.ref = unet2d, units, names, first, last, n_in_skips, ref
         self.register_buffer("prompt", prompt)
 
     def forward(self, *a):
         u, eh = self.u, self.prompt
         a = list(a)
-        if self.first:
+        if self.first and self.ref:  # reference stream: timestep 0, no camera embedding, plain 4-channel latent
+            lat = a[0]
+            a = a[1:]
+            emb = u.time_embedding(u.time_proj(torch.zeros(1, dtype=torch.long)).to(lat.dtype))
+            sample = u.conv_in(lat)
+            skips = [sample]
+        elif self.first:
             lat, nrm, pos, t, cam = a[:5]
             a = a[5:]
             emb = u.time_embedding(u.time_proj(t).to(lat.dtype)) + u.class_embedding(cam + 5).to(lat.dtype)
@@ -151,8 +157,9 @@ class GenSeg(nn.Module):
             skips = [x.float() for x in a[2:2 + self.nin]]
             a = a[2 + self.nin:]
         n = len(self.names)
-        CTX.mode, CTX.out = "gen", {}
-        CTX.ref, CTX.mv = dict(zip(self.names, a[:n])), dict(zip(self.names, a[n:2 * n]))
+        CTX.mode, CTX.out = ("ref" if self.ref else "gen"), {}
+        if not self.ref:
+            CTX.ref, CTX.mv = dict(zip(self.names, a[:n])), dict(zip(self.names, a[n:2 * n]))
         for kind, i in self.units:
             if kind == "down":
                 blk = u.down_blocks[i]
@@ -172,6 +179,8 @@ class GenSeg(nn.Module):
                 else:
                     sample = blk(hidden_states=sample, temb=emb, res_hidden_states_tuple=res, upsample_size=None)
         owns = tuple(CTX.out[nm].half() for nm in self.names)
+        if self.last and self.ref:
+            return owns
         if self.last:
             return (u.conv_out(u.conv_act(u.conv_norm_out(sample))),) + owns
         return (sample, emb) + tuple(x.half() for x in skips) + owns
@@ -353,15 +362,45 @@ def main():
         with torch.no_grad():
             feats_t = rw(lat)
         meta["ref_shapes"] = {n: list(f.shape[1:]) for n, f in zip(names, feats_t)}
-        p = os.path.join(a.out, "ref_unet.onnx")
-        with torch.no_grad():
-            export(rw, (lat,), p, ["lat"], [f"f_{san(n)}" for n in names], None)
+        segs, w = plan_segments(unet.unet_dual, a.segments)
+        print("ref segments:", [[f"{k}{i}" for k, i in sg] for sg in segs], "params(M):", [round(sum(w[x] for x in sg) / 1e6) for sg in segs], flush=True)
+        meta["ref_segments"], nskip, files = [], 0, []
+        state = None
+        for k, sg in enumerate(segs):
+            first, last = k == 0, k == len(segs) - 1
+            lnames = [n for x in sg for n in unit_layers(x, names)]
+            nin = nskip
+            for kind, i in sg:
+                if kind == "down":
+                    blk = unet.unet_dual.down_blocks[i]
+                    nskip += len(blk.resnets) + (1 if blk.downsamplers else 0) + (1 if i == 0 else 0)
+                elif kind == "up":
+                    nskip -= len(unet.unet_dual.up_blocks[i].resnets)
+            gs = GenSeg(unet.unet_dual, prompt_ref, sg, lnames, first, last, nin, ref=True).eval()
+            args = (lat,) if first else tuple(state)
+            in_names = ["lat"] if first else ["i_h", "i_emb"] + [f"i_sk{j}" for j in range(nin)]
+            out_state = [] if last else ["h", "emb"] + [f"sk{j}" for j in range(nskip)]
+            out_names = out_state + [f"own_{san(n)}" for n in lnames]
+            p = os.path.join(a.out, f"ref_seg{k}.onnx")
+            with torch.no_grad():
+                outs = gs(*args)
+                export(gs, args, p, in_names, out_names, None)
+            state = outs[:len(out_state)]
+            meta["ref_segments"].append({"file": f"ref_seg{k}.onnx", "layers": lnames, "first": first, "last": last,
+                                         "in_state": in_names, "out_state": out_state})
+            files.append(p)
+            del gs
         if a.parity:
-            s = ort_session(p)
-            o = s.run(None, {"lat": lat.numpy()})
-            print("PARITY ref_unet (maxrel, l2rel):", [round(rel(x, y.numpy())[1], 5) for x, y in zip(o, feats_t)][:16], flush=True)
-            meta["parity_ref_l2"] = max(rel(x, y.numpy())[1] for x, y in zip(o, feats_t))
-            del s
+            st, got = None, {}
+            for p, sm in zip(files, meta["ref_segments"]):
+                s = ort_session(p)
+                o = s.run(None, {"lat": lat.numpy()} if sm["first"] else dict(zip(sm["in_state"], st)))
+                del s
+                st = o[:len(sm["out_state"])]
+                got.update(dict(zip(sm["layers"], o[len(sm["out_state"]):])))
+            errs = [round(rel(got[n], f.numpy())[1], 5) for n, f in zip(names, feats_t)]
+            print("PARITY ref (segments chained, per layer l2rel):", errs, flush=True)
+            meta["parity_ref_l2"] = max(errs)
         del rw
         unet._modules["unet_dual"] = None
         import gc

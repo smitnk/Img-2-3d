@@ -41,6 +41,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var pendingPhotos: ((List<android.net.Uri>) -> Unit)? = null
+    private val photosPicker = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(4)) { uris ->
+        val f = pendingPhotos
+        pendingPhotos = null
+        if (uris.isNotEmpty() && f != null) f(uris)
+    }
+
     private val scriptPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::importScript) }
 
     private val exporter = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -60,6 +67,7 @@ class MainActivity : ComponentActivity() {
                 pendingPhotoMode = mode
                 picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             },
+            pickPhotos = { then -> pendingPhotos = then; photosPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             pickScript = { scriptPicker.launch(arrayOf("text/x-python", "text/plain", "application/x-python-code", "application/octet-stream")) },
             export = { m, blend -> saveAs(if (blend) m.blend!! else m.glb, m.name, if (blend) "blend" else "glb") },
             share = ::share,

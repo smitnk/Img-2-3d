@@ -154,6 +154,16 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 },
             )
 
+            EngineCard(
+                icon = Icons.Rounded.Brush, title = "Hunyuan Paint", summary = "Paints all sides from your photos", size = "≈2.0 GB",
+                details = "Tencent Hunyuan3D-2 Paint (turbo), int8. Needs about 2 GB free RAM, 15–40 min. Licence: Tencent Hunyuan 3D 2.0 Community License (not for EU, UK or South Korea).",
+                ready = state.hunyuanPaintPack == PackStatus.Ready,
+                progress = (state.hunyuanPaintPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.hunyuanPaintPack as? PackStatus.Failed)?.message, failed = state.hunyuanPaintPack is PackStatus.Failed,
+                onInstall = vm::installHunyuanPaintPack, onRemove = vm::uninstallHunyuanPaintPack,
+                onSave = { cb.pickFolder { vm.backupOne("hunyuanpaint", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuanpaint", it) } },
+            )
+
             SectionHeader("Rigging")
             EngineCard(
                 icon = Icons.Rounded.AutoFixHigh, title = "UniRig", summary = "Auto-rig: skeleton + skin weights", size = "≈2.5 GB",

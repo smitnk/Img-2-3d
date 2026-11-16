@@ -1,0 +1,73 @@
+[MEM] >> mesh_bpy rss=0.25 anon=0.10 file=0.14 GB
+03:50:11 | INFO: Data are loaded, start creating Blender stuff
+03:50:11 | INFO: Blender create Mesh node Mesh_0
+03:50:12 | INFO: glTF import finished in 0.45s
+imported objects: [('Armature', 'ARMATURE', 0, True), ('Icosphere', 'MESH', 42, True), ('Mesh_0', 'MESH', 130005, True)]
+mesh in: 130005 verts, 246305 faces
+mesh used: 23736 verts, 39999 faces (from 246305)
+03:50:14 | INFO: Starting glTF 2.0 export
+03:50:14 | WARNING: Mesh Mesh_0 is not valid, and may be exported wrongly
+03:50:14 | INFO: Extracting primitive: Mesh_0
+03:50:14 | INFO: Primitives created: 1
+03:50:14 | INFO: Finished glTF 2.0 export in 0.046315670013427734 s
+INFO Draco mesh compression is available, use library at /tmp/blender/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+
+PEAK mesh_bpy: hwm=0.595GB sampled_rss=0.595GB anon=0.447GB file=0.148GB t=2.4s
+PEAK prep hwm=0.60GB
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
+
+Blender quit
+[MEM] >> views rss=0.26 anon=0.11 file=0.15 GB
+MEM after views: rss=0.43 anon=0.28 file=0.15 hwm=0.48 GB
+PEAK views: hwm=0.484GB sampled_rss=0.475GB anon=0.326GB file=0.151GB t=2.5s
+[MEM] >> vae_encode rss=0.43 anon=0.28 file=0.15 GB
+PEAK vae_encode: hwm=0.728GB sampled_rss=0.728GB anon=0.57GB file=0.158GB t=75.6s
+[MEM] >> ref_unet rss=0.44 anon=0.28 file=0.16 GB
+MEM ref features: rss=0.49 anon=0.33 file=0.16 hwm=1.32 GB
+PEAK ref_unet: hwm=1.321GB sampled_rss=1.321GB anon=0.919GB file=0.459GB t=7.3s
+[MEM] >> denoise rss=0.49 anon=0.33 file=0.16 GB
+[step 1/10] t=989 129.0s rss=0.65 anon=0.49 file=0.16 hwm=1.63
+[step 2/10] t=890 71.5s rss=0.66 anon=0.50 file=0.16 hwm=1.63
+[step 3/10] t=791 72.7s rss=0.66 anon=0.50 file=0.16 hwm=1.63
+[step 4/10] t=692 74.8s rss=0.67 anon=0.51 file=0.16 hwm=1.63
+[step 5/10] t=593 74.7s rss=0.66 anon=0.50 file=0.16 hwm=1.63
+[step 6/10] t=494 75.6s rss=0.68 anon=0.52 file=0.16 hwm=1.63
+[step 7/10] t=395 75.7s rss=0.67 anon=0.51 file=0.16 hwm=1.63
+[step 8/10] t=296 74.9s rss=0.66 anon=0.51 file=0.16 hwm=1.63
+[step 9/10] t=197 74.2s rss=0.66 anon=0.50 file=0.16 hwm=1.63
+[step 10/10] t=98 75.3s rss=0.69 anon=0.54 file=0.16 hwm=1.63
+PEAK denoise: hwm=1.63GB sampled_rss=1.623GB anon=1.185GB file=0.471GB t=798.4s
+[MEM] >> vae_decode rss=0.53 anon=0.38 file=0.16 GB
+PEAK vae_decode: hwm=0.818GB sampled_rss=0.781GB anon=0.623GB file=0.158GB t=98.1s
+[MEM] >> colour rss=0.46 anon=0.31 file=0.16 GB
+PEAK colour: hwm=0.51GB sampled_rss=0.493GB anon=0.335GB file=0.158GB t=0.5s
+[MEM] >> bake rss=0.49 anon=0.33 file=0.16 GB
+bake view front: 18193 texels, 0 already painted
+bake view left: 13689 texels, 1901 already painted
+bake view back: 19751 texels, 3323 already painted
+bake view right: 13645 texels, 5408 already painted
+bake view top: 10231 texels, 6908 already painted
+bake view bottom: 8954 texels, 3012 already painted
+bake relaxed pass: 10673 of 35039 unpainted texels
+PEAK bake: hwm=0.552GB sampled_rss=0.54GB anon=0.382GB file=0.158GB t=5.5s
+[MEM] >> export_glb rss=0.25 anon=0.11 file=0.14 GB
+04:06:42 | INFO: Data are loaded, start creating Blender stuff
+04:06:42 | INFO: Blender create Mesh node Mesh_0
+04:06:42 | INFO: glTF import finished in 0.05s
+04:06:42 | INFO: Starting glTF 2.0 export
+04:06:42 | INFO: Extracting primitive: Mesh_0
+04:06:42 | INFO: Primitives created: 1
+04:06:42 | INFO: Finished glTF 2.0 export in 0.058115482330322266 s
+INFO Draco mesh compression is available, use library at /tmp/blender/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+
+PEAK export_glb: hwm=0.315GB sampled_rss=0.278GB anon=0.131GB file=0.146GB t=0.2s
+PEAK export hwm=0.32GB
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
+
+Blender quit
+PEAK total hwm=1.63GB anon=1.185GB time=991.1s
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
+
+Blender quit
+exit 0
+cgroup memory.peak MB 1350

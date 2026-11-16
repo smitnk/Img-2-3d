@@ -5,10 +5,17 @@ The cache for model files in Transformers v4.22.0 has been updated. Migrating yo
 externalized ref_unet.onnx 826 MB
 exported ref_unet.onnx 12 s
 PARITY ref_unet (maxrel, l2rel): [2e-05, 2e-05, 2e-05, 2e-05, 3e-05, 3e-05, 2e-05, 3e-05, 3e-05, 3e-05, 3e-05, 3e-05, 2e-05, 2e-05, 2e-05, 2e-05]
-externalized gen_unet.onnx 924 MB
-exported gen_unet.onnx 29 s
-PARITY gen_unet eps (maxrel, l2rel): (4.567080850392813e-06, 3.1997053611121373e-06)
-PARITY gen_unet eps 1 ref / 0 cached views: (1.9986989627795992e-06, 3.041416903215577e-06)
+segments: [['down0', 'down1', 'down2'], ['down3', 'mid0', 'up0'], ['up1'], ['up2', 'up3']] params(M): [224, 335, 300, 104]
+externalized gen_seg0.onnx 217 MB
+exported gen_seg0.onnx 8 s
+externalized gen_seg1.onnx 321 MB
+exported gen_seg1.onnx 2 s
+externalized gen_seg2.onnx 287 MB
+exported gen_seg2.onnx 3 s
+externalized gen_seg3.onnx 100 MB
+exported gen_seg3.onnx 10 s
+PARITY gen_unet (segments chained) eps (maxrel, l2rel): (0.000300412270007655, 0.00020363103249110281)
+PARITY gen_unet 1 ref / 0 cached views: (0.0001549604639876634, 0.00018629054829943925)
 An error occurred while trying to fetch /tmp/hfm/hunyuan3d-paint-v2-0-turbo/vae: Error no file named diffusion_pytorch_model.safetensors found in directory /tmp/hfm/hunyuan3d-paint-v2-0-turbo/vae.
 Defaulting to unsafe serialization. Pass `allow_pickle=False` to raise an error instead.
 /opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/onnx/_internal/jit_utils.py:309: UserWarning: Constant folding - Only steps=1 can be constant folded for opset >= 10 onnx::Slice op. Constant folding not applied. (Triggered internally at /pytorch/torch/csrc/jit/passes/onnx/constant_fold.cpp:178.)
@@ -19,20 +26,26 @@ Defaulting to unsafe serialization. Pass `allow_pickle=False` to raise an error 
   _C._jit_pass_onnx_graph_shape_type_inference(
 externalized vae_enc.onnx 130 MB
 exported vae_enc.onnx 2 s
-PARITY vae_enc: (1.4599474525311962e-05, 1.114045289796195e-06)
+PARITY vae_enc: (1.4599476344301365e-05, 1.113862367674301e-06)
 externalized vae_dec.onnx 189 MB
 exported vae_dec.onnx 2 s
-PARITY vae_dec: (6.152981313789496e-06, 1.950042815224151e-06)
-files: {'gen_unet.onnx': 5879967, 'gen_unet.onnx.data': 968769024, 'meta.json': 1192, 'ref_unet.onnx': 2093314, 'ref_unet.onnx.data': 866260224, 'vae_dec.onnx': 147830, 'vae_dec.onnx.data': 197950976, 'vae_enc.onnx': 129590, 'vae_enc.onnx.data': 136646144}
-total 2126868
-drwxr-xr-x  2 runner runner      4096 Nov 16 00:57 .
-drwxr-xr-x 13 runner runner      4096 Nov 16 00:55 ..
--rw-r--r--  1 runner runner   5879967 Nov 16 00:56 gen_unet.onnx
--rw-------  1 runner runner 968769024 Nov 16 00:56 gen_unet.onnx.data
--rw-r--r--  1 runner runner      1192 Nov 16 00:57 meta.json
--rw-r--r--  1 runner runner   2093314 Nov 16 00:55 ref_unet.onnx
--rw-------  1 runner runner 866260224 Nov 16 00:55 ref_unet.onnx.data
--rw-r--r--  1 runner runner    147830 Nov 16 00:57 vae_dec.onnx
--rw-------  1 runner runner 197950976 Nov 16 00:57 vae_dec.onnx.data
--rw-r--r--  1 runner runner    129590 Nov 16 00:57 vae_enc.onnx
--rw-------  1 runner runner 136646144 Nov 16 00:57 vae_enc.onnx.data
+PARITY vae_dec: (3.999437467427924e-06, 1.9130563941871515e-06)
+files: {'gen_seg0.onnx': 2246684, 'gen_seg0.onnx.data': 227753984, 'gen_seg1.onnx': 252350, 'gen_seg1.onnx.data': 336272384, 'gen_seg2.onnx': 485312, 'gen_seg2.onnx.data': 300847104, 'gen_seg3.onnx': 2819274, 'gen_seg3.onnx.data': 105007104, 'meta.json': 3010, 'ref_unet.onnx': 2093314, 'ref_unet.onnx.data': 866260224, 'vae_dec.onnx': 147830, 'vae_dec.onnx.data': 197950976, 'vae_enc.onnx': 129590, 'vae_enc.onnx.data': 136646144}
+total 2127888
+drwxr-xr-x  2 runner runner      4096 Nov 16 01:19 .
+drwxr-xr-x 13 runner runner      4096 Nov 16 01:17 ..
+-rw-r--r--  1 runner runner   2246684 Nov 16 01:18 gen_seg0.onnx
+-rw-------  1 runner runner 227753984 Nov 16 01:18 gen_seg0.onnx.data
+-rw-r--r--  1 runner runner    252350 Nov 16 01:18 gen_seg1.onnx
+-rw-------  1 runner runner 336272384 Nov 16 01:18 gen_seg1.onnx.data
+-rw-r--r--  1 runner runner    485312 Nov 16 01:18 gen_seg2.onnx
+-rw-------  1 runner runner 300847104 Nov 16 01:18 gen_seg2.onnx.data
+-rw-r--r--  1 runner runner   2819274 Nov 16 01:19 gen_seg3.onnx
+-rw-------  1 runner runner 105007104 Nov 16 01:19 gen_seg3.onnx.data
+-rw-r--r--  1 runner runner      3010 Nov 16 01:19 meta.json
+-rw-r--r--  1 runner runner   2093314 Nov 16 01:18 ref_unet.onnx
+-rw-------  1 runner runner 866260224 Nov 16 01:18 ref_unet.onnx.data
+-rw-r--r--  1 runner runner    147830 Nov 16 01:19 vae_dec.onnx
+-rw-------  1 runner runner 197950976 Nov 16 01:19 vae_dec.onnx.data
+-rw-r--r--  1 runner runner    129590 Nov 16 01:19 vae_enc.onnx
+-rw-------  1 runner runner 136646144 Nov 16 01:19 vae_enc.onnx.data

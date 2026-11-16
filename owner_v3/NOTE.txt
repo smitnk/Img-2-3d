@@ -1,0 +1,1 @@
+owner_v3 = arm_t4 (aarch64 Neoverse-N2, 4 threads, fp32, 10 steps, refs front+back with --ref-views front back, taskset 0-3, MemoryMax=2G)

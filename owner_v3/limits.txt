@@ -1,0 +1,10 @@
+CPU(s):                                  4
+Model name:                              Neoverse-N2
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16
+      4 asimddp
+      4 asimdhp
+      8 bf16
+      4 fphp
+      8 i8mm
+      4 sve2
+cgroup cap 2G: yes

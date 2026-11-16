@@ -166,5 +166,129 @@
  "peak_anon_gb": 1.189,
  "total_time_s": 1881.2,
  "peak_prep_hwm_gb": 0.608,
- "peak_export_hwm_gb": 0.315
+ "peak_export_hwm_gb": 0.315,
+ "colour_metrics": {
+  "front_chroma_render": 16.575,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 1.019,
+  "front_L_render": 50.826,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 14.852,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.769,
+   0.477,
+   0.26
+  ],
+  "front_orange_deltaE": 3.256,
+  "front_orange_chroma_ratio": 0.942,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.418,
+   0.457,
+   0.431
+  ],
+  "front_green_deltaE": 3.329,
+  "front_green_chroma_ratio": 0.778,
+  "back_chroma_render": 14.17,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 1.034,
+  "back_L_render": 52.662,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 16.811,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.809,
+   0.594,
+   0.429
+  ],
+  "back_orange_deltaE": 14.235,
+  "back_orange_chroma_ratio": 0.732,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.465,
+   0.455,
+   0.43
+  ],
+  "back_green_deltaE": 6.722,
+  "back_green_chroma_ratio": 0.655
+ },
+ "colour_metrics_before": {
+  "front_chroma_render": 13.109,
+  "front_chroma_ref": 16.26,
+  "front_chroma_ratio": 0.806,
+  "front_L_render": 49.375,
+  "front_L_ref": 52.57,
+  "front_deltaE_fg": 14.175,
+  "front_orange_ref_rgb": [
+   0.79,
+   0.473,
+   0.253
+  ],
+  "front_orange_render_rgb": [
+   0.713,
+   0.478,
+   0.327
+  ],
+  "front_orange_deltaE": 15.158,
+  "front_orange_chroma_ratio": 0.706,
+  "front_green_ref_rgb": [
+   0.411,
+   0.477,
+   0.46
+  ],
+  "front_green_render_rgb": [
+   0.442,
+   0.438,
+   0.41
+  ],
+  "front_green_deltaE": 7.608,
+  "front_green_chroma_ratio": 0.599,
+  "back_chroma_render": 12.181,
+  "back_chroma_ref": 13.707,
+  "back_chroma_ratio": 0.889,
+  "back_L_render": 50.578,
+  "back_L_ref": 54.996,
+  "back_deltaE_fg": 15.009,
+  "back_orange_ref_rgb": [
+   0.786,
+   0.502,
+   0.289
+  ],
+  "back_orange_render_rgb": [
+   0.713,
+   0.547,
+   0.429
+  ],
+  "back_orange_deltaE": 21.512,
+  "back_orange_chroma_ratio": 0.54,
+  "back_green_ref_rgb": [
+   0.407,
+   0.461,
+   0.445
+  ],
+  "back_green_render_rgb": [
+   0.491,
+   0.461,
+   0.43
+  ],
+  "back_green_deltaE": 9.035,
+  "back_green_chroma_ratio": 0.961
+ }
 }

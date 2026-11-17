@@ -200,6 +200,7 @@ def timer(S, phases):
 def skeleton_phase(a, skel_file):
     """GLB -> simplified mesh -> skeleton; writes skel_file (atomically). Run in its own process: its memory dies with it."""
     np, S, K, P, Z, T = mods()
+    S.tame_malloc()  # this process only does the skeleton; see onnx_skeleton.tame_malloc
     phases = {}
     phase = timer(S, phases)
     info = json.load(open(f"{a.models}/info.json"))

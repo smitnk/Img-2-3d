@@ -34,6 +34,31 @@ def log_rss(tag):
         print(f"MEM {tag}: peak {rss_gb():.2f}GB", flush=True)
 
 
+def tame_malloc(mmap_threshold=256 * 1024):
+    """glibc's malloc raises its mmap threshold to the size of every large block that is freed (up to 32 MB) and from then on serves such
+    blocks from the heap/per-thread arenas, where the KV cache arrays (a new, bigger one per step and tensor) fragment it: on the phone the
+    heap grew to 2-3 GB for ~0.5 GB of live data. A fixed threshold switches that adaptation off: every block >= 256 KB is its own mmap and
+    goes back to the kernel on free. One arena (ORT's workers would otherwise each keep their own free lists). No-op without glibc."""
+    try:
+        import ctypes
+        libc = ctypes.CDLL("libc.so.6")
+        ok = [libc.mallopt(-3, mmap_threshold),  # M_MMAP_THRESHOLD
+              libc.mallopt(-1, mmap_threshold),  # M_TRIM_THRESHOLD
+              libc.mallopt(-2, 0),               # M_TOP_PAD
+              libc.mallopt(-8, 1)]               # M_ARENA_MAX
+        return all(ok)
+    except Exception:
+        return False
+
+
+def trim_malloc():
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
+
+
 def session(path, threads=0, prepack=True):
     """ORT session tuned for low peak RSS: no arena (it keeps the largest block ever requested and rounds up to powers of two),
     no memory pattern (dynamic shapes), initializers straight from the system allocator instead of the arena. Weights stored as external data
@@ -94,17 +119,27 @@ def empty_kv(dec, b, heads, hd):
     return [np.zeros((b, heads, 0, hd), np.float32) for _ in range(dec.n)]
 
 
+PREFILL_CHUNK = 64
+
+
 def prefill(dec, prompt, heads, hd):
-    """prompt [P,D] -> (K/V of the whole prompt, batch 1, as the shared prefix; logits [V] of the last prompt token)."""
-    pre0, gen = empty_kv(dec, 1, heads, hd), empty_kv(dec, 1, heads, hd)
+    """prompt [P,D] -> (K/V of the whole prompt, batch 1, as the shared prefix; logits [V] of the last prompt token).
+    The graph attends over pk (shared prefix) then gk (generated part), so the prompt goes in as a growing prefix pk plus a small gk of at most
+    PREFILL_CHUNK tokens: every step re-copies only the small part (instead of the whole cache: 1026 x ~100 MB of copying and as many
+    differently sized blocks for the allocator), the prefix is rebuilt once per chunk."""
+    pre, gen = empty_kv(dec, 1, heads, hd), empty_kv(dec, 1, heads, hd)
     for t in range(len(prompt)):
-        logits, new = dec.run(prompt[t][None, None], [[t]], pre0, gen)
+        logits, new = dec.run(prompt[t][None, None], [[t]], pre, gen)
         for i, n in enumerate(new):
             gen[i] = np.concatenate([gen[i], n], 2)
-        if t % 256 == 255:
-            log_rss(f"prefill token {t + 1}")
+        if t % PREFILL_CHUNK == PREFILL_CHUNK - 1 or t == len(prompt) - 1:
+            pre = [np.concatenate([a, g], 2) for a, g in zip(pre, gen)]
+            gen = empty_kv(dec, 1, heads, hd)
+            if t % 256 == 255:
+                log_rss(f"prefill token {t + 1}")
+    trim_malloc()
     log_rss("prefill done")
-    return gen, logits[0]
+    return pre, logits[0]
 
 
 def repetition_penalty(s, ids, p):
@@ -189,8 +224,6 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
             logits = np.repeat(l0[None], nb, 0)
         else:
             logits, new = dec.run(embed[run_seq[:, c - 1]][:, None], np.full((nb, 1), P + c - 1), pre, gen)
-            for i, n in enumerate(new):  # in place per tensor: one transient copy instead of a second whole cache
-                gen[i] = np.concatenate([gen[i], n], 2)
         x = logits.astype(np.float32)
         lp = x - x.max(-1, keepdims=True)
         lp = lp - np.log(np.exp(lp).sum(-1, keepdims=True))
@@ -228,9 +261,14 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
         lens = np.concatenate([lens, np.full(keep, c + 1)])[m_top]
         is_fin = np.concatenate([is_fin, did])[m_top]
         fin_sc = m_sc[m_top]
-        if c > 0:
+        if c > 0:  # cache of the surviving beams + this step's K/V, written once into one fresh array per tensor
             for i in range(len(gen)):
-                gen[i] = gen[i][parent]
+                g = gen[i]
+                nxt = np.empty((nb, H, g.shape[2] + 1, Dh), np.float32)
+                np.take(g, parent, axis=0, out=nxt[:, :, :-1], mode="clip")  # clip: no hidden buffering copy
+                nxt[:, :, -1] = new[i][parent, :, 0]
+                gen[i] = nxt
+            del new
         else:  # first step: all beams share the prompt, the generated part is still empty
             gen = empty_kv(dec, nb, H, Dh)
         c += 1
@@ -240,6 +278,7 @@ def beam_sample(dec, embed, prompt, tok, start, cfg, noise):
             break
         if c == 1 or c % 50 == 0:
             print(f"beam step {c} best {run_sc[0]:.2f}", flush=True)
+            trim_malloc()
             log_rss(f"beam step {c}")
     assert lens[0] > 0, "no finished beam"
     return np.array(list(start) + seqs[0, :lens[0]].tolist(), np.int64)

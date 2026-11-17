@@ -109,7 +109,7 @@ class CurioPack(context: Context) : AssetPack(File(context.filesDir, "curiomesh"
 
 /** UniRig on the phone (ONNX skeleton + skin models ~GB, onnxruntime/scipy libs, MIT), for Rig with UniRig; release unirig-v1 (unirig-pack.yml). */
 class UnirigPack(context: Context) : AssetPack(File(context.filesDir, "unirig"), BuildConfig.UNIRIG_BASE_URL, "unirig_info.json",
-    5, "unirig_py.zip") // v2: weights as external data (.onnx.data), skin network in three graphs, v3: skeleton in-process + file-backed decoder, v4: int8 skeleton decoder + 8 beams (phone RAM), v5: 16384 skin samples (phone RAM)
+    6, "unirig_py.zip") // v2: weights as external data (.onnx.data), skin network in three graphs, v3: skeleton in-process + file-backed decoder, v4: int8 skeleton decoder + 8 beams (phone RAM), v5: 16384 skin samples (phone RAM), v6: skeleton KV cache without per-step full copies + fixed malloc mmap threshold (phone RAM)
 
 /** Hunyuan3D-2 Paint (turbo, int8 ONNX; Tencent Hunyuan 3D 2.0 Community License) for all-sides texturing, release hunyuanpaint-v1. */
 class HunyuanPaintPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanpaint"), BuildConfig.HUNYUANPAINT_BASE_URL, "hunyuanpaint_info.json",

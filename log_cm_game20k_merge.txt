@@ -1,0 +1,12 @@
+FBX version: 7400
+06:06:04 | INFO: Data are loaded, start creating Blender stuff
+06:06:04 | INFO: Blender create Mesh node in_Retopo
+06:06:04 | INFO: glTF import finished in 0.05s
+  0%|          | 0/36080 [00:00<?, ?it/s] 48%|████▊     | 17256/36080 [00:00<00:00, 172547.00it/s] 96%|█████████▌| 34511/36080 [00:00<00:00, 158874.63it/s]100%|██████████| 36080/36080 [00:00<00:00, 160457.13it/s]
+ERROR Draco mesh compression is not available because library could not be found at /home/runner/work/Img-2-3d/Img-2-3d/unirig/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+06:06:09 | INFO: Starting glTF 2.0 export
+06:06:09 | INFO: Extracting primitive: in_Retopo
+06:06:09 | INFO: Primitives created: 1
+06:06:09 | INFO: Finished glTF 2.0 export in 0.18774652481079102 s
+
+done

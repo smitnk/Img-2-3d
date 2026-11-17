@@ -1,0 +1,186 @@
+MEM run.py top (before torch import) rss=0.01GB hwm=0.01GB t=0s
+MEM after imports rss=1.06GB hwm=1.06GB t=4s
+MEM dataset: before transform_asset rss=1.06GB hwm=1.06GB t=4s
+MEM voxel_skin: before voxelization rss=1.07GB hwm=1.07GB t=4s
+MEM voxel_skin: voxelization done M=609522 N=21238 J=28 F=42428 rss=1.20GB hwm=1.56GB t=5s
+MEM voxel_skin: trees built rss=1.22GB hwm=1.56GB t=5s
+MEM voxel_skin: graph built nnz=3735231 rss=1.24GB hwm=1.56GB t=7s
+MEM voxel_skin: dijkstra done rss=1.20GB hwm=1.56GB t=11s
+MEM voxel_skin: done rss=1.20GB hwm=1.56GB t=11s
+MEM dataset: after transform_asset rss=1.20GB hwm=1.56GB t=11s
+MEM after preload transform (before model) rss=1.20GB hwm=1.56GB t=11s
+MEM after config/model/system construction rss=2.56GB hwm=2.56GB t=12s
+MEM before ckpt torch.load rss=2.56GB hwm=2.56GB t=13s
+MEM ckpt key=epoch bytes=0 (0.00GB)
+MEM ckpt key=global_step bytes=0 (0.00GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt key=state_dict bytes=0 (0.00GB)
+MEM ckpt key=loops bytes=0 (0.00GB)
+MEM ckpt key=callbacks bytes=32 (0.00GB)
+MEM ckpt key=optimizer_states bytes=2915974796 (2.72GB)
+MEM ckpt key=lr_schedulers bytes=0 (0.00GB)
+MEM ckpt key=hparams_name bytes=0 (0.00GB)
+MEM ckpt key=hyper_parameters bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=1156 params=364496338 fp32_bytes=1457985352 disk_bytes=0 disk_dtypes={'torch.float32': 1155, 'torch.int64': 1}
+MEM model params=364496273 param_dtypes={'torch.float32': 1153} buffers=5 buffer_bytes=320 buffer_dtypes={'torch.float32': 4, 'torch.int64': 1}
+MEM after ckpt torch.load (mmap) rss=2.58GB hwm=2.58GB t=13s
+MEM after load_state_dict rss=4.37GB hwm=4.37GB t=13s
+MEM after ckpt freed rss=2.57GB hwm=4.37GB t=13s
+MEM after Trainer creation rss=2.57GB hwm=4.37GB t=13s
+MEM datamodule setup rss=2.57GB hwm=4.37GB t=13s
+MEM first batch batch.voxel_skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.offset shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.joints shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.num_bones shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.tails shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.parents shape=(1, 28) dtype=torch.int64 bytes=224
+MEM first batch batch.matrix_local shape=(1, 28, 4, 4) dtype=torch.float32 bytes=1792
+MEM first batch batch.vertices shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.normals shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 21238, 3) dtype=torch.float32 bytes=254856
+MEM first batch batch.origin_vertex_normals shape=(1, 21238, 3) dtype=torch.float32 bytes=254856
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 42428, 3) dtype=torch.int64 bytes=1018272
+MEM first batch batch.origin_face_normals shape=(1, 42428, 3) dtype=torch.float32 bytes=509136
+MEM first batch built rss=2.59GB hwm=4.37GB t=13s
+MEM fwd start N=32768 J=28 rss=2.58GB hwm=4.37GB t=13s
+MEM fwd after global (Michelangelo) encoder rss=2.59GB hwm=4.37GB t=15s
+MEM MHA first call (q 28 x kv 1052) rss=2.60GB hwm=4.37GB t=15s
+MEM fwd after bone encoder rss=2.59GB hwm=4.37GB t=15s
+MEM ptv3 serialized+sparsified N=32768 rss=2.60GB hwm=4.37GB t=15s
+MEM ptv3 after embedding (stem conv k=5) rss=2.63GB hwm=4.37GB t=15s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.37GB t=15s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.37GB t=16s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.37GB t=16s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.37GB t=16s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.37GB t=17s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.37GB t=17s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.37GB t=18s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.37GB t=19s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.37GB t=20s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=22s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=24s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=26s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=28s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=30s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.37GB t=32s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=36s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=39s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=42s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=45s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=49s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=52s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=55s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=58s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=62s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=65s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=68s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=71s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=75s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=78s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=81s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.80GB hwm=4.37GB t=84s
+MEM fwd after PTv3 mesh encoder rss=2.69GB hwm=4.37GB t=85s
+MEM fwd after mesh_bone_attn x16 rss=2.70GB hwm=4.37GB t=128s
+MEM fwd after skin chunk loop rss=2.74GB hwm=4.37GB t=145s
+MEM predict_step: after model rss=2.61GB hwm=4.37GB t=145s
+MEM writer: before reskin rss=2.61GB hwm=4.37GB t=145s
+MEM writer: after reskin rss=2.61GB hwm=4.37GB t=145s
+MEM writer: before fbx export rss=2.61GB hwm=4.37GB t=145s
+MEM writer: after fbx export rss=2.61GB hwm=4.37GB t=145s
+MEM after trainer.predict rss=2.60GB hwm=4.37GB t=145s
+MEM run.py top (before torch import) rss=0.01GB hwm=0.01GB t=0s
+MEM after imports rss=1.06GB hwm=1.06GB t=4s
+MEM dataset: before transform_asset rss=1.07GB hwm=1.07GB t=4s
+MEM voxel_skin: before voxelization rss=1.07GB hwm=1.07GB t=4s
+MEM voxel_skin: voxelization done M=608738 N=27724 J=28 F=49930 rss=1.20GB hwm=1.56GB t=10s
+MEM voxel_skin: trees built rss=1.22GB hwm=1.56GB t=10s
+MEM voxel_skin: graph built nnz=3771908 rss=1.24GB hwm=1.56GB t=11s
+MEM voxel_skin: dijkstra done rss=1.20GB hwm=1.56GB t=15s
+MEM voxel_skin: done rss=1.20GB hwm=1.56GB t=15s
+MEM dataset: after transform_asset rss=1.21GB hwm=1.56GB t=15s
+MEM after preload transform (before model) rss=1.20GB hwm=1.56GB t=15s
+MEM after config/model/system construction rss=2.56GB hwm=2.56GB t=17s
+MEM before ckpt torch.load rss=2.56GB hwm=2.56GB t=44s
+MEM ckpt key=epoch bytes=0 (0.00GB)
+MEM ckpt key=global_step bytes=0 (0.00GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt key=state_dict bytes=0 (0.00GB)
+MEM ckpt key=loops bytes=0 (0.00GB)
+MEM ckpt key=callbacks bytes=32 (0.00GB)
+MEM ckpt key=optimizer_states bytes=2915974796 (2.72GB)
+MEM ckpt key=lr_schedulers bytes=0 (0.00GB)
+MEM ckpt key=hparams_name bytes=0 (0.00GB)
+MEM ckpt key=hyper_parameters bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=1156 params=364496338 fp32_bytes=1457985352 disk_bytes=0 disk_dtypes={'torch.float32': 1155, 'torch.int64': 1}
+MEM model params=364496273 param_dtypes={'torch.float32': 1153} buffers=5 buffer_bytes=320 buffer_dtypes={'torch.float32': 4, 'torch.int64': 1}
+MEM after ckpt torch.load (mmap) rss=2.58GB hwm=2.58GB t=44s
+MEM after load_state_dict rss=4.38GB hwm=4.38GB t=44s
+MEM after ckpt freed rss=2.57GB hwm=4.38GB t=45s
+MEM after Trainer creation rss=2.57GB hwm=4.38GB t=45s
+MEM datamodule setup rss=2.57GB hwm=4.38GB t=45s
+MEM first batch batch.voxel_skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.offset shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.joints shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.num_bones shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.tails shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.parents shape=(1, 28) dtype=torch.int64 bytes=224
+MEM first batch batch.matrix_local shape=(1, 28, 4, 4) dtype=torch.float32 bytes=1792
+MEM first batch batch.vertices shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.normals shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.origin_vertex_normals shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 49930, 3) dtype=torch.int64 bytes=1198320
+MEM first batch batch.origin_face_normals shape=(1, 49930, 3) dtype=torch.float32 bytes=599160
+MEM first batch built rss=2.59GB hwm=4.38GB t=45s
+MEM fwd start N=32768 J=28 rss=2.58GB hwm=4.38GB t=45s
+MEM fwd after global (Michelangelo) encoder rss=2.59GB hwm=4.38GB t=46s
+MEM MHA first call (q 28 x kv 1052) rss=2.61GB hwm=4.38GB t=46s
+MEM fwd after bone encoder rss=2.60GB hwm=4.38GB t=46s
+MEM ptv3 serialized+sparsified N=32768 rss=2.60GB hwm=4.38GB t=47s
+MEM ptv3 after embedding (stem conv k=5) rss=2.64GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=48s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=48s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=49s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=50s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=51s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=52s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=54s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=56s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=58s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=60s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=62s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=64s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=67s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=70s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=74s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=77s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=80s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=83s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=86s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=90s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=93s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=96s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=99s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=103s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=106s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=109s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=112s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=115s
+MEM fwd after PTv3 mesh encoder rss=2.69GB hwm=4.38GB t=116s
+MEM fwd after mesh_bone_attn x16 rss=2.70GB hwm=4.38GB t=160s
+MEM fwd after skin chunk loop rss=2.74GB hwm=4.38GB t=177s
+MEM predict_step: after model rss=2.61GB hwm=4.38GB t=177s
+MEM writer: before reskin rss=2.61GB hwm=4.38GB t=177s
+MEM writer: after reskin rss=2.61GB hwm=4.38GB t=177s
+MEM writer: before fbx export rss=2.61GB hwm=4.38GB t=177s
+MEM writer: after fbx export rss=2.62GB hwm=4.38GB t=177s
+MEM after trainer.predict rss=2.60GB hwm=4.38GB t=177s

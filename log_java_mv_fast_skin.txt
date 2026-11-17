@@ -1,0 +1,132 @@
+  0%|          | 0/1 [00:00<?, ?it/s]Info: Deleted 1 data-block(s)
+[32mNow processing res/skel_java_mv_fast.fbx...[0m
+Now processing res/skel_java_mv_fast.fbx...
+FBX version: 7400
+save to: tmp/res/skel_java_mv_fast
+100%|██████████| 1/1 [00:01<00:00,  1.25s/it]100%|██████████| 1/1 [00:01<00:00,  1.25s/it]
+1 models processed
+done
+MEM run.py top (before torch import) rss=0.01GB hwm=0.01GB t=0s
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+MEM after imports rss=1.06GB hwm=1.06GB t=4s
+Seed set to 12345
+[92mload task config: configs/task/quick_inference_unirig_skin.yaml[0m
+[92mload data config: configs/data/quick_inference.yaml[0m
+[92mload transform config: configs/transform/inference_skin_transform.yaml[0m
+MEM dataset: before transform_asset rss=1.07GB hwm=1.07GB t=4s
+MEM voxel_skin: before voxelization rss=1.07GB hwm=1.07GB t=4s
+MEM voxel_skin: voxelization done M=608738 N=27724 J=28 F=49930 rss=1.20GB hwm=1.56GB t=10s
+MEM voxel_skin: trees built rss=1.22GB hwm=1.56GB t=10s
+MEM voxel_skin: graph built nnz=3771908 rss=1.24GB hwm=1.56GB t=11s
+MEM voxel_skin: dijkstra done rss=1.20GB hwm=1.56GB t=15s
+MEM voxel_skin: done rss=1.20GB hwm=1.56GB t=15s
+MEM dataset: after transform_asset rss=1.21GB hwm=1.56GB t=15s
+MEM after preload transform (before model) rss=1.20GB hwm=1.56GB t=15s
+[92mload model config: configs/model/unirig_skin.yaml[0m
+WARNING: use BatchNorm in ptv3obj !!!
+[92mload system config: configs/system/skin.yaml[0m
+MEM after config/model/system construction rss=2.56GB hwm=2.56GB t=17s
+MEM before ckpt torch.load rss=2.56GB hwm=2.56GB t=44s
+MEM ckpt key=epoch bytes=0 (0.00GB)
+MEM ckpt key=global_step bytes=0 (0.00GB)
+MEM ckpt key=pytorch-lightning_version bytes=0 (0.00GB)
+MEM ckpt key=state_dict bytes=0 (0.00GB)
+MEM ckpt key=loops bytes=0 (0.00GB)
+MEM ckpt key=callbacks bytes=32 (0.00GB)
+MEM ckpt key=optimizer_states bytes=2915974796 (2.72GB)
+MEM ckpt key=lr_schedulers bytes=0 (0.00GB)
+MEM ckpt key=hparams_name bytes=0 (0.00GB)
+MEM ckpt key=hyper_parameters bytes=0 (0.00GB)
+MEM ckpt state_dict tensors=1156 params=364496338 fp32_bytes=1457985352 disk_bytes=0 disk_dtypes={'torch.float32': 1155, 'torch.int64': 1}
+MEM model params=364496273 param_dtypes={'torch.float32': 1153} buffers=5 buffer_bytes=320 buffer_dtypes={'torch.float32': 4, 'torch.int64': 1}
+MEM after ckpt torch.load (mmap) rss=2.58GB hwm=2.58GB t=44s
+state_dict loaded directly (optimizer state never read)
+MEM after load_state_dict rss=4.38GB hwm=4.38GB t=44s
+MEM after ckpt freed rss=2.57GB hwm=4.38GB t=45s
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `lightning.pytorch` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+MEM after Trainer creation rss=2.57GB hwm=4.38GB t=45s
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+MEM datamodule setup rss=2.57GB hwm=4.38GB t=45s
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]MEM dataset item taken from preload rss=2.57GB hwm=4.38GB t=45s
+MEM first batch batch.voxel_skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.skin shape=(1, 32768, 28) dtype=torch.float64 bytes=7340032
+MEM first batch batch.offset shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.joints shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.num_bones shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.tails shape=(1, 28, 3) dtype=torch.float32 bytes=336
+MEM first batch batch.parents shape=(1, 28) dtype=torch.int64 bytes=224
+MEM first batch batch.matrix_local shape=(1, 28, 4, 4) dtype=torch.float32 bytes=1792
+MEM first batch batch.vertices shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.normals shape=(1, 32768, 3) dtype=torch.float32 bytes=393216
+MEM first batch batch.num_points shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_vertices shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.origin_vertex_normals shape=(1, 27724, 3) dtype=torch.float32 bytes=332688
+MEM first batch batch.num_faces shape=(1,) dtype=torch.int64 bytes=8
+MEM first batch batch.origin_faces shape=(1, 49930, 3) dtype=torch.int64 bytes=1198320
+MEM first batch batch.origin_face_normals shape=(1, 49930, 3) dtype=torch.float32 bytes=599160
+MEM first batch built rss=2.59GB hwm=4.38GB t=45s
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]MEM predict_step: before model rss=2.58GB hwm=4.38GB t=45s
+MEM fwd start N=32768 J=28 rss=2.58GB hwm=4.38GB t=45s
+MEM fwd after global (Michelangelo) encoder rss=2.59GB hwm=4.38GB t=46s
+MEM MHA first call (q 28 x kv 1052) rss=2.61GB hwm=4.38GB t=46s
+MEM fwd after bone encoder rss=2.60GB hwm=4.38GB t=46s
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:386: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  'offset': torch.tensor(batch['offset']),
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/torch/amp/autocast_mode.py:283: UserWarning: In CPU autocast, but the target dtype is not supported. Disabling autocast.
+CPU Autocast only supports dtype of torch.bfloat16, torch.float16 currently.
+  warnings.warn(error_message)
+MEM ptv3 serialized+sparsified N=32768 rss=2.60GB hwm=4.38GB t=47s
+MEM ptv3 after embedding (stem conv k=5) rss=2.64GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=32 H=2 N=32768 K=1024 rss=2.65GB hwm=4.38GB t=47s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=48s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=48s
+MEM ptv3 block C=64 H=4 N=32768 K=1024 rss=2.67GB hwm=4.38GB t=49s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=50s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=51s
+MEM ptv3 block C=128 H=8 N=32768 K=1024 rss=2.70GB hwm=4.38GB t=52s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=54s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=56s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=58s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=60s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=62s
+MEM ptv3 block C=256 H=16 N=32768 K=1024 rss=2.75GB hwm=4.38GB t=64s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=67s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=70s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=74s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=77s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=80s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=83s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=86s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=90s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=93s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=96s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=99s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=103s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=106s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=109s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=112s
+MEM ptv3 block C=384 H=24 N=32768 K=1024 rss=2.81GB hwm=4.38GB t=115s
+MEM fwd after PTv3 mesh encoder rss=2.69GB hwm=4.38GB t=116s
+MEM fwd after mesh_bone_attn x16 rss=2.70GB hwm=4.38GB t=160s
+/home/runner/work/Img-2-3d/Img-2-3d/unirig/src/model/unirig_skin.py:457: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  skin_pred[i, :, :num_bones[i]] = F.softmax(pred)
+MEM fwd after skin chunk loop rss=2.74GB hwm=4.38GB t=177s
+MEM predict_step: after model rss=2.61GB hwm=4.38GB t=177s
+MEM writer: before reskin rss=2.61GB hwm=4.38GB t=177s
+MEM writer: after reskin rss=2.61GB hwm=4.38GB t=177s
+MEM writer: before fbx export rss=2.61GB hwm=4.38GB t=177s
+
+FBX export starting... 'res/skin_java_mv_fast.fbx'
+(bpy.data.armatures['Armature'], 'POSE')
+export finished in 0.1062 sec.
+MEM writer: after fbx export rss=2.62GB hwm=4.38GB t=177s
+Predicting DataLoader 0: 100%|██████████| 1/1 [02:12<00:00,  0.01it/s]Predicting DataLoader 0: 100%|██████████| 1/1 [02:12<00:00,  0.01it/s]
+MEM after trainer.predict rss=2.60GB hwm=4.38GB t=177s
+done

@@ -1,0 +1,6 @@
+AB skeleton java_mv_fast: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28
+AB skin java_mv_fast: max=3.151e-02 mean=6.841e-06 verts=27724 joints=28
+AB glb java_mv_fast: joints ref=[28] new=[28]
+AB skeleton cm_game20k: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28
+AB skin cm_game20k: max=7.841e-02 mean=1.172e-05 verts=21238 joints=28
+AB glb cm_game20k: joints ref=[28] new=[28]

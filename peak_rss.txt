@@ -1,0 +1,6 @@
+time_cm_game20k_merge peakRSS_GB=0.72 wall=0:07.02
+time_cm_game20k_skeleton peakRSS_GB=3.77 wall=2:54.03
+time_cm_game20k_skin peakRSS_GB=4.37 wall=2:29.06
+time_java_mv_fast_merge peakRSS_GB=0.92 wall=0:20.28
+time_java_mv_fast_skeleton peakRSS_GB=3.77 wall=3:15.16
+time_java_mv_fast_skin peakRSS_GB=4.38 wall=3:01.30

@@ -1,0 +1,11 @@
+MEM start: rss 0.03GB (anon 0.01 file 0.01) peak 0.03GB
+do not have open3d
+MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+MEM session skel_decoder.onnx: rss 0.63GB (anon 0.60 file 0.03) peak 0.63GB
+MEM prefill token 256: rss 1.38GB (anon 0.60 file 0.78) peak 1.38GB
+MEM prefill token 512: rss 1.44GB (anon 0.66 file 0.78) peak 1.44GB
+MEM prefill token 768: rss 1.53GB (anon 0.75 file 0.78) peak 1.53GB
+MEM prefill token 1024: rss 1.61GB (anon 0.83 file 0.78) peak 1.61GB
+MEM prefill done: rss 1.39GB (anon 0.61 file 0.78) peak 1.70GB
+MEM end: rss 1.26GB (anon 0.47 file 0.78) peak 1.70GB
+RESULT {"phase": "greedy", "name": "cm_game20k", "tokens": 172, "torch_tokens": 172, "equal": true, "first_mismatch": 172, "logits_maxdiff_first32": 8.106231689453125e-05, "seconds": 73.6, "self_peak_rss_gb": 1.7}

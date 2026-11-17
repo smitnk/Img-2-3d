@@ -1,0 +1,17 @@
+MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+do not have open3d
+MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+MEM session skel_decoder.onnx: rss 0.64GB (anon 0.61 file 0.03) peak 0.64GB
+MEM prefill token 256: rss 1.40GB (anon 0.61 file 0.78) peak 1.40GB
+MEM prefill token 512: rss 1.44GB (anon 0.66 file 0.78) peak 1.44GB
+MEM prefill token 768: rss 1.53GB (anon 0.75 file 0.79) peak 1.53GB
+MEM prefill token 1024: rss 1.63GB (anon 0.85 file 0.79) peak 1.63GB
+MEM prefill done: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+beam step 1 best -0.00
+MEM beam step 1: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+beam step 50 best -23.21
+MEM beam step 50: rss 1.54GB (anon 0.75 file 0.79) peak 1.79GB
+beam step 100 best -56.16
+MEM beam step 100: rss 1.68GB (anon 0.89 file 0.79) peak 2.08GB
+MEM end: rss 1.24GB (anon 0.46 file 0.79) peak 2.08GB
+RESULT {"phase": "beam", "name": "cm_game20k", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.015842825174331665, "seconds": 348.7, "self_peak_rss_gb": 2.08}

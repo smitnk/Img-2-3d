@@ -1,0 +1,2 @@
+AB skeleton java_mv_fast: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28
+AB skeleton cm_game20k: max=0.000e+00 mean=0.000e+00 parents_equal=True joints=28

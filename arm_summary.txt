@@ -1,0 +1,64 @@
+java_mv_fast encode:  wall=0:03.93peakRSS_GB=0.92
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.04GB (anon 0.02 file 0.02) peak 0.04GB
+  MEM session skel_encoder.onnx: rss 0.41GB (anon 0.38 file 0.03) peak 0.45GB
+  MEM encoder run done: rss 0.44GB (anon 0.41 file 0.03) peak 0.92GB
+  MEM end: rss 0.44GB (anon 0.41 file 0.03) peak 0.92GB
+RESULT {"phase": "encode", "name": "java_mv_fast", "encoder_maxdiff_vs_torch_x86": 0.000255584716796875, "seconds": 3.7, "self_peak_rss_gb": 0.92}
+java_mv_fast greedy:  wall=1:06.56peakRSS_GB=1.71
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.62GB (anon 0.59 file 0.03) peak 0.62GB
+  MEM prefill token 256: rss 1.37GB (anon 0.59 file 0.78) peak 1.37GB
+  MEM prefill token 512: rss 1.43GB (anon 0.65 file 0.78) peak 1.43GB
+  MEM prefill token 768: rss 1.52GB (anon 0.74 file 0.78) peak 1.52GB
+  MEM prefill token 1024: rss 1.63GB (anon 0.85 file 0.78) peak 1.63GB
+  MEM prefill done: rss 1.39GB (anon 0.61 file 0.78) peak 1.71GB
+  MEM end: rss 1.25GB (anon 0.46 file 0.78) peak 1.71GB
+RESULT {"phase": "greedy", "name": "java_mv_fast", "tokens": 102, "torch_tokens": 102, "equal": true, "first_mismatch": 102, "logits_maxdiff_first32": 4.100799560546875e-05, "seconds": 66.4, "self_peak_rss_gb": 1.71}
+java_mv_fast beam:  wall=5:55.15peakRSS_GB=2.08
+  MEM start: rss 0.03GB (anon 0.01 file 0.01) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.01) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.64GB (anon 0.61 file 0.03) peak 0.64GB
+  MEM prefill token 256: rss 1.39GB (anon 0.61 file 0.78) peak 1.39GB
+  MEM prefill token 512: rss 1.44GB (anon 0.65 file 0.78) peak 1.44GB
+  MEM prefill token 768: rss 1.53GB (anon 0.75 file 0.78) peak 1.53GB
+  MEM prefill token 1024: rss 1.63GB (anon 0.85 file 0.79) peak 1.63GB
+  MEM prefill done: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+  MEM beam step 1: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+  MEM beam step 50: rss 1.54GB (anon 0.75 file 0.79) peak 1.79GB
+  MEM beam step 100: rss 1.68GB (anon 0.89 file 0.79) peak 2.08GB
+  MEM end: rss 1.25GB (anon 0.46 file 0.79) peak 2.08GB
+RESULT {"phase": "beam", "name": "java_mv_fast", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.009488333016633987, "seconds": 355.0, "self_peak_rss_gb": 2.08}
+cm_game20k encode:  wall=0:03.93peakRSS_GB=0.89
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_encoder.onnx: rss 0.39GB (anon 0.36 file 0.03) peak 0.45GB
+  MEM encoder run done: rss 0.40GB (anon 0.37 file 0.03) peak 0.89GB
+  MEM end: rss 0.40GB (anon 0.37 file 0.03) peak 0.89GB
+RESULT {"phase": "encode", "name": "cm_game20k", "encoder_maxdiff_vs_torch_x86": 0.000431060791015625, "seconds": 3.8, "self_peak_rss_gb": 0.89}
+cm_game20k greedy:  wall=1:13.78peakRSS_GB=1.70
+  MEM start: rss 0.03GB (anon 0.01 file 0.01) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.63GB (anon 0.60 file 0.03) peak 0.63GB
+  MEM prefill token 256: rss 1.38GB (anon 0.60 file 0.78) peak 1.38GB
+  MEM prefill token 512: rss 1.44GB (anon 0.66 file 0.78) peak 1.44GB
+  MEM prefill token 768: rss 1.53GB (anon 0.75 file 0.78) peak 1.53GB
+  MEM prefill token 1024: rss 1.61GB (anon 0.83 file 0.78) peak 1.61GB
+  MEM prefill done: rss 1.39GB (anon 0.61 file 0.78) peak 1.70GB
+  MEM end: rss 1.26GB (anon 0.47 file 0.78) peak 1.70GB
+RESULT {"phase": "greedy", "name": "cm_game20k", "tokens": 172, "torch_tokens": 172, "equal": true, "first_mismatch": 172, "logits_maxdiff_first32": 8.106231689453125e-05, "seconds": 73.6, "self_peak_rss_gb": 1.7}
+cm_game20k beam:  wall=5:48.88peakRSS_GB=2.08
+  MEM start: rss 0.03GB (anon 0.01 file 0.02) peak 0.03GB
+  MEM inputs + tokenizer loaded: rss 0.03GB (anon 0.02 file 0.02) peak 0.03GB
+  MEM session skel_decoder.onnx: rss 0.64GB (anon 0.61 file 0.03) peak 0.64GB
+  MEM prefill token 256: rss 1.40GB (anon 0.61 file 0.78) peak 1.40GB
+  MEM prefill token 512: rss 1.44GB (anon 0.66 file 0.78) peak 1.44GB
+  MEM prefill token 768: rss 1.53GB (anon 0.75 file 0.79) peak 1.53GB
+  MEM prefill token 1024: rss 1.63GB (anon 0.85 file 0.79) peak 1.63GB
+  MEM prefill done: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+  MEM beam step 1: rss 1.40GB (anon 0.61 file 0.79) peak 1.71GB
+  MEM beam step 50: rss 1.54GB (anon 0.75 file 0.79) peak 1.79GB
+  MEM beam step 100: rss 1.68GB (anon 0.89 file 0.79) peak 2.08GB
+  MEM end: rss 1.24GB (anon 0.46 file 0.79) peak 2.08GB
+RESULT {"phase": "beam", "name": "cm_game20k", "tokens": 104, "torch_tokens": 104, "joints": 28, "torch_joints": 28, "note": "numpy RNG: a different but valid sample, not expected to equal torch's", "joint_chamfer_normalized": 0.015842825174331665, "seconds": 348.7, "self_peak_rss_gb": 2.08}

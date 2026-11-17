@@ -101,6 +101,8 @@ def prefill(dec, prompt, heads, hd):
         logits, new = dec.run(prompt[t][None, None], [[t]], pre0, gen)
         for i, n in enumerate(new):
             gen[i] = np.concatenate([gen[i], n], 2)
+        if t % 256 == 255:
+            log_rss(f"prefill token {t + 1}")
     log_rss("prefill done")
     return gen, logits[0]
 

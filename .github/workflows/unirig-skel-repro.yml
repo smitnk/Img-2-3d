@@ -1,0 +1,46 @@
+name: UniRig skeleton memory repro (released pack, textured Hunyuan Paint GLBs, phone-like limits)
+on:
+  push:
+    branches: [skel-mem]
+    paths: [".github/workflows/unirig-skel-repro.yml", "tools/unirig/**"]
+  workflow_dispatch:
+permissions: { contents: write }
+env: { GH_TOKEN: "${{ github.token }}", GITHUB_REPOSITORY: "${{ github.repository }}" }
+jobs:
+  arm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender runtime, released pack, meshes
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get install -y -qq time unzip
+          mkdir out w w/in w/out w/models
+          gh release download blender-runtime-v1 -R $GITHUB_REPOSITORY -p blender-runtime-arm64.tar.gz
+          mkdir x && sudo tar -xzf blender-runtime-arm64.tar.gz -C x && rm blender-runtime-arm64.tar.gz
+          R=$(dirname $(dirname $(dirname $(sudo find x -path '*opt/blender/blender' -type f | head -1)))); echo "R=$PWD/$R" >> $GITHUB_ENV
+          gh release download unirig-v1 -R $GITHUB_REPOSITORY -D w/models -p 'skel_*' -p embed.npy -p info.json -p unirig_py.zip
+          (cd w && mkdir pk && unzip -q models/unirig_py.zip -d pk && mv pk/pylibs pylibs && rm -rf pk models/unirig_py.zip)
+          cat w/models/info.json | tr -d '\n '; echo
+          git clone -q --depth 1 -b paint-phone-out https://github.com/$GITHUB_REPOSITORY pm
+          for d in owner owner_v2 owner_v2_s20 hyref; do cp pm/$d/textured.glb w/in/$d.glb; done
+          mkdir w/phone && cp tools/unirig/phone/*.py tools/unirig/onnx_skeleton.py tools/unirig/onnx_skin.py w/phone/
+          sudo mount --bind /proc $R/proc; sudo mount --bind /dev $R/dev; sudo mount --bind /sys $R/sys; sudo mkdir -p $R/w && sudo mount --bind $PWD/w $R/w
+      - name: Skeleton phase only, 2 cores, 2 GB cap
+        run: |
+          for n in owner_v2 owner owner_v2_s20 hyref; do
+            echo "== $n"
+            timeout 60m /usr/bin/time -v -o out/time_$n.txt sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1 chroot $R env HOME=/root \
+              /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/phone/unirig_phone.py -- \
+              --in /w/in/$n.glb --out /w/out/$n.glb --models /w/models --pylibs /w/pylibs --work /w/work_$n --threads 2 --phase skeleton ${{ vars.EXTRA }} > out/log_$n.txt 2>&1 && echo "OK $n" || echo "FAILED $n"
+            grep -E "^(INPUT|MESH|SKELETON|PEAK|MEM|beam)|Traceback|Error|Killed" out/log_$n.txt | cut -c1-300 | tail -40
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: logs, path: out, retention-days: 3 }
+      - name: Push log branch
+        if: always()
+        run: |
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-skel && cp -r $GITHUB_WORKSPACE/out/* . && git add -A \
+            && git -c user.name=ci -c user.email=ci@local commit -qm "skel repro $GITHUB_RUN_ID" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-skel

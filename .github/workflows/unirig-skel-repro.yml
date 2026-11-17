@@ -8,6 +8,10 @@ permissions: { contents: write }
 env: { GH_TOKEN: "${{ github.token }}", GITHUB_REPOSITORY: "${{ github.repository }}" }
 jobs:
   arm:
+    strategy:
+      fail-fast: false
+      matrix:
+        v: ["old", "kb256", "kb0", "kb1024", "kb4096"]
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 120
     steps:
@@ -31,25 +35,22 @@ jobs:
         run: |
           git fetch -q origin main && mkdir w/phone_old && cp w/phone/*.py w/phone_old/ \
             && git show origin/main:tools/unirig/onnx_skeleton.py > w/phone_old/onnx_skeleton.py && git show origin/main:tools/unirig/phone/unirig_phone.py > w/phone_old/unirig_phone.py
-          HOSTILE="MALLOC_MMAP_THRESHOLD_=33554432 MALLOC_TRIM_THRESHOLD_=4294967295 MALLOC_TOP_PAD_=268435456"
-          run() {  # label, script dir, env, extra args
-            local n=$1 d=$2 e=$3; shift 3
-            echo "== $n"
-            timeout 60m /usr/bin/time -v -o out/time_$n.txt sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1 chroot $R env HOME=/root $e \
-              /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/$d/unirig_phone.py -- \
-              --in /w/in/owner_v2.glb --out /w/out/$n.glb --models /w/models --pylibs /w/pylibs --work /w/work_$n --threads 2 --phase skeleton "$@" > out/log_$n.txt 2>&1 && echo "OK $n" || echo "FAILED $n"
-            grep -E "^(INPUT|SKELETON|PEAK|MEM|beam|PHASE)|Traceback|Error|Killed" out/log_$n.txt | cut -c1-300 | tail -40
-          }
-          run old_default phone_old ""
-          run old_hostile phone_old "$HOSTILE"
-          run new_hostile phone "$HOSTILE"
-          run new_default phone ""
-          run new_beams15 phone "" --beams 15
+          cat /sys/kernel/mm/transparent_hugepage/enabled || true
+          echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled || true
+          echo "THP now: $(cat /sys/kernel/mm/transparent_hugepage/enabled)" | tee out/thp.txt
+          v=${{ matrix.v }}; d=phone; E=""
+          [ $v = old ] && d=phone_old
+          [ $v != old ] && E="UNIRIG_MMAP_KB=${v#kb}"
+          n=$v
+          timeout 60m /usr/bin/time -v -o out/time_$n.txt sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0,1 chroot $R env HOME=/root $E \
+            /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/$d/unirig_phone.py -- \
+            --in /w/in/owner_v2.glb --out /w/out/$n.glb --models /w/models --pylibs /w/pylibs --work /w/work_$n --threads 2 --phase skeleton > out/log_$n.txt 2>&1 && echo "OK $n" || echo "FAILED $n"
+          grep -E "^(INPUT|SKELETON|PEAK|MEM|beam|PHASE)|Traceback|Error|Killed" out/log_$n.txt | cut -c1-300 | tail -40
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: logs, path: out, retention-days: 3 }
+        with: { name: logs-${{ matrix.v }}, path: out, retention-days: 3 }
       - name: Push log branch
         if: always()
         run: |
-          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b ci-logs-unirig-skel && cp -r $GITHUB_WORKSPACE/out/* . && git add -A \
-            && git -c user.name=ci -c user.email=ci@local commit -qm "skel repro $GITHUB_RUN_ID" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-skel
+          mkdir /tmp/cilog && cd /tmp/cilog && git init -q -b x && cp -r $GITHUB_WORKSPACE/out/* . && git add -A \
+            && git -c user.name=ci -c user.email=ci@local commit -qm "skel repro $GITHUB_RUN_ID" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-unirig-skel-${{ matrix.v }}

@@ -34,13 +34,16 @@ def log_rss(tag):
         print(f"MEM {tag}: peak {rss_gb():.2f}GB", flush=True)
 
 
-def tame_malloc(mmap_threshold=256 * 1024):
+def tame_malloc(mmap_threshold=None):
     """glibc's malloc raises its mmap threshold to the size of every large block that is freed (up to 32 MB) and from then on serves such
     blocks from the heap/per-thread arenas, where the KV cache arrays (a new, bigger one per step and tensor) fragment it: on the phone the
     heap grew to 2-3 GB for ~0.5 GB of live data. A fixed threshold switches that adaptation off: every block >= 256 KB is its own mmap and
     goes back to the kernel on free. One arena (ORT's workers would otherwise each keep their own free lists). No-op without glibc."""
     try:
         import ctypes
+        mmap_threshold = mmap_threshold or int(os.environ.get("UNIRIG_MMAP_KB", "256")) * 1024
+        if mmap_threshold <= 0:
+            return False
         libc = ctypes.CDLL("libc.so.6")
         ok = [libc.mallopt(-3, mmap_threshold),  # M_MMAP_THRESHOLD
               libc.mallopt(-1, mmap_threshold),  # M_TRIM_THRESHOLD

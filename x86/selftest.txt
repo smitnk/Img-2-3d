@@ -1,0 +1,17 @@
+SELFTEST serialization codes depth 1 vs pure python: ok 
+SELFTEST serialization codes depth 2 vs pure python: ok 
+SELFTEST serialization codes depth 5 vs pure python: ok 
+SELFTEST serialization codes depth 9 vs pure python: ok 
+SELFTEST serialization codes depth 12 vs pure python: ok 
+SELFTEST serialization codes depth 16 vs pure python: ok 
+SELFTEST serialization order/inverse: ok depth 8
+SELFTEST std_argsort == libstdc++ std::sort: ok 
+SELFTEST tokenizer grammar + detokenize on random streams: ok 
+SELFTEST tokenizer hand-made skeleton: ok parents [None, 0, 1]
+SELFTEST voxelization of a centred sphere: ok 912 voxels, ideal 905, centroid [-0.0, -0.0, 0.0]
+SELFTEST voxelization of an off-centre sphere: ok centroid [0.2980000078678131, -0.2029999941587448, 0.1469999998807907] vs [0.30000001192092896, -0.20000000298023224, 0.15000000596046448]
+SELFTEST voxel_skin rows sum to 1, nearer joint wins: ok shape (162, 2)
+SELFTEST reskin rows sum to 1: ok 
+SELFTEST merge_vertices + normals: ok 8 vertices
+SELFTEST affine into [-1,1]: ok 
+SELFTEST sample_mix deterministic per seed: ok 

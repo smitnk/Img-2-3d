@@ -1,0 +1,31 @@
+MEM skeleton start: rss 0.15GB (anon 0.09 file 0.07) peak 0.15GB
+04:10:04 | INFO: Data are loaded, start creating Blender stuff
+04:10:04 | INFO: Blender create Mesh node Mesh_0
+04:10:04 | INFO: glTF import finished in 0.07s
+INPUT 1 mesh object(s), 40984 vertices, 39997 triangles
+MESH 23725 vertices, 39997 faces after merge/simplify
+PHASE mesh: 0.2s
+MEM mesh: rss 0.17GB (anon 0.10 file 0.07) peak 0.18GB
+MEM session skel_encoder.onnx: rss 0.40GB (anon 0.32 file 0.08) peak 0.40GB
+MEM encoder run done: rss 0.40GB (anon 0.32 file 0.08) peak 0.90GB
+PHASE skeleton encoder: 6.9s
+MEM skeleton encoder: rss 0.19GB (anon 0.11 file 0.08) peak 0.90GB
+MEM session skel_decoder.onnx: rss 0.20GB (anon 0.12 file 0.08) peak 0.90GB
+MEM prefill token 256: rss 0.55GB (anon 0.19 file 0.37) peak 0.90GB
+MEM prefill token 512: rss 0.60GB (anon 0.23 file 0.37) peak 0.90GB
+MEM prefill token 768: rss 0.65GB (anon 0.28 file 0.37) peak 0.90GB
+MEM prefill token 1024: rss 0.69GB (anon 0.32 file 0.37) peak 0.90GB
+MEM prefill done: rss 0.68GB (anon 0.31 file 0.37) peak 0.90GB
+beam step 1 best -0.00
+MEM beam step 1: rss 0.68GB (anon 0.32 file 0.37) peak 0.90GB
+beam step 50 best -11.96
+MEM beam step 50: rss 0.82GB (anon 0.45 file 0.37) peak 0.95GB
+beam step 100 best -23.71
+MEM beam step 100: rss 0.96GB (anon 0.59 file 0.37) peak 1.09GB
+SKELETON 130 tokens, 34 joints
+PHASE skeleton decoder: 608.4s
+MEM skeleton decoder: rss 0.21GB (anon 0.13 file 0.08) peak 1.17GB
+PEAK skeleton 1.17GB
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

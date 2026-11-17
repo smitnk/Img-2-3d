@@ -48,7 +48,7 @@ jobs:
           grep -E "^(INPUT|SKELETON|PEAK|MEM|beam|PHASE)|Traceback|Error|Killed" out/log_$n.txt | cut -c1-300 | tail -40
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: logs-${{ matrix.v }}, path: out, retention-days: 3 }
+        with: { name: "logs-${{ matrix.v }}", path: out, retention-days: 3 }
       - name: Push log branch
         if: always()
         run: |

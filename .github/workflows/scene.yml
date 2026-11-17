@@ -7,7 +7,7 @@ jobs:
   part:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    strategy: { matrix: { r: ["1 30", "31 60", "61 90", "91 120"] } }
+    strategy: { matrix: { s: [combat, dance], r: ["1 30", "31 60", "61 90", "91 120"] } }
     steps:
       - uses: actions/checkout@v4
       - name: Blender
@@ -18,19 +18,9 @@ jobs:
           tar -xJf b.tar.xz
           sudo apt-get -qq install -y libxi6 libxkbcommon0 libsm6 libxrender1 libgl1 > /dev/null
       - name: Render
-        run: blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char.glb $PWD/out ${{ matrix.r }} 2>&1 | grep -E "DONE|Error|Traceback" | tail
+        run: SCENE=${{ matrix.s }} blender-4.2.3-linux-x64/blender -b -P tools/scene/action.py -- tools/scene/char2.glb $PWD/out ${{ matrix.r }} 2>&1 | grep -E "DONE|Error|Traceback" | tail
       - name: Push
         run: |
           n=$(echo "${{ matrix.r }}" | cut -d' ' -f1)
           cd out && git init -q -b p && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm part
-          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} p:scene-part-$n
-  video:
-    needs: part
-    runs-on: ubuntu-24.04
-    steps:
-      - run: |
-          for n in 1 31 61 91; do git clone -q --depth 1 -b scene-part-$n https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} p$n; cp p$n/*.png .; done
-          ls f_*.png | wc -l
-          ffmpeg -y -loglevel error -framerate 24 -start_number 1 -i f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart vid/action_scene.mp4 || { mkdir -p vid; ffmpeg -y -loglevel error -framerate 24 -start_number 1 -i f_%04d.png -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart vid/action_scene.mp4; }
-          cd vid && git init -q -b v && git add -A && git -c user.name=ci -c user.email=ci@x commit -qm video
-          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} v:scene-out-video
+          git push -qf https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} p:scene-part-${{ matrix.s }}-$n

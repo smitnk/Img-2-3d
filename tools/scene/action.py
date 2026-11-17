@@ -1,5 +1,5 @@
 # 5 s action scene: stance -> crouch -> flying kick -> land -> punch combo -> victory. blender -b -P action.py -- in.glb outdir [preview]
-import bpy, sys, math
+import bpy, sys, math, os
 from mathutils import Vector, Matrix, Quaternion
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -45,6 +45,23 @@ POSES = {  # frame: (bone directions, root offset (r,u,f), yaw deg)
     108: ({**legs(), "upper_arm.R": v(.25, 1, .1), "forearm.R": v(0, 1, .05), "upper_arm.L": M(.6, -.8, .1), "forearm.L": M(.3, -1, .3), "spine": v(0, 1, -.05)}, (0, .08, .68), 15),
     120: ({**legs(), "upper_arm.R": v(.2, 1, .05), "forearm.R": v(0, 1, 0), "upper_arm.L": M(.6, -.8, .1), "forearm.L": M(.3, -1, .3), "spine": v(0, 1, -.05)}, (0, .0, .68), 15),
 }
+
+def arms(rr, lr): return {"upper_arm.R": v(*rr[0]), "forearm.R": v(*rr[1]), "upper_arm.L": M(*lr[0]), "forearm.L": M(*lr[1])}
+DANCE = {  # hip-hop groove: bounce, arm waves, side steps, spin, pose
+    1:   ({**legs(), **arms(((.9, -.4, 0), (.9, -.4, 0)), ((.9, -.4, 0), (.9, -.4, 0))), "spine": v(0, 1, 0)}, (0, 0, 0), 0),
+    12:  ({**legs(.25, .35), **arms(((.6, .2, .5), (0, .9, .4)), ((.6, .2, .5), (0, .9, .4))), "spine": v(.15, 1, .1)}, (-.15, -.12, 0), 15),
+    24:  ({**legs(), **arms(((1, .3, 0), (1, .8, 0)), ((1, -.3, 0), (1, -.8, 0))), "spine": v(-.1, 1, 0)}, (0, 0, 0), 0),
+    36:  ({**legs(.25, .35), **arms(((.6, .2, .5), (0, .9, .4)), ((.6, .2, .5), (0, .9, .4))), "spine": v(-.15, 1, .1)}, (.15, -.12, 0), -15),
+    48:  ({**legs(), **arms(((1, -.3, 0), (1, -.8, 0)), ((1, .3, 0), (1, .8, 0))), "spine": v(.1, 1, 0)}, (0, 0, 0), 0),
+    60:  ({**legs(.2, .4), **arms(((.3, 1, .1), (0, 1, 0)), ((.3, 1, .1), (0, 1, 0))), "spine": v(0, 1, -.05)}, (0, .25, 0), 90),
+    72:  ({**legs(.2, .4), **arms(((.3, 1, .1), (0, 1, 0)), ((.3, 1, .1), (0, 1, 0))), "spine": v(0, 1, -.05)}, (0, .25, 0), 270),
+    84:  ({**legs(.3, .5), **arms(((.7, -.3, .5), (.2, -.9, .3)), ((.7, -.3, .5), (.2, -.9, .3))), "spine": v(0, 1, .35)}, (0, -.2, 0), 360),
+    96:  ({**legs(), "thigh.R": v(.6, -.8, .1), "shin.R": v(.6, -.8, .1), **arms(((.95, .3, 0), (.95, .3, 0)), ((.6, .6, .4), (-.4, .8, .3))), "spine": v(.15, 1, 0)}, (.1, 0, 0), 360),
+    108: ({**legs(.25), **arms(((.4, .9, .2), (.1, 1, 0)), ((.8, -.5, .2), (.6, -.8, .3))), "spine": v(0, 1, -.1)}, (0, .05, 0), 380),
+    120: ({**legs(.25), **arms(((.4, .9, .2), (.1, 1, 0)), ((.8, -.5, .2), (.6, -.8, .3))), "spine": v(0, 1, -.1)}, (0, .05, 0), 380),
+}
+import os
+if os.environ.get("SCENE") == "dance": POSES = DANCE
 pb = arm.pose.bones
 for p in pb: p.rotation_mode = "QUATERNION"
 base_loc, base_rot = arm.location.copy(), arm.rotation_euler.copy()
@@ -61,7 +78,7 @@ for f, (dirs, (r, u, fw), yaw) in POSES.items():
         p.matrix = Matrix.Translation(h) @ rot @ Matrix.Translation(-h) @ p.matrix
         bpy.context.view_layer.update()
     for p in pb: p.keyframe_insert("rotation_quaternion", frame=f)
-    arm.location = base_loc + Vector((rx * r * 0, 0, u)) + Vector((0, fw, 0))
+    arm.location = base_loc + Vector((rx * r, 0, u)) + Vector((0, fw, 0))
     arm.rotation_euler = (base_rot.x, base_rot.y, base_rot.z + math.radians(yaw))
     arm.keyframe_insert("location", frame=f); arm.keyframe_insert("rotation_euler", frame=f)
 bpy.ops.object.mode_set(mode="OBJECT")
@@ -70,7 +87,7 @@ bpy.ops.object.mode_set(mode="OBJECT")
 mat = bpy.data.materials.new("clay"); mat.use_nodes = True
 bsdf = mat.node_tree.nodes["Principled BSDF"]
 bsdf.inputs["Base Color"].default_value = (.85, .78, .7, 1); bsdf.inputs["Roughness"].default_value = .6
-mesh.data.materials.clear(); mesh.data.materials.append(mat)
+if not mesh.data.materials: mesh.data.materials.append(mat)  # keep painted texture
 bpy.ops.mesh.primitive_plane_add(size=300, location=(0, 0, 0))
 floor = bpy.context.object
 fm = bpy.data.materials.new("floor"); fm.use_nodes = True

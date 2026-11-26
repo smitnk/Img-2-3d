@@ -1,42 +1,49 @@
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 Loading checkpoint from HuggingFace: sonata ...
 SONATA CONFIG {'in_channels': 9, 'order': ('z', 'z-trans', 'hilbert', 'hilbert-trans'), 'stride': (2, 2, 2, 2), 'enc_depths': (3, 3, 3, 12, 3), 'enc_channels': (48, 96, 192, 384, 512), 'enc_num_head': (3, 6, 12, 24, 32), 'enc_patch_size': (1024, 1024, 1024, 1024, 1024), 'mlp_ratio': 4, 'qkv_bias': True, 'qk_scale': None, 'attn_drop': 0.0, 'proj_drop': 0.0, 'drop_path': 0.3, 'shuffle_orders': True, 'pre_norm': True, 'enable_rpe': False, 'enable_flash': True, 'upcast_attention': False, 'upcast_softmax': False, 'traceable': True, 'enc_mode': True, 'mask_token': True}
 flash attention: False
 WEIGHTS loaded 513 tensors; missing=0 unexpected=0
 PARAMS total 112.7M sonata 108.5M fp32 430 MB
 MESH vertices=20002 faces=40000 watertight=True bodies=1
-SPCONV PROBE stage0 inconsistent=51 build_nbr mismatching entries=51 of 422658 (FAIL) tie=0 self_center=True natural_order=True
-SPCONV stage0 n=15654 gather-conv vs spconv max abs diff 2.645e-01 (refmax 7.794e-01) FAIL
-SPCONV stage1 n=13810 gather-conv vs spconv max abs diff 4.711e-01 (refmax 1.408e+00) FAIL
-SPCONV stage2 n=8872 gather-conv vs spconv max abs diff 9.174e-01 (refmax 5.420e+00) FAIL
-SPCONV stage3 n=3195 gather-conv vs spconv max abs diff 2.073e+00 (refmax 1.353e+01) FAIL
-SPCONV stage4 n=852 gather-conv vs spconv max abs diff 2.533e+00 (refmax 9.490e+00) FAIL
-STOCK features (16384, 512) in 8.67s; voxels per stage {0: 15654, 1: 13810, 2: 8872, 3: 3195, 4: 852}; patch K per stage {0: 1024, 1: 1024, 2: 1024, 3: 1024, 4: 852}; rss 1781 MB
-STATIC encoder vs stock: max abs 3.177e-01 mean 1.097e-02 refmax 1.646e+00 min cos 0.930124 FAIL
-STATIC heads vs stock: max logit diff 5.722e-06 iou diff 2.384e-07 mask agreement 100.0000%
-/home/runner/work/Img-2-3d/Img-2-3d/tools/p3sam/p3.py:88: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
-  step = max(1, budget_patches_heads // H)
-EXPORT work/enc.onnx: 418.5 MB
-EXPORT work/heads.onnx: 11.9 MB
-CAPTURE DONE {"points": 16384, "prompts": 128, "seed": 42, "torch": "2.5.1+cpu", "sonata_config": {"in_channels": 9, "order": ["z", "z-trans", "hilbert", "hilbert-trans"], "stride": [2, 2, 2, 2], "enc_depths": [3, 3, 3, 12, 3], "enc_channels": [48, 96, 192, 384, 512], "enc_num_head": [3, 6, 12, 24, 32], "enc_patch_size": [1024, 1024, 1024, 1024, 1024], "mlp_ratio": 4, "qkv_bias": true, "qk_scale": null, "attn_drop": 0.0, "proj_drop": 0.0, "drop_path": 0.3, "shuffle_orders": true, "pre_norm": true, "enable_rpe": false, "enable_flash": false, "upcast_attention": false, "upcast_softmax": false, "traceable": true, "enc_mode": true, "mask_token": true}, "missing_keys": 0, "unexpected_keys": 0, "params_total": 112728649, "params_sonata": 108461376, "mesh": {"vertices": 20002, "faces": 40000, "watertight": true}, "torch_features_s": 8.67, "stages_n": {"0": 15654, "1": 13810, "2": 8872, "3": 3195, "4": 852}, "stages_K": {"0": 1024, "1": 1024, "2": 1024, "3": 1024, "4": 852}, "static_torch_enc_s": 11.73, "static_vs_stock_feat": {"max_abs": 0.3177401125431061, "mean_abs": 0.010965983383357525, "ref_max": 1.646228551864624, "min_cos": 0.9301243424415588}, "enc_inputs_mb": 12.6, "torch_heads_s": 123.77, "static_torch_heads_s": 98.01, "static_vs_stock_heads": {"max_abs_logit": 5.7220458984375e-06, "max_abs_iou": 2.384185791015625e-07, "mask_agree": 1.0}, "onnx_bytes": {"enc_fp32": 438829673, "heads_fp32": 12477905}, "capture_peak_rss_mb": 12986, "capture_total_s": 270.9}
-	Command being timed: "python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work --points 16384 --prompts 128"
-	User time (seconds): 616.40
-	System time (seconds): 200.80
-	Percent of CPU this job got: 298%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:34.12
+SPCONV DIAG n=15654 duplicate_coords=0 coords min=[0, 0, 0] max=[363, 400, 132] spatial_shape=[459, 496, 228] differing entries=2264 rows=2116
+SPCONV DIAG row 9 k=0 dst=[349, 238, 59] offs[k]=[-1, -1, -1] spconv_src=[200, 368, 13] (rel [-149, 130, -46]) mine_src=[348, 237, 58]
+SPCONV DIAG row 9 k=5 dst=[349, 238, 59] offs[k]=[-1, 0, 1] spconv_src=[207, 394, 63] (rel [-142, 156, 4]) mine_src=[348, 238, 60]
+SPCONV DIAG row 16 k=4 dst=[349, 247, 67] offs[k]=[-1, 0, 0] spconv_src=[154, 358, 4] (rel [-195, 111, -63]) mine_src=[348, 247, 67]
+SPCONV DIAG row 21 k=22 dst=[348, 247, 67] offs[k]=[1, 0, 0] spconv_src=[207, 19, 89] (rel [-141, -228, 22]) mine_src=[349, 247, 67]
+SPCONV DIAG row 22 k=5 dst=[348, 246, 71] offs[k]=[-1, 0, 1] spconv_src=[206, 16, 18] (rel [-142, -230, -53]) mine_src=[347, 246, 72]
+SPCONV DIAG row 27 k=21 dst=[348, 238, 60] offs[k]=[1, 0, -1] spconv_src=[209, 365, 117] (rel [-139, 127, 57]) mine_src=[349, 238, 59]
+SPCONV DIAG row 28 k=4 dst=[347, 237, 76] offs[k]=[-1, 0, 0] spconv_src=[175, 118, 62] (rel [-172, -119, -14]) mine_src=[346, 237, 76]
+SPCONV DIAG row 35 k=15 dst=[347, 246, 73] offs[k]=[0, 1, -1] spconv_src=[180, 338, 9] (rel [-167, 92, -64]) mine_src=[347, 247, 72]
+SPCONV DIAG row 45 k=19 dst=[346, 239, 68] offs[k]=[1, -1, 0] spconv_src=[206, 124, 85] (rel [-140, -115, 17]) mine_src=[347, 238, 68]
+SPCONV DIAG row 48 k=14 dst=[346, 237, 76] offs[k]=[0, 0, 1] spconv_src=[249, 231, 67] (rel [-97, -6, -9]) mine_src=[346, 237, 77]
+SPCONV DIAG row 52 k=14 dst=[345, 247, 72] offs[k]=[0, 0, 1] spconv_src=[246, 231, 65] (rel [-99, -16, -7]) mine_src=[345, 247, 73]
+SPCONV DIAG row 62 k=7 dst=[344, 238, 74] offs[k]=[-1, 1, 0] spconv_src=[205, 223, 36] (rel [-139, -15, -38]) mine_src=[343, 239, 74]
+SPCONV PROBE stage0 inconsistent=2264 build_nbr mismatching entries=2264 of 422658 (FAIL) tie=0 self_center=True natural_order=True
+SPCONV stage0 n=15654 gather-conv vs spconv max abs diff 4.695e-01 (refmax 7.901e-01) FAIL
+SPCONV stage1 n=13810 gather-conv vs spconv max abs diff 9.257e-01 (refmax 1.385e+00) FAIL
+SPCONV stage2 n=8872 gather-conv vs spconv max abs diff 1.591e+00 (refmax 5.642e+00) FAIL
+SPCONV stage3 n=3195 gather-conv vs spconv max abs diff 2.695e+00 (refmax 1.368e+01) FAIL
+SPCONV stage4 n=852 gather-conv vs spconv max abs diff 2.211e+00 (refmax 7.287e+00) FAIL
+STOCK features (16384, 512) in 5.79s; voxels per stage {0: 15654, 1: 13810, 2: 8872, 3: 3195, 4: 852}; patch K per stage {0: 1024, 1: 1024, 2: 1024, 3: 1024, 4: 852}; rss 1964 MB
+STATIC encoder vs stock: max abs 8.850e-01 mean 7.168e-02 refmax 1.900e+00 min cos 0.748357 FAIL
+SKIP HEADS
+	Command being timed: "python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work --points 16384 --prompts 128 --skip-heads --no-export"
+	User time (seconds): 40.94
+	System time (seconds): 14.08
+	Percent of CPU this job got: 291%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:18.88
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 13297456
+	Maximum resident set size (kbytes): 2151368
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 22
-	Minor (reclaiming a frame) page faults: 85224374
-	Voluntary context switches: 29543
-	Involuntary context switches: 44211
+	Major (requiring I/O) page faults: 7
+	Minor (reclaiming a frame) page faults: 8219153
+	Voluntary context switches: 11534
+	Involuntary context switches: 6019
 	Swaps: 0
-	File system inputs: 7520
-	File system outputs: 2671472
+	File system inputs: 6120
+	File system outputs: 855936
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

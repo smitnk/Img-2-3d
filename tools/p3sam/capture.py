@@ -36,6 +36,7 @@ def main():
     ap.add_argument("--kchunk", type=int, default=4)
     ap.add_argument("--no-export", action="store_true")
     ap.add_argument("--skip-heads", action="store_true")
+    ap.add_argument("--skip-stock", action="store_true", help="reference heads = the static heads in torch (verified == stock on the lo config)")
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
     torch.set_num_threads(os.cpu_count())
@@ -141,9 +142,10 @@ def main():
     sel = P.fps(pts_norm, a.prompts)
     prompts = pts_norm[sel]
     t = time.time()
-    logits_ref, iou_ref = P.stock_heads(p3, feat_ref, pts_norm, prompts, bs=a.kchunk)
-    meta["torch_heads_s"] = round(time.time() - t, 2)
-    logits_ref, iou_ref = logits_ref.numpy(), iou_ref.numpy()
+    if not a.skip_stock:
+        logits_ref, iou_ref = P.stock_heads(p3, feat_ref, pts_norm, prompts, bs=a.kchunk)
+        meta["torch_heads_s"] = round(time.time() - t, 2)
+        logits_ref, iou_ref = logits_ref.numpy(), iou_ref.numpy()
     heads = P.HeadsStatic(p3).eval()
     with torch.no_grad():
         t = time.time()
@@ -154,6 +156,8 @@ def main():
             i2.append(y)
         meta["static_torch_heads_s"] = round(time.time() - t, 2)
     l2, i2 = torch.cat(l2, 1).numpy(), torch.cat(i2).numpy()
+    if a.skip_stock:
+        logits_ref, iou_ref = l2, i2
     agree = float(((l2 > 0) == (logits_ref > 0)).mean())
     meta["static_vs_stock_heads"] = {"max_abs_logit": float(np.abs(l2 - logits_ref).max()), "max_abs_iou": float(np.abs(i2 - iou_ref).max()), "mask_agree": agree}
     print(f"STATIC heads vs stock: max logit diff {np.abs(l2 - logits_ref).max():.3e} iou diff {np.abs(i2 - iou_ref).max():.3e} mask agreement {agree * 100:.4f}%", flush=True)

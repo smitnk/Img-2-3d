@@ -51,6 +51,10 @@ def to_manifold(v, f):
         return m, str(m.status())
     m, st = make(v, f)
     if "NoError" in st and not m.is_empty():
+        if m.volume() < 0:  # inside-out (thin open patch whose fan cap flipped the orientation)
+            m2, st2 = make(v, np.asarray(f)[:, ::-1])
+            if "NoError" in st2 and m2.volume() > 0:
+                return m2, "ok_flipped"
         return m, "ok"
     t = trimesh.Trimesh(v, f, process=True)
     trimesh.repair.fix_winding(t)

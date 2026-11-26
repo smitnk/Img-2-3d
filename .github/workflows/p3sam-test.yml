@@ -16,8 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: lo, points: 16384, prompts: 128 }
-          - { name: hi, points: 32768, prompts: 256 }
+          - { name: lo, points: 16384, prompts: 128, seed: 42, extra: "", sweep: "yes" }
+          - { name: mid, points: 24576, prompts: 128, seed: 42, extra: "--skip-stock", sweep: "no" }
+          - { name: lo_s7, points: 16384, prompts: 128, seed: 7, extra: "--skip-stock", sweep: "no" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -49,14 +50,14 @@ jobs:
         continue-on-error: true
         run: |
           /usr/bin/time -v python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work \
-            --points ${{ matrix.points }} --prompts ${{ matrix.prompts }} $(cat tools/p3sam/extra_args.txt 2>/dev/null) 2>&1 | tee out/capture.log | grep -vE "^\s+(Page size|Swaps|File system|Socket|Signals|Voluntary|Involuntary|Exit status)" | tail -150
+            --points ${{ matrix.points }} --prompts ${{ matrix.prompts }} --seed ${{ matrix.seed }} ${{ matrix.extra }} $(cat tools/p3sam/extra_args.txt 2>/dev/null) 2>&1 | tee out/capture.log | grep -vE "^\s+(Page size|Swaps|File system|Socket|Signals|Voluntary|Involuntary|Exit status)" | tail -150
           ls -la work
       - name: Quantize (int8 dynamic, fp16)
         if: steps.capture.outcome == 'success'
         continue-on-error: true
         run: python tools/p3sam/quant.py work 2>&1 | tee out/quant.log | tail -30; ls -la work/*.onnx*
       - name: Quantization sweep (which op groups tolerate int8 / 4-bit weights)
-        if: steps.capture.outcome == 'success'
+        if: steps.capture.outcome == 'success' && matrix.sweep == 'yes'
         continue-on-error: true
         run: python tools/p3sam/sweep.py work 2>&1 | tee out/sweep.log | grep -E "SWEEP|Error|error" | cut -c1-400; cp work/sweep.json out/ 2>/dev/null || true
       - name: Stage 2 - ONNX Runtime CPU (fp32, int8, w4, fp16; one process each)

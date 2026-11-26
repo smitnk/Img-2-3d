@@ -84,6 +84,37 @@ def main():
           f"rss {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024:.0f} MB", flush=True)
     inv = data["inverse"].numpy()
 
+    # ---- is the pip spconv CPU build itself right? (probe its neighbour table at 1 thread and at all threads, twice each)
+    import spconv.pytorch as spconv
+    chk = {}
+    try:
+        n0 = len(rec.coords[0])
+        x = spconv.SparseConvTensor(torch.randn(n0, 48), torch.cat([torch.zeros(n0, 1, dtype=torch.long), torch.from_numpy(rec.coords[0])], 1).int().contiguous(),
+                                    [int(rec.coords[0].max()) + 96] * 3, 1)
+        conv0 = [m for m in p3.sonata.modules() if m.__class__.__name__ == "SubMConv3dCPU"][0]
+        P.CONV["mode"] = "spconv"
+        for nt in (1, 1, os.cpu_count(), os.cpu_count()):
+            torch.set_num_threads(nt)
+            tab = P.E.probe_table(conv0, x)
+            chk[f"threads{nt}_run{len([k for k in chk if k.startswith(f'threads{nt}_')])}"] = int((tab != rec.nbr[0]).sum())
+        print(f"SPCONV-CPU table entries differing from the exact neighbour table (of {rec.nbr[0].size}): {chk}", flush=True)
+        for nt in (1, os.cpu_count()):  # whole stock model with the spconv CPU kernels vs the exact-conv reference
+            torch.set_num_threads(nt)
+            np.random.seed(a.seed)
+            torch.manual_seed(a.seed)
+            fs, _ = P.stock_features(p3, transform, pts_norm, normals)
+            fs = fs.numpy()
+            cs = (fs * feat_ref).sum(1) / (np.linalg.norm(fs, axis=1) * np.linalg.norm(feat_ref, axis=1) + 1e-9)
+            chk[f"stock_with_spconv_threads{nt}"] = dict(mean_cos=float(cs.mean()), min_cos=float(cs.min()), max_abs=float(np.abs(fs - feat_ref).max()))
+            print(f"SPCONV-CPU full model, {nt} thread(s): cos vs exact-conv reference mean {cs.mean():.6f} min {cs.min():.4f} max abs {np.abs(fs - feat_ref).max():.3e}", flush=True)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        chk["error"] = repr(e)[:300]
+    P.CONV["mode"] = "ref"
+    torch.set_num_threads(os.cpu_count())
+    meta["spconv_cpu_check"] = chk
+
     # ---- static encoder in torch vs stock
     enc = P.EncStatic(p3, rec).eval()
     ins = P.enc_inputs(rec, feat0)
@@ -137,6 +168,20 @@ def main():
                                             ["feats", "points", "prompts"], ["logits", "iou"],
                                             {"feats": {0: "N"}, "points": {0: "N"}, "prompts": {0: "K"}, "logits": {0: "N", 1: "K"}, "iou": {0: "K"}},
                                             f"{a.work}/heads.onnx")
+        import copy
+        hh = copy.deepcopy(heads).half().eval().requires_grad_(False)
+
+        class HalfWrap(torch.nn.Module):  # fp16 heads exported straight from torch (onnxconverter_common chokes on this graph)
+            def forward(self, f, p, q):
+                x, y = hh(f.half(), p.half(), q.half())
+                return x.float(), y.float()
+        try:
+            sizes["heads_fp16"] = P.export_onnx(HalfWrap().eval(), (torch.from_numpy(feat_ref), torch.from_numpy(pts_norm), torch.from_numpy(prompts[:K0])),
+                                                ["feats", "points", "prompts"], ["logits", "iou"],
+                                                {"feats": {0: "N"}, "points": {0: "N"}, "prompts": {0: "K"}, "logits": {0: "N", 1: "K"}, "iou": {0: "K"}},
+                                                f"{a.work}/heads_fp16.onnx")
+        except Exception as e:
+            print("heads fp16 export failed", repr(e), flush=True)
         meta["onnx_bytes"] = sizes
     meta["capture_peak_rss_mb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
     meta["capture_total_s"] = round(time.time() - t0, 1)

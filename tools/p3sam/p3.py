@@ -28,17 +28,51 @@ import export_skin as E  # noqa: E402
 CONV_BUDGET = 1 << 24
 
 
+CONV = {"mode": "ref", "cache": {}}
+
+
+def nbr_for(x):
+    """(neighbour table (N, 27), voxel coords) of a SparseConvTensor; natural offset order (a*3+b)*3+c with offset a-1,b-1,c-1, centre = row itself."""
+    key = (x.indices.data_ptr(), int(x.indices.shape[0]), int(x.indices.sum()))
+    t = CONV["cache"].get(key)
+    if t is None:
+        coords = x.indices[:, 1:].cpu().numpy().astype(np.int64)
+        t = (O.build_nbr(coords, 3), coords)
+        CONV["cache"][key] = t
+    return t
+
+
 # ----------------------------------------------------------------------------------------------- stock model (torch, CPU)
 def build_p3(src, enable_cpu_patches=True):
     """Stock P3-SAM modules on CPU. src = snapshot of the HF space tencent/Hunyuan3D-Part (P3-SAM/, XPart/)."""
     sys.path.insert(0, f"{src}/XPart/partgen")
     import spconv.pytorch as spconv
 
-    class SubMConv3dCPU(spconv.SubMConv3d):  # spconv's CPU build asserts on the fused bias of an eval conv (see unirig/patch_cpu.py)
+    class SubMConv3dCPU(spconv.SubMConv3d):
+        """CONV['mode'] == 'ref': exact submanifold conv by gathers over a numpy neighbour table (the maths of spconv's CUDA kernels);
+        'spconv': the pip spconv CPU build (its CPU kernels returned wrong / run-to-run different neighbours on 15k voxels, see capture.py)."""
+
         def forward(self, input, add_input=None):
-            return self._conv_forward(True, input, self.weight, self.bias, add_input, name=self.name,
-                                      sparse_unique_name=self._sparse_unique_name, act_type=self.act_type,
-                                      act_alpha=self.act_alpha, act_beta=self.act_beta)
+            if CONV["mode"] == "spconv":  # CPU build asserts on the fused bias of an eval conv, see unirig/patch_cpu.py
+                return self._conv_forward(True, input, self.weight, self.bias, add_input, name=self.name,
+                                          sparse_unique_name=self._sparse_unique_name, act_type=self.act_type,
+                                          act_alpha=self.act_alpha, act_beta=self.act_beta)
+            nbr = torch.from_numpy(nbr_for(input)[0])
+            if not hasattr(self, "_wn"):
+                self._wn = E.native_w(self).detach().clone()
+            f = input.features
+            fp = torch.cat([f, f.new_zeros(1, f.shape[1])])
+            I = f.shape[1]
+            g = max(1, min(self._wn.shape[0], CONV_BUDGET // (len(f) * I)))
+            out = None
+            for a in range(0, self._wn.shape[0], g):
+                b = min(a + g, self._wn.shape[0])
+                x = torch.index_select(fp, 0, nbr[:, a:b].reshape(-1)).reshape(len(f), (b - a) * I)
+                y = x @ self._wn[a:b].reshape((b - a) * I, -1)
+                out = y if out is None else out + y
+            if self.bias is not None:
+                out = out + self.bias
+            return input.replace_feature(out)
 
     spconv.SubMConv3d = SubMConv3dCPU
     from models import sonata
@@ -100,8 +134,6 @@ class Rec:
     def __init__(self):
         self.stage = 0
         self.nbr, self.coords, self.ordinv, self.cluster, self.n, self.K = {}, {}, {}, {}, {}, {}
-        self.policy = None
-        self.verify = []
 
 
 def install_recording(p3, sm, rec):
@@ -126,48 +158,8 @@ def install_recording(p3, sm, rec):
     def conv_pre(mod, args):
         x = args[0]
         s = rec.stage
-        if s in rec.nbr:
-            return
-        coords = x.indices[:, 1:].cpu().numpy().astype(np.int64)
-        if rec.policy is None:  # learn spconv's neighbour order / duplicate policy once, on the first conv, by probing spconv itself
-            tab = E.probe_table(mod, x)
-            offs, bad = E.derive_offsets(tab, coords)
-            best = None
-            for t in (0, 1):
-                for sc in (True, False):
-                    mism = int((O.build_nbr(coords, 3, t, offs, sc) != tab).sum())
-                    if best is None or mism < best[0]:
-                        best = (mism, t, sc)
-            rec.policy = dict(offs=offs, tie=best[1], sc=best[2])
-            mine = O.build_nbr(coords, 3, best[1], offs, best[2])
-            n = len(coords)
-            ud = n - len(np.unique(coords, axis=0))
-            r_, k_ = np.nonzero(mine != tab)
-            print(f"SPCONV DIAG n={n} duplicate_coords={ud} coords min={coords.min(0).tolist()} max={coords.max(0).tolist()} "
-                  f"spatial_shape={list(x.spatial_shape)} differing entries={len(r_)} rows={len(set(r_.tolist()))}", flush=True)
-            for r, k in list(zip(r_, k_))[:12]:
-                src_t = coords[tab[r, k]] if tab[r, k] < n else None
-                src_m = coords[mine[r, k]] if mine[r, k] < n else None
-                print(f"SPCONV DIAG row {r} k={k} dst={coords[r].tolist()} offs[k]={offs[k].tolist()} spconv_src={None if src_t is None else src_t.tolist()} "
-                      f"(rel {None if src_t is None else (src_t - coords[r]).tolist()}) mine_src={None if src_m is None else src_m.tolist()}", flush=True)
-            print(f"SPCONV PROBE stage0 inconsistent={bad} build_nbr mismatching entries={best[0]} of {tab.size} "
-                  f"({'PASS' if bad == 0 and best[0] == 0 else 'FAIL'}) tie={best[1]} self_center={best[2]} "
-                  f"natural_order={bool((offs == O.natural_offsets(3)).all())}", flush=True)
-        pol = rec.policy
-        rec.nbr[s] = O.build_nbr(coords, 3, pol["tie"], pol["offs"], pol["sc"])
-        rec.coords[s] = coords
-
-    def conv_post(mod, args, out):
-        s = rec.stage
-        if any(v[0] == s for v in rec.verify):
-            return
-        x = args[0]
-        y = E.GatherConv(mod, x.features.shape[0])(x.features.detach(), torch.from_numpy(rec.nbr[s]))
-        d = float((y - out.features.detach()).abs().max())
-        ref = float(out.features.detach().abs().max())
-        rec.verify.append((s, x.features.shape[0], d, ref))
-        print(f"SPCONV stage{s} n={x.features.shape[0]} gather-conv vs spconv max abs diff {d:.3e} (refmax {ref:.3e}) "
-              f"{'PASS' if d / max(ref, 1e-9) < 1e-3 else 'FAIL'}", flush=True)
+        if s not in rec.nbr:
+            rec.nbr[s], rec.coords[s] = nbr_for(x)
 
     def pool_post(mod, args, out):
         rec.stage += 1
@@ -176,7 +168,7 @@ def install_recording(p3, sm, rec):
     for m in p3.sonata.modules():
         n = m.__class__.__name__
         if n == "SubMConv3dCPU":
-            hooks += [m.register_forward_pre_hook(conv_pre), m.register_forward_hook(conv_post)]
+            hooks.append(m.register_forward_pre_hook(conv_pre))
         elif n == "GridPooling":
             hooks.append(m.register_forward_hook(pool_post))
     return hooks
@@ -369,9 +361,11 @@ class HeadsStatic(nn.Module):
         s2 = [512, 3, 3, 3]
         g = self.run(self.seg_s2_mlp_g, s2, [f, p, q, pm]).max(0).values[None]  # (1,K,256)
         s3 = [256, 512, 3, 3, 3]
-        pm2 = torch.cat([self.run(m, s3, [g, f, p, q, pm]) for m in (self.seg_s2_mlp_1, self.seg_s2_mlp_2, self.seg_s2_mlp_3)], -1)
+        l3 = [self.run(m, s3, [g, f, p, q, pm]) for m in (self.seg_s2_mlp_1, self.seg_s2_mlp_2, self.seg_s2_mlp_3)]
+        pm2 = torch.cat(l3, -1)
         h = self.run(self.iou_mlp, s3, [g, f, p, q, pm2]).max(0).values  # (K,256)
-        return pm2, torch.sigmoid(self.iou_mlp_out(h))
+        # a second Concat for the graph output: an output that also feeds other nodes breaks onnxconverter_common's fp16 conversion
+        return torch.cat(l3, -1), torch.sigmoid(self.iou_mlp_out(h))
 
 
 def export_onnx(mod, args, in_names, out_names, dyn, path):

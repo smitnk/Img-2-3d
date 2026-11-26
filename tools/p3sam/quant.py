@@ -38,6 +38,9 @@ if __name__ == "__main__":
     for name in ("enc", "heads"):
         for var, fn in (("int8", int8), ("fp16", fp16)):
             try:
+                if var == "fp16" and name == "heads" and os.path.exists(f"{w}/heads_fp16.onnx"):
+                    print("QUANT heads fp16: exported from torch (capture.py)", flush=True)
+                    continue
                 fn(f"{w}/{name}_fp32.onnx", f"{w}/{name}_{var}.onnx")
                 sz = os.path.getsize(f"{w}/{name}_{var}.onnx") + os.path.getsize(f"{w}/{name}_{var}.onnx.data")
                 print(f"QUANT {name} {var}: {sz / 2 ** 20:.1f} MB", flush=True)

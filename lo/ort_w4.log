@@ -1,22 +1,22 @@
-ORT {"variant": "w4", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.51, "rss_enc_loaded_mb": 257, "enc_run_s": 10.87, "rss_enc_done_mb": 383, "rss_enc_freed_mb": 235, "heads_load_s": 0.03, "heads_run_s": 70.97, "ok": true, "peak_rss_mb": 741, "total_s": 82.38, "enc_bytes": 192712101, "heads_bytes": 8270371}
+ORT {"variant": "w4", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.35, "rss_enc_loaded_mb": 136, "enc_run_s": 9.39, "rss_enc_done_mb": 212, "rss_enc_freed_mb": 194, "heads_load_s": 0.02, "heads_run_s": 58.92, "ok": true, "peak_rss_mb": 726, "total_s": 68.68, "enc_bytes": 69360840, "heads_bytes": 7826130}
 	Command being timed: "python tools/p3sam/ort_run.py --work work --variant w4"
-	User time (seconds): 268.52
-	System time (seconds): 57.64
-	Percent of CPU this job got: 389%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:23.69
+	User time (seconds): 224.67
+	System time (seconds): 48.57
+	Percent of CPU this job got: 391%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:09.80
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 758424
+	Maximum resident set size (kbytes): 743092
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 1
-	Minor (reclaiming a frame) page faults: 20727694
-	Voluntary context switches: 4561
-	Involuntary context switches: 52141
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 21014133
+	Voluntary context switches: 3850
+	Involuntary context switches: 45141
 	Swaps: 0
 	File system inputs: 0
-	File system outputs: 52616
+	File system outputs: 52608
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

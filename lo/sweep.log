@@ -1,283 +1,223 @@
-SWEEP enc: 281 MatMul/Gemm nodes in 130 types: {'/linear/Gemm': 1, 'conv': 63, '/cpe.1/Gemm': 1, '/qkv/Gemm': 1, '/MatMul': 90, '/proj/Gemm': 1, '/mlp.0/fc1/Gemm': 1, '/mlp.0/fc2/Gemm': 1, '/cpe.1_1/Gemm': 1, '/qkv_1/Gemm': 1, '/proj_1/Gemm': 1, '/mlp.0/fc1_1/Gemm': 1, '/mlp.0/fc2_1/Gemm': 1, '/cpe.1_2/Gemm': 1, '/qkv_2/Gemm': 1, '/proj_2/Gemm': 1, '/mlp.0/fc1_2/Gemm': 1, '/mlp.0/fc2_2/Gemm': 1, '/proj_3/Gemm': 1, '/cpe.1_3/Gemm': 1, '/qkv_3/Gemm': 1, '/proj_4/Gemm': 1, '/mlp.0/fc1_3/Gemm': 1, '/mlp.0/fc2_3/Gemm': 1, '/cpe.1_4/Gemm': 1, '/qkv_4/Gemm': 1, '/proj_5/Gemm': 1, '/mlp.0/fc1_4/Gemm': 1, '/mlp.0/fc2_4/Gemm': 1, '/cpe.1_5/Gemm': 1, '/qkv_5/Gemm': 1, '/proj_6/Gemm': 1, '/mlp.0/fc1_5/Gemm': 1, '/mlp.0/fc2_5/Gemm': 1, '/proj_7/Gemm': 1, '/cpe.1_6/Gemm': 1, '/qkv_6/Gemm': 1, '/proj_8/Gemm': 1, '/mlp.0/fc1_6/Gemm': 1, '/mlp.0/fc2_6/Gemm': 1, '/cpe.1_7/Gemm': 1, '/qkv_7/Gemm': 1, '/proj_9/Gemm': 1, '/mlp.0/fc1_7/Gemm': 1, '/mlp.0/fc2_7/Gemm': 1, '/cpe.1_8/Gemm': 1, '/qkv_8/Gemm': 1, '/proj_10/Gemm': 1, '/mlp.0/fc1_8/Gemm': 1, '/mlp.0/fc2_8/Gemm': 1, '/proj_11/Gemm': 1, '/cpe.1_9/Gemm': 1, '/qkv_9/Gemm': 1, '/proj_12/Gemm': 1, '/mlp.0/fc1_9/Gemm': 1, '/mlp.0/fc2_9/Gemm': 1, '/cpe.1_10/Gemm': 1, '/qkv_10/Gemm': 1, '/proj_13/Gemm': 1, '/mlp.0/fc1_10/Gemm': 1, '/mlp.0/fc2_10/Gemm': 1, '/cpe.1_11/Gemm': 1, '/qkv_11/Gemm': 1, '/proj_14/Gemm': 1, '/mlp.0/fc1_11/Gemm': 1, '/mlp.0/fc2_11/Gemm': 1, '/cpe.1_12/Gemm': 1, '/qkv_12/Gemm': 1, '/proj_15/Gemm': 1, '/mlp.0/fc1_12/Gemm': 1, '/mlp.0/fc2_12/Gemm': 1, '/cpe.1_13/Gemm': 1, '/qkv_13/Gemm': 1, '/proj_16/Gemm': 1, '/mlp.0/fc1_13/Gemm': 1, '/mlp.0/fc2_13/Gemm': 1, '/cpe.1_14/Gemm': 1, '/qkv_14/Gemm': 1, '/proj_17/Gemm': 1, '/mlp.0/fc1_14/Gemm': 1, '/mlp.0/fc2_14/Gemm': 1, '/cpe.1_15/Gemm': 1, '/qkv_15/Gemm': 1, '/proj_18/Gemm': 1, '/mlp.0/fc1_15/Gemm': 1, '/mlp.0/fc2_15/Gemm': 1, '/cpe.1_16/Gemm': 1, '/qkv_16/Gemm': 1, '/proj_19/Gemm': 1, '/mlp.0/fc1_16/Gemm': 1, '/mlp.0/fc2_16/Gemm': 1, '/cpe.1_17/Gemm': 1, '/qkv_17/Gemm': 1, '/proj_20/Gemm': 1, '/mlp.0/fc1_17/Gemm': 1, '/mlp.0/fc2_17/Gemm': 1, '/cpe.1_18/Gemm': 1, '/qkv_18/Gemm': 1, '/proj_21/Gemm': 1, '/mlp.0/fc1_18/Gemm': 1, '/mlp.0/fc2_18/Gemm': 1, '/cpe.1_19/Gemm': 1, '/qkv_19/Gemm': 1, '/proj_22/Gemm': 1, '/mlp.0/fc1_19/Gemm': 1, '/mlp.0/fc2_19/Gemm': 1, '/cpe.1_20/Gemm': 1, '/qkv_20/Gemm': 1, '/proj_23/Gemm': 1, '/mlp.0/fc1_20/Gemm': 1, '/mlp.0/fc2_20/Gemm': 1, '/proj_24/Gemm': 1, '/cpe.1_21/Gemm': 1, '/qkv_21/Gemm': 1, '/proj_25/Gemm': 1, '/mlp.0/fc1_21/Gemm': 1, '/mlp.0/fc2_21/Gemm': 1, '/cpe.1_22/Gemm': 1, '/qkv_22/Gemm': 1, '/proj_26/Gemm': 1, '/mlp.0/fc1_22/Gemm': 1, '/mlp.0/fc2_22/Gemm': 1, '/cpe.1_23/Gemm': 1, '/qkv_23/Gemm': 1, '/proj_27/Gemm': 1, '/mlp.0/fc1_23/Gemm': 1, '/mlp.0/fc2_23/Gemm': 1, '/mlp/mlp.0/Gemm': 1, '/mlp/mlp.2/Gemm': 1, '/mlp/mlp.4/Gemm': 1}
-SWEEP enc fp32 {'cos_mean': 1.0, 'cos_min': 0.9999997019767761, 'run_s': 10.06, 'mb': 418.5}
+SWEEP enc: 281 MatMul/Gemm nodes in 100 types: {'/linear/MatMul': 1, 'conv': 63, '/cpe.1/MatMul': 24, '/qkv/MatMul': 24, '/MatMul': 1, '/MatMul_1': 1, '/proj/MatMul': 28, '/mlp.0/fc1/MatMul': 24, '/mlp.0/fc2/MatMul': 24, '/MatMul_2': 1, '/MatMul_3': 1, '/MatMul_4': 1, '/MatMul_5': 1, '/MatMul_6': 1, '/MatMul_7': 1, '/MatMul_8': 1, '/MatMul_9': 1, '/MatMul_10': 1, '/MatMul_11': 1, '/MatMul_12': 1, '/MatMul_13': 1, '/MatMul_14': 1, '/MatMul_15': 1, '/MatMul_16': 1, '/MatMul_17': 1, '/MatMul_18': 1, '/MatMul_19': 1, '/MatMul_20': 1, '/MatMul_21': 1, '/MatMul_22': 1, '/MatMul_23': 1, '/MatMul_24': 1, '/MatMul_25': 1, '/MatMul_26': 1, '/MatMul_27': 1, '/MatMul_28': 1, '/MatMul_29': 1, '/MatMul_30': 1, '/MatMul_31': 1, '/MatMul_32': 1, '/MatMul_33': 1, '/MatMul_34': 1, '/MatMul_35': 1, '/MatMul_36': 1, '/MatMul_37': 1, '/MatMul_38': 1, '/MatMul_39': 1, '/MatMul_40': 1, '/MatMul_41': 1, '/MatMul_42': 1, '/MatMul_43': 1, '/MatMul_44': 1, '/MatMul_45': 1, '/MatMul_46': 1, '/MatMul_47': 1, '/MatMul_48': 1, '/MatMul_49': 1, '/MatMul_50': 1, '/MatMul_51': 1, '/MatMul_52': 1, '/MatMul_53': 1, '/MatMul_54': 1, '/MatMul_55': 1, '/MatMul_56': 1, '/MatMul_57': 1, '/MatMul_58': 1, '/MatMul_59': 1, '/MatMul_60': 1, '/MatMul_61': 1, '/MatMul_62': 1, '/MatMul_63': 1, '/MatMul_64': 1, '/MatMul_65': 1, '/MatMul_66': 1, '/MatMul_67': 1, '/MatMul_68': 1, '/MatMul_69': 1, '/MatMul_70': 1, '/MatMul_71': 1, '/MatMul_72': 1, '/MatMul_73': 1, '/MatMul_74': 1, '/MatMul_75': 1, '/MatMul_76': 1, '/MatMul_77': 1, '/MatMul_78': 1, '/MatMul_79': 1, '/MatMul_80': 1, '/MatMul_81': 1, '/MatMul_82': 1, '/MatMul_83': 1, '/MatMul_84': 1, '/MatMul_85': 1, '/MatMul_86': 1, '/MatMul_87': 1, '/MatMul_88': 1, '/MatMul_89': 1, '/mlp/mlp.0/MatMul': 1, '/mlp/mlp.2/MatMul': 1, '/mlp/mlp.4/MatMul': 1}
+SWEEP enc fp32 {'cos_mean': 1.0, 'cos_min': 0.9999996423721313, 'run_s': 8.7, 'mb': 418.5}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:all {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.74, 'mb': 106.0, 'quant_s': 16.0, 'excluded': 0, 'reduce_range': False}
+SWEEP enc int8:all_u8s8 {'cos_mean': 0.9885472655296326, 'cos_min': 0.9664692282676697, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 11.0, 'excluded': 0, 'reduce_range': False}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:all_rr {'cos_mean': 0.9827098250389099, 'cos_min': 0.9541021585464478, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 0, 'reduce_range': True}
+SWEEP enc int8:all {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.16, 'mb': 106.0, 'quant_s': 9.9, 'excluded': 0, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/linear/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.95, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/linear/MatMul] {'cos_mean': 0.9839702844619751, 'cos_min': 0.9518334269523621, 'run_s': 4.15, 'mb': 106.0, 'quant_s': 10.0, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[conv] {'cos_mean': 0.9157465696334839, 'cos_min': 0.7907397747039795, 'run_s': 6.64, 'mb': 314.5, 'quant_s': 13.6, 'excluded': 63, 'reduce_range': False}
+SWEEP enc int8:no[conv] {'cos_mean': 0.9853914976119995, 'cos_min': 0.961713969707489, 'run_s': 5.29, 'mb': 314.5, 'quant_s': 9.8, 'excluded': 63, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/cpe.1/MatMul] {'cos_mean': 0.9854617118835449, 'cos_min': 0.965060293674469, 'run_s': 4.17, 'mb': 113.7, 'quant_s': 9.6, 'excluded': 24, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/qkv/MatMul] {'cos_mean': 0.9966301918029785, 'cos_min': 0.9899466037750244, 'run_s': 4.24, 'mb': 129.1, 'quant_s': 9.0, 'excluded': 24, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/MatMul] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.79, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 90, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.89, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_1] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.86, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/proj/MatMul] {'cos_mean': 0.9868636727333069, 'cos_min': 0.966893196105957, 'run_s': 4.1, 'mb': 114.5, 'quant_s': 9.3, 'excluded': 28, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.87, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/mlp.0/fc1/MatMul] {'cos_mean': 0.9815685153007507, 'cos_min': 0.9642934203147888, 'run_s': 4.32, 'mb': 136.8, 'quant_s': 8.8, 'excluded': 24, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/mlp.0/fc2/MatMul] {'cos_mean': 0.9886788725852966, 'cos_min': 0.9669556021690369, 'run_s': 4.35, 'mb': 136.9, 'quant_s': 9.7, 'excluded': 24, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.74, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_2] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.0, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.84, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_3] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.68, 'mb': 106.0, 'quant_s': 14.5, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_4] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.13, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_1/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.7, 'mb': 106.0, 'quant_s': 14.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_5] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.61, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_6] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.05, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_7] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_8] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.28, 'mb': 106.0, 'quant_s': 9.9, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.99, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_9] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.04, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.87, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_10] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_3/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_11] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.08, 'mb': 106.0, 'quant_s': 9.8, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_3/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_12] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_3/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_13] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.0, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_14] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_3/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.73, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_15] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.13, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_3/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.87, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_16] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.04, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.77, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_17] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.05, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.7, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_18] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_5/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_19] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_20] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.01, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.91, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_21] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_5/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_22] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.13, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_5/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.78, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_23] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.0, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_6/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_24] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_5/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_25] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_5/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.05, 'mb': 106.0, 'quant_s': 15.6, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_26] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_7/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.0, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_27] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.02, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_6/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_28] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.3, 'mb': 106.0, 'quant_s': 9.9, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_6/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.03, 'mb': 106.0, 'quant_s': 15.5, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_29] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_8/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.02, 'mb': 106.0, 'quant_s': 15.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_30] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.02, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_6/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.94, 'mb': 106.0, 'quant_s': 15.5, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_31] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_6/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.86, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_32] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.05, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_7/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_33] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_7/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_34] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.02, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_9/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.77, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_35] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_7/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.77, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_36] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_7/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_37] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.02, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_8/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.71, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_38] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_8/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.79, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_39] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_10/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.9, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_40] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.0, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_8/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_41] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.04, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_8/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_42] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.09, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_11/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_43] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_9/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.76, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_44] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_9/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.77, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_45] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.08, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_12/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_46] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_9/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.82, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_47] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_9/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_48] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_10/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.84, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_49] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_10/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.78, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_50] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.09, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_13/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.93, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_51] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_10/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.72, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_52] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_10/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.94, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_53] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_11/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.7, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_54] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.13, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_11/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.72, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_55] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.08, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_14/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_56] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_11/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.79, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_57] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_11/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_58] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_12/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_59] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_12/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.65, 'mb': 106.0, 'quant_s': 14.5, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_60] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.18, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_15/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.87, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_61] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.09, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_12/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.76, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_62] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.16, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_12/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_63] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.25, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_13/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.82, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_64] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.23, 'mb': 106.0, 'quant_s': 9.8, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_13/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_65] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.13, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_16/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.72, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_66] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.09, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_13/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.19, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_67] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_13/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.19, 'mb': 106.0, 'quant_s': 16.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_68] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.08, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_14/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.19, 'mb': 106.0, 'quant_s': 15.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_69] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.05, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_14/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.36, 'mb': 106.0, 'quant_s': 16.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_70] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_17/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.04, 'mb': 106.0, 'quant_s': 15.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_71] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_14/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.86, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_72] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_14/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_73] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.04, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_15/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.86, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_74] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.12, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_15/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.88, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_75] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_18/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.91, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_76] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_15/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.95, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_77] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_15/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.84, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_78] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.14, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_16/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.78, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_79] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.07, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_16/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.8, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_80] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_19/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.9, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_81] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.15, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_16/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.67, 'mb': 106.0, 'quant_s': 14.5, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_82] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.04, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_16/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.81, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_83] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.06, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_17/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.76, 'mb': 106.0, 'quant_s': 14.6, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_84] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_17/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.96, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_85] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.11, 'mb': 106.0, 'quant_s': 9.7, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_20/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.94, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_86] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.05, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_17/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 14.8, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_87] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.03, 'mb': 106.0, 'quant_s': 9.4, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_17/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.77, 'mb': 106.0, 'quant_s': 15.0, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_88] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.1, 'mb': 106.0, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_18/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.86, 'mb': 106.0, 'quant_s': 14.9, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/MatMul_89] {'cos_mean': 0.9877849817276001, 'cos_min': 0.9712607264518738, 'run_s': 4.02, 'mb': 106.0, 'quant_s': 9.5, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_18/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.93, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/mlp/mlp.0/MatMul] {'cos_mean': 0.9882569313049316, 'cos_min': 0.9718039631843567, 'run_s': 4.14, 'mb': 107.8, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_21/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.04, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/mlp/mlp.2/MatMul] {'cos_mean': 0.9878170490264893, 'cos_min': 0.9713202118873596, 'run_s': 4.24, 'mb': 106.7, 'quant_s': 9.8, 'excluded': 1, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_18/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.94, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:no[/mlp/mlp.4/MatMul] {'cos_mean': 0.9879807829856873, 'cos_min': 0.9712071418762207, 'run_s': 4.11, 'mb': 106.7, 'quant_s': 9.6, 'excluded': 1, 'reduce_range': True}
+SWEEP enc types by cos gain when left in fp32: [('/qkv/MatMul', 0.00885), ('/mlp.0/fc2/MatMul', 0.00089), ('/mlp/mlp.0/MatMul', 0.00047), ('/mlp/mlp.4/MatMul', 0.0002), ('/mlp/mlp.2/MatMul', 3e-05), ('/MatMul', 0.0), ('/MatMul_1', 0.0), ('/MatMul_2', 0.0)]
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_18/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.08, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:greedy1 {'cos_mean': 0.9966301918029785, 'cos_min': 0.9899466037750244, 'run_s': 4.21, 'mb': 129.1, 'quant_s': 8.8, 'excluded': 24, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_19/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.9, 'mb': 106.0, 'quant_s': 15.6, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:greedy2 {'cos_mean': 0.9972846508026123, 'cos_min': 0.9935139417648315, 'run_s': 4.4, 'mb': 159.9, 'quant_s': 8.6, 'excluded': 48, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_19/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.04, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:greedy3 {'cos_mean': 0.9975924491882324, 'cos_min': 0.9940193295478821, 'run_s': 4.46, 'mb': 161.7, 'quant_s': 8.6, 'excluded': 49, 'reduce_range': True}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_22/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.07, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
+SWEEP enc int8:greedy4 {'cos_mean': 0.9977797269821167, 'cos_min': 0.9942399859428406, 'run_s': 4.55, 'mb': 162.5, 'quant_s': 8.7, 'excluded': 50, 'reduce_range': True}
+SWEEP enc w4:all {'cos_mean': 0.949005126953125, 'cos_min': 0.8721074461936951, 'run_s': 8.02, 'mb': 66.2, 'quant_s': 9.0, 'excluded': 0, 'reduce_range': False}
+SWEEP enc pick int8: int8:greedy2 (bar met: True) {'cos_mean': 0.9972846508026123, 'cos_min': 0.9935139417648315, 'run_s': 4.4, 'mb': 159.9, 'quant_s': 8.6, 'excluded': 48, 'reduce_range': True}
+SWEEP enc pick w4: w4:all (bar met: False) {'cos_mean': 0.949005126953125, 'cos_min': 0.8721074461936951, 'run_s': 8.02, 'mb': 66.2, 'quant_s': 9.0, 'excluded': 0, 'reduce_range': False}
 WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_19/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.96, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_19/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.01, 'mb': 106.0, 'quant_s': 15.6, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_20/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.85, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_20/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.93, 'mb': 106.0, 'quant_s': 15.5, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_23/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.97, 'mb': 106.0, 'quant_s': 15.6, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_20/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.05, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_20/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.11, 'mb': 106.0, 'quant_s': 15.8, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_24/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.0, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_21/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_21/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.83, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_25/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.99, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_21/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.96, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_21/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.9, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_22/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.92, 'mb': 106.0, 'quant_s': 15.1, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_22/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.11, 'mb': 106.0, 'quant_s': 16.0, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_26/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.02, 'mb': 106.0, 'quant_s': 16.0, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_22/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.14, 'mb': 106.0, 'quant_s': 16.0, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_22/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.16, 'mb': 106.0, 'quant_s': 16.0, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/cpe.1_23/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 6.15, 'mb': 106.0, 'quant_s': 15.9, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/qkv_23/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.97, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/proj_27/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.93, 'mb': 106.0, 'quant_s': 15.5, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc1_23/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.99, 'mb': 106.0, 'quant_s': 15.8, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp.0/fc2_23/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.99, 'mb': 106.0, 'quant_s': 15.7, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp/mlp.0/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.97, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp/mlp.2/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.91, 'mb': 106.0, 'quant_s': 15.3, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:no[/mlp/mlp.4/Gemm] {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.99, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
-SWEEP enc types by cos gain when left in fp32: [('/linear/Gemm', 0.0), ('/cpe.1/Gemm', 0.0), ('/qkv/Gemm', 0.0), ('/MatMul', 0.0), ('/proj/Gemm', 0.0), ('/mlp.0/fc1/Gemm', 0.0), ('/mlp.0/fc2/Gemm', 0.0), ('/cpe.1_1/Gemm', 0.0)]
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:greedy1 {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.93, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 1, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:greedy2 {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.87, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 2, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:greedy3 {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.98, 'mb': 106.0, 'quant_s': 15.4, 'excluded': 3, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP enc int8:greedy4 {'cos_mean': 0.9286428689956665, 'cos_min': 0.7949640154838562, 'run_s': 5.92, 'mb': 106.0, 'quant_s': 15.2, 'excluded': 93, 'reduce_range': False}
-SWEEP enc w4:all {'cos_mean': 0.9976164102554321, 'cos_min': 0.9918347597122192, 'run_s': 9.43, 'mb': 183.8, 'quant_s': 10.6, 'excluded': 0, 'reduce_range': False}
-SWEEP enc pick int8: int8:all_rr (bar met: False) {'cos_mean': 0.9827098250389099, 'cos_min': 0.9541021585464478, 'run_s': 5.75, 'mb': 106.0, 'quant_s': 14.7, 'excluded': 0, 'reduce_range': True}
-SWEEP enc pick w4: w4:all (bar met: True) {'cos_mean': 0.9976164102554321, 'cos_min': 0.9918347597122192, 'run_s': 9.43, 'mb': 183.8, 'quant_s': 10.6, 'excluded': 0, 'reduce_range': False}
-WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
-SWEEP heads int8:all {'mask_agree': 0.9984207153320312, 'iou_maxdiff': 0.01751852035522461, 'run_s': 2.93, 'mb': 8.0, 'quant_s': 3.3, 'excluded': 0, 'reduce_range': False}
-SWEEP heads w4:all {'mask_agree': 0.9930191040039062, 'iou_maxdiff': 0.07996129989624023, 'run_s': 3.53, 'mb': 7.9, 'quant_s': 3.6, 'excluded': 0, 'reduce_range': False}
-SWEEP heads pick int8: int8:all (bar met: True) {'mask_agree': 0.9984207153320312, 'iou_maxdiff': 0.01751852035522461, 'run_s': 2.93, 'mb': 8.0, 'quant_s': 3.3, 'excluded': 0, 'reduce_range': False}
-SWEEP heads pick w4: w4:all (bar met: True) {'mask_agree': 0.9930191040039062, 'iou_maxdiff': 0.07996129989624023, 'run_s': 3.53, 'mb': 7.9, 'quant_s': 3.6, 'excluded': 0, 'reduce_range': False}
+SWEEP heads int8:all {'mask_agree': 0.998382568359375, 'iou_maxdiff': 0.02177339792251587, 'run_s': 2.12, 'mb': 8.0, 'quant_s': 2.3, 'excluded': 0, 'reduce_range': True}
+SWEEP heads w4:all {'mask_agree': 0.99298095703125, 'iou_maxdiff': 0.08363589644432068, 'run_s': 3.36, 'mb': 7.5, 'quant_s': 3.4, 'excluded': 0, 'reduce_range': False}
+SWEEP heads pick int8: int8:all (bar met: True) {'mask_agree': 0.998382568359375, 'iou_maxdiff': 0.02177339792251587, 'run_s': 2.12, 'mb': 8.0, 'quant_s': 2.3, 'excluded': 0, 'reduce_range': True}
+SWEEP heads pick w4: w4:all (bar met: True) {'mask_agree': 0.99298095703125, 'iou_maxdiff': 0.08363589644432068, 'run_s': 3.36, 'mb': 7.5, 'quant_s': 3.4, 'excluded': 0, 'reduce_range': False}

@@ -1,22 +1,22 @@
-ORT {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.92, "rss_enc_loaded_mb": 93, "enc_run_s": 16.47, "rss_enc_done_mb": 834, "rss_enc_freed_mb": 624, "heads_load_s": 0.03, "heads_run_s": 80.01, "ok": true, "peak_rss_mb": 1089, "total_s": 97.43, "enc_bytes": 219716858, "heads_bytes": 6250936}
+ORT {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.67, "rss_enc_loaded_mb": 93, "enc_run_s": 13.06, "rss_enc_done_mb": 858, "rss_enc_freed_mb": 648, "heads_load_s": 0.02, "heads_run_s": 65.68, "ok": true, "peak_rss_mb": 1113, "total_s": 79.43, "enc_bytes": 219725369, "heads_bytes": 6250986}
 	Command being timed: "python tools/p3sam/ort_run.py --work work --variant fp16"
-	User time (seconds): 357.80
-	System time (seconds): 20.61
-	Percent of CPU this job got: 383%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:38.71
+	User time (seconds): 293.56
+	System time (seconds): 16.96
+	Percent of CPU this job got: 385%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:20.54
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 1114720
+	Maximum resident set size (kbytes): 1139424
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 200
-	Minor (reclaiming a frame) page faults: 7893654
-	Voluntary context switches: 6537
-	Involuntary context switches: 57429
+	Major (requiring I/O) page faults: 29
+	Minor (reclaiming a frame) page faults: 8037434
+	Voluntary context switches: 4285
+	Involuntary context switches: 47131
 	Swaps: 0
-	File system inputs: 438864
-	File system outputs: 52648
+	File system inputs: 12304
+	File system outputs: 52608
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

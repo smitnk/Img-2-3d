@@ -1,28 +1,25 @@
-LABELS torch-ref: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 22, 'kept_clusters': 22, 'min_members': 1, 'merged': 10, 'unlabelled_points': 0}
-LABELS fp32: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 22, 'kept_clusters': 22, 'min_members': 1, 'merged': 10, 'unlabelled_points': 0}
-LABELS int8: point labels=9 face parts=9 {'prompts': 128, 'nms_clusters': 25, 'kept_clusters': 25, 'min_members': 1, 'merged': 9, 'unlabelled_points': 0}
-LABELS w4: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 19, 'kept_clusters': 19, 'min_members': 1, 'merged': 8, 'unlabelled_points': 0}
-LABELS fp16: point labels=10 face parts=10 {'prompts': 128, 'nms_clusters': 23, 'kept_clusters': 23, 'min_members': 1, 'merged': 10, 'unlabelled_points': 0}
-CHOSEN variant fp16; 10 parts
-PART 0: faces=72 caps=1 manifold=ok volume=0.00000
-PART 1: faces=22 caps=1 manifold=ok volume=0.00000
-PART 2: faces=5582 caps=3 manifold=ok volume=0.00272
-PART 3: faces=7718 caps=2 manifold=ok volume=0.00518
-PART 4: faces=10322 caps=1 manifold=ok volume=0.01488
-PART 5: faces=13760 caps=5 manifold=ok volume=0.01206
-PART 6: faces=2012 caps=1 manifold=ok volume=0.00069
-PART 7: faces=1102 caps=1 manifold=ok volume=0.00050
-PART 8: faces=1088 caps=1 manifold=ok volume=0.00047
-PART 9: faces=156 caps=1 manifold=ok volume=-0.00000
-PEG male=3 hole=5 r=0.0392 ok=True
-PEG male=2 hole=5 r=0.0586 ok=True
-PEG male=2 hole=4 r=0.0252 ok=True
-PEG male=7 hole=4 r=0.0294 ok=True
-PEG male=8 hole=4 r=0.0251 ok=True
-PEG male=5 hole=4 r=0.0260 ok=True
-PEG male=6 hole=2 r=0.0172 ok=True
-PEG male=0 hole=2 r=0.0109 ok=True
-PEG male=9 hole=5 r=0.0059 ok=True
-PEG male=9 hole=4 r=0.0061 ok=True
-PEG male=7 hole=2 r=0.0068 ok=True
-RESULTS {"reference": {"parts": 8, "prompts": 128, "nms_clusters": 22, "kept_clusters": 22, "min_members": 1, "merged": 10, "unlabelled_points": 0}, "variants": {"fp32": {"variant": "fp32", "threads": 4, "arena": 0, "rss_after_inputs_mb": 66, "enc_load_s": 0.7, "rss_enc_loaded_mb": 500, "enc_run_s": 10.46, "rss_enc_done_mb": 627, "rss_enc_freed_mb": 211, "heads_load_s": 0.03, "heads_run_s": 72.26, "ok": true, "peak_rss_mb": 988, "total_s": 83.45, "enc_bytes": 438831708, "heads_bytes": 12478140, "feat_cos_mean": 1.0, "feat_cos_min": 0.9999997615814209, "mask_agree_pct": 99.99961853027344, "iou_pred_maxdiff": 4.079937934875488e-05, "point_label_agree_pct": 100.0, "face_label_agree_pct": 99.99999999999986, "parts": 8, "post_prompts": 128, "post_nms_clusters": 22, "post_kept_clusters": 22, "post_min_members": 1, "post_merged": 10, "post_unlabelled_points": 0}, "int8": {"variant": "int8", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.5, "rss_enc_loaded_mb": 193, "enc_run_s": 6.64, "rss_enc_done_mb": 273, "rss_enc_freed_mb": 239, "heads_load_s": 0.03, "heads_run_s": 61.42, "ok": true, "peak_rss_mb": 708, "total_s": 68.59, "enc_bytes": 111157915, "heads_bytes": 8393483, "feat_cos_mean": 0.9827097654342651, "feat_cos_min": 0.9541046619415283, "mask_agree_pct": 98.56128692626953, "iou_pred_maxdiff": 0.19044142961502075, "point_label_agree_pct": 78.4912109375, "face_label_agree_pct": 79.89133327255678, "parts": 9, "post_prompts": 128, "post_nms_clusters": 25, "post_kept_clusters": 25, "post_min_members": 1, "post_merged": 9, "post_unlabelled_points": 0}, "w4": {"variant": "w4", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.51, "rss_enc_loaded_mb": 257, "enc_run_s": 10.87, "rss_enc_done_mb": 383, "rss_enc_freed_mb": 235, "heads_load_s": 0.03, "heads_run_s": 70.97, "ok": true, "peak_rss_mb": 741, "total_s": 82.38, "enc_bytes": 192712101, "heads_bytes": 8270371, "feat_cos_mean": 0.9976164102554321, "feat_cos_min": 0.9918337464332581, "mask_agree_pct": 98.89378547668457, "iou_pred_maxdiff": 0.20175929367542267, "point_label_agree_pct": 77.825927734375, "face_label_agree_pct": 79.09093418839657, "parts": 8, "post_prompts": 128, "post_nms_clusters": 19, "post_kept_clusters": 19, "post_min_members": 1, "post_merged": 8, "post_unlabelled_points": 0}, "fp16": {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.92, "rss_enc_loaded_mb": 93, "enc_run_s": 16.47, "rss_enc_done_mb": 834, "rss_enc_freed_mb": 624, "heads_load_s": 0.03, "heads_run_s": 80.01, "ok": true, "peak_rss_mb": 1089, "total_s": 97.43, "enc_bytes": 219716858, "heads_bytes": 6250936, "feat_cos_mean": 0.9994609951972961, "feat_cos_min": 0.9974616169929504, "mask_agree_pct": 99.74846839904785, "iou_pred_maxdiff": 0.030182406306266785, "point_label_agree_pct": 97.796630859375, "face_label_agree_pct": 97.9313155549784, "parts": 10, "post_prompts": 128, "post_nms_clusters": 23, "post_kept_clusters": 23, "post_min_members": 1, "post_m
+LABELS torch-ref: point labels=9 face parts=9 {'prompts': 128, 'nms_clusters': 19, 'kept_clusters': 19, 'min_members': 1, 'merged': 9, 'unlabelled_points': 0}
+LABELS fp32: point labels=9 face parts=9 {'prompts': 128, 'nms_clusters': 19, 'kept_clusters': 19, 'min_members': 1, 'merged': 9, 'unlabelled_points': 0}
+LABELS int8: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 16, 'kept_clusters': 16, 'min_members': 1, 'merged': 8, 'unlabelled_points': 0}
+LABELS w4: point labels=6 face parts=6 {'prompts': 128, 'nms_clusters': 19, 'kept_clusters': 19, 'min_members': 1, 'merged': 6, 'unlabelled_points': 0}
+LABELS fp16: point labels=9 face parts=9 {'prompts': 128, 'nms_clusters': 18, 'kept_clusters': 18, 'min_members': 1, 'merged': 9, 'unlabelled_points': 0}
+CHOSEN variant int8; 8 parts
+PART 0: faces=130 caps=1 manifold=ok volume=0.00000
+PART 1: faces=142 caps=1 manifold=ok volume=0.00001
+PART 2: faces=14912 caps=4 manifold=ok volume=0.01170
+PART 3: faces=11212 caps=1 manifold=ok volume=0.01628
+PART 4: faces=11530 caps=1 manifold=ok volume=0.00890
+PART 5: faces=1984 caps=1 manifold=ok volume=0.00068
+PART 6: faces=1098 caps=1 manifold=ok volume=0.00047
+PART 7: faces=144 caps=1 manifold=ok volume=-0.00000
+PEG male=4 hole=2 r=0.0425 ok=True
+PEG male=2 hole=3 r=0.0374 ok=True
+PEG male=6 hole=3 r=0.0250 ok=True
+PEG male=5 hole=2 r=0.0173 ok=True
+PEG male=1 hole=2 r=0.0093 ok=True
+PEG male=0 hole=2 r=0.0130 ok=True
+PEG male=0 hole=3 r=0.0146 ok=True
+PEG male=7 hole=2 r=0.0056 ok=True
+PEG male=7 hole=3 r=0.0062 ok=True
+PEG male=6 hole=2 r=0.0074 ok=True
+RESULTS {"reference": {"parts": 9, "prompts": 128, "nms_clusters": 19, "kept_clusters": 19, "min_members": 1, "merged": 9, "unlabelled_points": 0}, "variants": {"fp32": {"variant": "fp32", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.53, "rss_enc_loaded_mb": 500, "enc_run_s": 8.66, "rss_enc_done_mb": 639, "rss_enc_freed_mb": 223, "heads_load_s": 0.02, "heads_run_s": 59.75, "ok": true, "peak_rss_mb": 990, "total_s": 68.96, "enc_bytes": 438833284, "heads_bytes": 12478363, "feat_cos_mean": 1.0, "feat_cos_min": 0.9999997019767761, "mask_agree_pct": 99.99971389770508, "iou_pred_maxdiff": 8.852779865264893e-05, "point_label_agree_pct": 99.993896484375, "face_label_agree_pct": 99.9999999999997, "parts": 9, "post_prompts": 128, "post_nms_clusters": 19, "post_kept_clusters": 19, "post_min_members": 1, "post_merged": 9, "post_unlabelled_points": 0}, "int8": {"variant": "int8", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.39, "rss_enc_loaded_mb": 246, "enc_run_s": 4.94, "rss_enc_done_mb": 406, "rss_enc_freed_mb": 269, "heads_load_s": 0.03, "heads_run_s": 38.24, "ok": true, "peak_rss_mb": 723, "total_s": 43.6, "enc_bytes": 167676985, "heads_bytes": 8393190, "feat_cos_mean": 0.9972846508026123, "feat_cos_min": 0.9935147762298584, "mask_agree_pct": 99.4692325592041, "iou_pred_maxdiff": 0.14442172646522522, "point_label_agree_pct": 95.184326171875, "face_label_agree_pct": 95.6242085149132, "parts": 8, "post_prompts": 128, "post_nms_clusters": 16, "post_kept_clusters": 16, "post_min_members": 1, "post_merged": 8, "post_unlabelled_points": 0}, "w4": {"variant": "w4", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.35, "rss_enc_loaded_mb": 136, "enc_run_s": 9.39, "rss_enc_done_mb": 212, "rss_enc_freed_mb": 194, "heads_load_s": 0.02, "heads_run_s": 58.92, "ok": true, "peak_rss_mb": 726, "total_s": 68.68, "enc_bytes": 69360840, "heads_bytes": 7826130, "feat_cos_mean": 0.949005126953125, "feat_cos_min": 0.8721061944961548, "mask_agree_pct": 96.4684009552002, "iou_pred_maxdiff": 0.38947609066963196, "point_label_agree_pct": 84.58251953125, "face_label_agree_pct": 84.97205536906112, "parts": 6, "post_prompts": 128, "post_nms_clusters": 19, "post_kept_clusters": 19, "post_min_members": 1, "post_merged": 6, "post_unlabelled_points": 0}, "fp16": {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.67, "rss_enc_loaded_mb": 93, "enc_run_s": 13.06, "rss_enc_done_mb": 858, "rss_enc_freed_mb": 648, "heads_load_s": 0.02, "heads_run_s": 65.68, "ok": true, "peak_rss_mb": 1113, "total_s": 79.43, "enc_bytes": 219725369, "heads_bytes": 6250986, "feat_cos_mean": 0.9993371963500977, "feat_cos_min": 0.9972757697105408, "mask_agree_pct": 99.80621337890625, "iou_pred_maxdiff": 0.033967286348342896, "point_label_agree_pct": 99.444580078125, "face_label_agree_pct": 99.69799960921563, "parts": 9, "post_prompts": 128, "post_nms_clusters": 18, "post_kept_clusters": 18, "post_min_members": 1, "post

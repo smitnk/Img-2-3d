@@ -1,0 +1,126 @@
+{
+ "points": 32768,
+ "prompts": 256,
+ "seed": 42,
+ "torch": "2.5.1+cpu",
+ "sonata_config": {
+  "in_channels": 9,
+  "order": [
+   "z",
+   "z-trans",
+   "hilbert",
+   "hilbert-trans"
+  ],
+  "stride": [
+   2,
+   2,
+   2,
+   2
+  ],
+  "enc_depths": [
+   3,
+   3,
+   3,
+   12,
+   3
+  ],
+  "enc_channels": [
+   48,
+   96,
+   192,
+   384,
+   512
+  ],
+  "enc_num_head": [
+   3,
+   6,
+   12,
+   24,
+   32
+  ],
+  "enc_patch_size": [
+   1024,
+   1024,
+   1024,
+   1024,
+   1024
+  ],
+  "mlp_ratio": 4,
+  "qkv_bias": true,
+  "qk_scale": null,
+  "attn_drop": 0.0,
+  "proj_drop": 0.0,
+  "drop_path": 0.3,
+  "shuffle_orders": true,
+  "pre_norm": true,
+  "enable_rpe": false,
+  "enable_flash": false,
+  "upcast_attention": false,
+  "upcast_softmax": false,
+  "traceable": true,
+  "enc_mode": true,
+  "mask_token": true
+ },
+ "missing_keys": 0,
+ "unexpected_keys": 0,
+ "params_total": 112728649,
+ "params_sonata": 108461376,
+ "mesh": {
+  "vertices": 20002,
+  "faces": 40000,
+  "watertight": true
+ },
+ "torch_features_s": 14.9,
+ "stages_n": {
+  "0": 30069,
+  "1": 23659,
+  "2": 11487,
+  "3": 3388,
+  "4": 871
+ },
+ "stages_K": {
+  "0": 1024,
+  "1": 1024,
+  "2": 1024,
+  "3": 1024,
+  "4": 871
+ },
+ "spconv_cpu_check": {
+  "threads1_run0": 0,
+  "threads1_run1": 0,
+  "threads4_run0": 122,
+  "threads4_run1": 141,
+  "stock_with_spconv_threads1": {
+   "mean_cos": 1.0,
+   "min_cos": 0.9999997019767761,
+   "max_abs": 0.0001621246337890625
+  },
+  "stock_with_spconv_threads4": {
+   "mean_cos": 0.9986807107925415,
+   "min_cos": 0.9640942215919495,
+   "max_abs": 0.209341362118721
+  }
+ },
+ "static_torch_enc_s": 14.8,
+ "static_vs_stock_feat": {
+  "max_abs": 0.0,
+  "mean_abs": 0.0,
+  "ref_max": 1.6472795009613037,
+  "min_cos": 0.9999998807907104
+ },
+ "enc_inputs_mb": 21.0,
+ "torch_heads_s": 513.38,
+ "static_torch_heads_s": 407.31,
+ "static_vs_stock_heads": {
+  "max_abs_logit": 7.152557373046875e-06,
+  "max_abs_iou": 2.384185791015625e-07,
+  "mask_agree": 0.9999999602635702
+ },
+ "onnx_bytes": {
+  "enc_fp32": 438857074,
+  "heads_fp32": 12478128,
+  "heads_fp16": 6250986
+ },
+ "capture_peak_rss_mb": 14950,
+ "capture_total_s": 1154.6
+}

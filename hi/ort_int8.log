@@ -1,0 +1,24 @@
+ORT {"variant": "int8", "threads": 4, "arena": 0, "rss_after_inputs_mb": 71, "enc_load_s": 0.51, "rss_enc_loaded_mb": 222, "enc_run_s": 8.19, "rss_enc_done_mb": 355, "rss_enc_freed_mb": 327, "heads_load_s": 0.03, "heads_run_s": 213.81, "ok": true, "peak_rss_mb": 1288, "total_s": 222.54, "enc_bytes": 136157541, "heads_bytes": 8393190}
+	Command being timed: "python tools/p3sam/ort_run.py --work work --variant int8"
+	User time (seconds): 741.54
+	System time (seconds): 138.17
+	Percent of CPU this job got: 389%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:45.81
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1318460
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 51441316
+	Voluntary context switches: 11887
+	Involuntary context switches: 146441
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 148840
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,18 @@
+{
+ "variant": "w4",
+ "threads": 4,
+ "arena": 0,
+ "rss_after_inputs_mb": 71,
+ "enc_load_s": 0.49,
+ "rss_enc_loaded_mb": 141,
+ "enc_run_s": 13.54,
+ "rss_enc_done_mb": 290,
+ "rss_enc_freed_mb": 305,
+ "heads_load_s": 0.03,
+ "heads_run_s": 278.3,
+ "ok": true,
+ "peak_rss_mb": 1284,
+ "total_s": 292.36,
+ "enc_bytes": 69391444,
+ "heads_bytes": 7826130
+}

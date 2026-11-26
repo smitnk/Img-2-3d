@@ -1,0 +1,310 @@
+{
+ "meta": {
+  "points": 32768,
+  "prompts": 256,
+  "seed": 42,
+  "torch": "2.5.1+cpu",
+  "sonata_config": {
+   "in_channels": 9,
+   "order": [
+    "z",
+    "z-trans",
+    "hilbert",
+    "hilbert-trans"
+   ],
+   "stride": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "enc_depths": [
+    3,
+    3,
+    3,
+    12,
+    3
+   ],
+   "enc_channels": [
+    48,
+    96,
+    192,
+    384,
+    512
+   ],
+   "enc_num_head": [
+    3,
+    6,
+    12,
+    24,
+    32
+   ],
+   "enc_patch_size": [
+    1024,
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "mlp_ratio": 4,
+   "qkv_bias": true,
+   "qk_scale": null,
+   "attn_drop": 0.0,
+   "proj_drop": 0.0,
+   "drop_path": 0.3,
+   "shuffle_orders": true,
+   "pre_norm": true,
+   "enable_rpe": false,
+   "enable_flash": false,
+   "upcast_attention": false,
+   "upcast_softmax": false,
+   "traceable": true,
+   "enc_mode": true,
+   "mask_token": true
+  },
+  "missing_keys": 0,
+  "unexpected_keys": 0,
+  "params_total": 112728649,
+  "params_sonata": 108461376,
+  "mesh": {
+   "vertices": 20002,
+   "faces": 40000,
+   "watertight": true
+  },
+  "torch_features_s": 14.9,
+  "stages_n": {
+   "0": 30069,
+   "1": 23659,
+   "2": 11487,
+   "3": 3388,
+   "4": 871
+  },
+  "stages_K": {
+   "0": 1024,
+   "1": 1024,
+   "2": 1024,
+   "3": 1024,
+   "4": 871
+  },
+  "spconv_cpu_check": {
+   "threads1_run0": 0,
+   "threads1_run1": 0,
+   "threads4_run0": 122,
+   "threads4_run1": 141,
+   "stock_with_spconv_threads1": {
+    "mean_cos": 1.0,
+    "min_cos": 0.9999997019767761,
+    "max_abs": 0.0001621246337890625
+   },
+   "stock_with_spconv_threads4": {
+    "mean_cos": 0.9986807107925415,
+    "min_cos": 0.9640942215919495,
+    "max_abs": 0.209341362118721
+   }
+  },
+  "static_torch_enc_s": 14.8,
+  "static_vs_stock_feat": {
+   "max_abs": 0.0,
+   "mean_abs": 0.0,
+   "ref_max": 1.6472795009613037,
+   "min_cos": 0.9999998807907104
+  },
+  "enc_inputs_mb": 21.0,
+  "torch_heads_s": 513.38,
+  "static_torch_heads_s": 407.31,
+  "static_vs_stock_heads": {
+   "max_abs_logit": 7.152557373046875e-06,
+   "max_abs_iou": 2.384185791015625e-07,
+   "mask_agree": 0.9999999602635702
+  },
+  "onnx_bytes": {
+   "enc_fp32": 438857074,
+   "heads_fp32": 12478128,
+   "heads_fp16": 6250986
+  },
+  "capture_peak_rss_mb": 14950,
+  "capture_total_s": 1154.6
+ },
+ "reference": {
+  "parts": 2,
+  "prompts": 256,
+  "nms_clusters": 4,
+  "kept_clusters": 3,
+  "min_members": 2,
+  "merged": 2,
+  "unlabelled_points": 0
+ },
+ "variants": {
+  "fp32": {
+   "variant": "fp32",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.7,
+   "rss_enc_loaded_mb": 506,
+   "enc_run_s": 13.67,
+   "rss_enc_done_mb": 652,
+   "rss_enc_freed_mb": 303,
+   "heads_load_s": 0.03,
+   "heads_run_s": 289.54,
+   "ok": true,
+   "peak_rss_mb": 1290,
+   "total_s": 303.94,
+   "enc_bytes": 438859154,
+   "heads_bytes": 12478363,
+   "feat_cos_mean": 1.0,
+   "feat_cos_min": 0.9999996423721313,
+   "mask_agree_pct": 99.9997615814209,
+   "iou_pred_maxdiff": 2.714991569519043e-05,
+   "point_label_agree_pct": 100.0,
+   "face_label_agree_pct": 99.99999999999996,
+   "parts": 2,
+   "post_prompts": 256,
+   "post_nms_clusters": 4,
+   "post_kept_clusters": 3,
+   "post_min_members": 2,
+   "post_merged": 2,
+   "post_unlabelled_points": 0
+  },
+  "int8": {
+   "variant": "int8",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.51,
+   "rss_enc_loaded_mb": 222,
+   "enc_run_s": 8.19,
+   "rss_enc_done_mb": 355,
+   "rss_enc_freed_mb": 327,
+   "heads_load_s": 0.03,
+   "heads_run_s": 213.81,
+   "ok": true,
+   "peak_rss_mb": 1288,
+   "total_s": 222.54,
+   "enc_bytes": 136157541,
+   "heads_bytes": 8393190,
+   "feat_cos_mean": 0.9973005056381226,
+   "feat_cos_min": 0.9904714226722717,
+   "mask_agree_pct": 99.82702732086182,
+   "iou_pred_maxdiff": 0.11596018075942993,
+   "point_label_agree_pct": 99.8199462890625,
+   "face_label_agree_pct": 99.81204182477768,
+   "parts": 2,
+   "post_prompts": 256,
+   "post_nms_clusters": 4,
+   "post_kept_clusters": 2,
+   "post_min_members": 2,
+   "post_merged": 2,
+   "post_unlabelled_points": 0
+  },
+  "w4": {
+   "variant": "w4",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.49,
+   "rss_enc_loaded_mb": 141,
+   "enc_run_s": 13.54,
+   "rss_enc_done_mb": 290,
+   "rss_enc_freed_mb": 305,
+   "heads_load_s": 0.03,
+   "heads_run_s": 278.3,
+   "ok": true,
+   "peak_rss_mb": 1284,
+   "total_s": 292.36,
+   "enc_bytes": 69391444,
+   "heads_bytes": 7826130,
+   "feat_cos_mean": 0.9711142182350159,
+   "feat_cos_min": 0.9328439235687256,
+   "mask_agree_pct": 99.7044324874878,
+   "iou_pred_maxdiff": 0.13581834733486176,
+   "point_label_agree_pct": 99.6612548828125,
+   "face_label_agree_pct": 99.76964571772862,
+   "parts": 2,
+   "post_prompts": 256,
+   "post_nms_clusters": 2,
+   "post_kept_clusters": 2,
+   "post_min_members": 2,
+   "post_merged": 2,
+   "post_unlabelled_points": 0
+  },
+  "fp16": {
+   "variant": "fp16",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 1.03,
+   "rss_enc_loaded_mb": 100,
+   "enc_run_s": 20.28,
+   "rss_enc_done_mb": 636,
+   "rss_enc_freed_mb": 426,
+   "heads_load_s": 0.03,
+   "heads_run_s": 352.4,
+   "ok": true,
+   "peak_rss_mb": 1392,
+   "total_s": 373.74,
+   "enc_bytes": 219765058,
+   "heads_bytes": 6250986,
+   "feat_cos_mean": 0.9995754361152649,
+   "feat_cos_min": 0.9971869587898254,
+   "mask_agree_pct": 99.9359130859375,
+   "iou_pred_maxdiff": 0.019009709358215332,
+   "point_label_agree_pct": 99.9755859375,
+   "face_label_agree_pct": 99.98579115745765,
+   "parts": 2,
+   "post_prompts": 256,
+   "post_nms_clusters": 3,
+   "post_kept_clusters": 2,
+   "post_min_members": 2,
+   "post_merged": 2,
+   "post_unlabelled_points": 0
+  }
+ },
+ "chosen_variant": "w4",
+ "split": {
+  "parts": {
+   "0": {
+    "faces_in": 28244,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.02132514470747939,
+    "genus": 0,
+    "out_faces": 28822,
+    "out_vertices": 14411,
+    "watertight": true,
+    "bytes": 519564
+   },
+   "1": {
+    "faces_in": 12128,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.017247215700783847,
+    "genus": 0,
+    "out_faces": 12714,
+    "out_vertices": 6359,
+    "watertight": true,
+    "bytes": 229636
+   }
+  },
+  "pegs": [
+   {
+    "male": 1,
+    "hole": 0,
+    "radius": 0.03555408510625776,
+    "contact_radius": 0.08888521276564439,
+    "contact_edges": 186,
+    "ok": true,
+    "volume_added": 0.000221504439788852,
+    "volume_removed": 0.00028976630870359774
+   }
+  ]
+ },
+ "split_s": 0.1,
+ "split_all_manifold": true,
+ "split_all_watertight": true,
+ "pegs_ok": 1,
+ "pegs_total": 1,
+ "zip_bytes": 879630
+}

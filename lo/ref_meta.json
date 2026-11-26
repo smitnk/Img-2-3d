@@ -1,0 +1,109 @@
+{
+ "points": 16384,
+ "prompts": 128,
+ "seed": 42,
+ "torch": "2.5.1+cpu",
+ "sonata_config": {
+  "in_channels": 9,
+  "order": [
+   "z",
+   "z-trans",
+   "hilbert",
+   "hilbert-trans"
+  ],
+  "stride": [
+   2,
+   2,
+   2,
+   2
+  ],
+  "enc_depths": [
+   3,
+   3,
+   3,
+   12,
+   3
+  ],
+  "enc_channels": [
+   48,
+   96,
+   192,
+   384,
+   512
+  ],
+  "enc_num_head": [
+   3,
+   6,
+   12,
+   24,
+   32
+  ],
+  "enc_patch_size": [
+   1024,
+   1024,
+   1024,
+   1024,
+   1024
+  ],
+  "mlp_ratio": 4,
+  "qkv_bias": true,
+  "qk_scale": null,
+  "attn_drop": 0.0,
+  "proj_drop": 0.0,
+  "drop_path": 0.3,
+  "shuffle_orders": true,
+  "pre_norm": true,
+  "enable_rpe": false,
+  "enable_flash": false,
+  "upcast_attention": false,
+  "upcast_softmax": false,
+  "traceable": true,
+  "enc_mode": true,
+  "mask_token": true
+ },
+ "missing_keys": 0,
+ "unexpected_keys": 0,
+ "params_total": 112728649,
+ "params_sonata": 108461376,
+ "mesh": {
+  "vertices": 20002,
+  "faces": 40000,
+  "watertight": true
+ },
+ "torch_features_s": 8.67,
+ "stages_n": {
+  "0": 15654,
+  "1": 13810,
+  "2": 8872,
+  "3": 3195,
+  "4": 852
+ },
+ "stages_K": {
+  "0": 1024,
+  "1": 1024,
+  "2": 1024,
+  "3": 1024,
+  "4": 852
+ },
+ "static_torch_enc_s": 11.73,
+ "static_vs_stock_feat": {
+  "max_abs": 0.3177401125431061,
+  "mean_abs": 0.010965983383357525,
+  "ref_max": 1.646228551864624,
+  "min_cos": 0.9301243424415588
+ },
+ "enc_inputs_mb": 12.6,
+ "torch_heads_s": 123.77,
+ "static_torch_heads_s": 98.01,
+ "static_vs_stock_heads": {
+  "max_abs_logit": 5.7220458984375e-06,
+  "max_abs_iou": 2.384185791015625e-07,
+  "mask_agree": 1.0
+ },
+ "onnx_bytes": {
+  "enc_fp32": 438829673,
+  "heads_fp32": 12477905
+ },
+ "capture_peak_rss_mb": 12986,
+ "capture_total_s": 270.9
+}

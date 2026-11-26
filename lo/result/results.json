@@ -1,0 +1,416 @@
+{
+ "meta": {
+  "points": 16384,
+  "prompts": 128,
+  "seed": 42,
+  "torch": "2.5.1+cpu",
+  "sonata_config": {
+   "in_channels": 9,
+   "order": [
+    "z",
+    "z-trans",
+    "hilbert",
+    "hilbert-trans"
+   ],
+   "stride": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "enc_depths": [
+    3,
+    3,
+    3,
+    12,
+    3
+   ],
+   "enc_channels": [
+    48,
+    96,
+    192,
+    384,
+    512
+   ],
+   "enc_num_head": [
+    3,
+    6,
+    12,
+    24,
+    32
+   ],
+   "enc_patch_size": [
+    1024,
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "mlp_ratio": 4,
+   "qkv_bias": true,
+   "qk_scale": null,
+   "attn_drop": 0.0,
+   "proj_drop": 0.0,
+   "drop_path": 0.3,
+   "shuffle_orders": true,
+   "pre_norm": true,
+   "enable_rpe": false,
+   "enable_flash": false,
+   "upcast_attention": false,
+   "upcast_softmax": false,
+   "traceable": true,
+   "enc_mode": true,
+   "mask_token": true
+  },
+  "missing_keys": 0,
+  "unexpected_keys": 0,
+  "params_total": 112728649,
+  "params_sonata": 108461376,
+  "mesh": {
+   "vertices": 20002,
+   "faces": 40000,
+   "watertight": true
+  },
+  "torch_features_s": 8.67,
+  "stages_n": {
+   "0": 15654,
+   "1": 13810,
+   "2": 8872,
+   "3": 3195,
+   "4": 852
+  },
+  "stages_K": {
+   "0": 1024,
+   "1": 1024,
+   "2": 1024,
+   "3": 1024,
+   "4": 852
+  },
+  "static_torch_enc_s": 11.73,
+  "static_vs_stock_feat": {
+   "max_abs": 0.3177401125431061,
+   "mean_abs": 0.010965983383357525,
+   "ref_max": 1.646228551864624,
+   "min_cos": 0.9301243424415588
+  },
+  "enc_inputs_mb": 12.6,
+  "torch_heads_s": 123.77,
+  "static_torch_heads_s": 98.01,
+  "static_vs_stock_heads": {
+   "max_abs_logit": 5.7220458984375e-06,
+   "max_abs_iou": 2.384185791015625e-07,
+   "mask_agree": 1.0
+  },
+  "onnx_bytes": {
+   "enc_fp32": 438829673,
+   "heads_fp32": 12477905
+  },
+  "capture_peak_rss_mb": 12986,
+  "capture_total_s": 270.9
+ },
+ "reference": {
+  "parts": 9,
+  "prompts": 128,
+  "nms_clusters": 23,
+  "kept_clusters": 23,
+  "min_members": 1,
+  "merged": 10,
+  "unlabelled_points": 0
+ },
+ "variants": {
+  "fp32": {
+   "variant": "fp32",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.61,
+   "rss_enc_loaded_mb": 503,
+   "enc_run_s": 10.03,
+   "rss_enc_done_mb": 575,
+   "rss_enc_freed_mb": 191,
+   "heads_load_s": 0.03,
+   "heads_run_s": 68.55,
+   "ok": true,
+   "peak_rss_mb": 995,
+   "total_s": 79.22,
+   "enc_bytes": 438831708,
+   "heads_bytes": 12478140,
+   "feat_cos_mean": 0.9975261688232422,
+   "feat_cos_min": 0.9301257133483887,
+   "mask_agree_pct": 99.46084022521973,
+   "iou_pred_maxdiff": 0.1722579300403595,
+   "point_label_agree_pct": 78.961181640625,
+   "face_label_agree_pct": 80.12740807450096,
+   "parts": 8,
+   "post_prompts": 128,
+   "post_nms_clusters": 22,
+   "post_kept_clusters": 22,
+   "post_min_members": 1,
+   "post_merged": 10,
+   "post_unlabelled_points": 0
+  },
+  "int8": {
+   "variant": "int8",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.43,
+   "rss_enc_loaded_mb": 196,
+   "enc_run_s": 6.23,
+   "rss_enc_done_mb": 288,
+   "rss_enc_freed_mb": 223,
+   "heads_load_s": 0.03,
+   "heads_run_s": 57.67,
+   "ok": true,
+   "peak_rss_mb": 709,
+   "total_s": 64.36,
+   "enc_bytes": 111157149,
+   "heads_bytes": 8393393,
+   "feat_cos_mean": 0.9192458987236023,
+   "feat_cos_min": 0.7775791883468628,
+   "mask_agree_pct": 92.10472106933594,
+   "iou_pred_maxdiff": 0.270910382270813,
+   "point_label_agree_pct": 85.4248046875,
+   "face_label_agree_pct": 85.52736068507899,
+   "parts": 8,
+   "post_prompts": 128,
+   "post_nms_clusters": 49,
+   "post_kept_clusters": 49,
+   "post_min_members": 1,
+   "post_merged": 8,
+   "post_unlabelled_points": 6
+  },
+  "fp16": {
+   "variant": "fp16",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 71,
+   "enc_load_s": 0.9,
+   "rss_enc_loaded_mb": 96,
+   "enc_run_s": 15.39,
+   "rss_enc_done_mb": 944,
+   "rss_enc_freed_mb": 734,
+   "ok": false,
+   "error": "Fail('[ONNXRuntimeError] : 1 : FAIL : Load model from work/heads_fp16.onnx failed:Type Error: Type parameter (T) of Optype (MatMul) bound to different types (tensor(float) and tensor(float16) in node (/MatMul_32).')",
+   "peak_rss_mb": 1172,
+   "total_s": 16.29,
+   "enc_bytes": 219716858,
+   "heads_bytes": 6271724
+  }
+ },
+ "chosen_variant": "fp32",
+ "split": {
+  "parts": {
+   "0": {
+    "faces_in": 5844,
+    "caps": 3,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.002882645749053982,
+    "genus": -1,
+    "out_faces": 7258,
+    "out_vertices": 3633,
+    "watertight": true,
+    "bytes": 131452
+   },
+   "1": {
+    "faces_in": 7110,
+    "caps": 2,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.004859407182929707,
+    "genus": -1,
+    "out_faces": 7488,
+    "out_vertices": 3746,
+    "watertight": true,
+    "bytes": 135572
+   },
+   "2": {
+    "faces_in": 10126,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.014849384063112358,
+    "genus": 0,
+    "out_faces": 11356,
+    "out_vertices": 5680,
+    "watertight": true,
+    "bytes": 205196
+   },
+   "3": {
+    "faces_in": 14124,
+    "caps": 4,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.012297835106329242,
+    "genus": 0,
+    "out_faces": 15276,
+    "out_vertices": 7636,
+    "watertight": true,
+    "bytes": 275704
+   },
+   "4": {
+    "faces_in": 2016,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.0006963186048687433,
+    "genus": 0,
+    "out_faces": 2306,
+    "out_vertices": 1155,
+    "watertight": true,
+    "bytes": 42288
+   },
+   "5": {
+    "faces_in": 1120,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.0005030330265190799,
+    "genus": 0,
+    "out_faces": 1900,
+    "out_vertices": 952,
+    "watertight": true,
+    "bytes": 34984
+   },
+   "6": {
+    "faces_in": 1088,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.00046961784676172484,
+    "genus": 0,
+    "out_faces": 1472,
+    "out_vertices": 738,
+    "watertight": true,
+    "bytes": 27276
+   },
+   "7": {
+    "faces_in": 156,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": -2.624227743888294e-06,
+    "genus": 0,
+    "out_faces": 956,
+    "out_vertices": 472,
+    "watertight": true,
+    "bytes": 17892
+   }
+  },
+  "pegs": [
+   {
+    "male": 0,
+    "hole": 3,
+    "radius": 0.05649338141001447,
+    "contact_radius": 0.14123345352503616,
+    "contact_edges": 205,
+    "ok": true,
+    "volume_added": 0.001574838596990018,
+    "volume_removed": 0.0014393889090047116
+   },
+   {
+    "male": 1,
+    "hole": 3,
+    "radius": 0.03656124680222926,
+    "contact_radius": 0.09140311700557315,
+    "contact_edges": 179,
+    "ok": true,
+    "volume_added": 0.0004329512487563202,
+    "volume_removed": 9.302441736544834e-05
+   },
+   {
+    "male": 5,
+    "hole": 2,
+    "radius": 0.029389668215364553,
+    "contact_radius": 0.07347417053841138,
+    "contact_edges": 83,
+    "ok": true,
+    "volume_added": 0.00013805733481898354,
+    "volume_removed": 4.4574412443732295e-05
+   },
+   {
+    "male": 6,
+    "hole": 2,
+    "radius": 0.02509186454143359,
+    "contact_radius": 0.06272966135358397,
+    "contact_edges": 76,
+    "ok": true,
+    "volume_added": 8.130674939190884e-05,
+    "volume_removed": 1.394609984668553e-05
+   },
+   {
+    "male": 0,
+    "hole": 2,
+    "radius": 0.02725018205591281,
+    "contact_radius": 0.06812545513978202,
+    "contact_edges": 71,
+    "ok": true,
+    "volume_added": 0.00011458962361361562,
+    "volume_removed": 0.00012798137036179776
+   },
+   {
+    "male": 3,
+    "hole": 2,
+    "radius": 0.026020901647940367,
+    "contact_radius": 0.06505225411985091,
+    "contact_edges": 69,
+    "ok": true,
+    "volume_added": 0.00011140782793496971,
+    "volume_removed": 9.337150841160803e-05
+   },
+   {
+    "male": 4,
+    "hole": 0,
+    "radius": 0.017084631300253315,
+    "contact_radius": 0.042711578250633285,
+    "contact_edges": 46,
+    "ok": true,
+    "volume_added": 2.4473279918574113e-05,
+    "volume_removed": 3.2026667957172315e-05
+   },
+   {
+    "male": 7,
+    "hole": 3,
+    "radius": 0.00585361139928575,
+    "contact_radius": 0.014634028498214375,
+    "contact_edges": 16,
+    "ok": true,
+    "volume_added": 2.453140666159133e-06,
+    "volume_removed": 9.594405498813269e-07
+   },
+   {
+    "male": 5,
+    "hole": 0,
+    "radius": 0.007198727384631735,
+    "contact_radius": 0.017996818461579335,
+    "contact_edges": 15,
+    "ok": true,
+    "volume_added": 3.3439853620038495e-06,
+    "volume_removed": 9.734511249399544e-07
+   },
+   {
+    "male": 7,
+    "hole": 2,
+    "radius": 0.006101926238629326,
+    "contact_radius": 0.015254815596573315,
+    "contact_edges": 15,
+    "ok": true,
+    "volume_added": 1.8474795542685336e-06,
+    "volume_removed": 1.0323108548121462e-06
+   },
+   {
+    "a": 6,
+    "b": 0,
+    "skipped": "contact too small",
+    "contact_radius": 0.0119263384194051
+   }
+  ]
+ },
+ "split_s": 0.2,
+ "split_all_manifold": true,
+ "split_all_watertight": true,
+ "pegs_ok": 10,
+ "pegs_total": 11,
+ "zip_bytes": 978003
+}

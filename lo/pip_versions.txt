@@ -1,0 +1,12 @@
+cumm                 0.7.11
+huggingface_hub      2.5.0
+manifold3d           3.5.5
+numpy                1.26.4
+onnx                 1.17.0
+onnxruntime          1.20.1
+safetensors          0.8.0
+spconv               2.3.8
+torch                2.5.1+cpu
+torch_cluster        1.6.3+pt25cpu
+torch_scatter        2.1.2+pt25cpu
+trimesh              5.2.2

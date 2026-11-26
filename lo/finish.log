@@ -1,0 +1,23 @@
+LABELS torch-ref: point labels=10 face parts=9 {'prompts': 128, 'nms_clusters': 23, 'kept_clusters': 23, 'min_members': 1, 'merged': 10, 'unlabelled_points': 0}
+LABELS fp32: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 22, 'kept_clusters': 22, 'min_members': 1, 'merged': 10, 'unlabelled_points': 0}
+LABELS int8: point labels=8 face parts=8 {'prompts': 128, 'nms_clusters': 49, 'kept_clusters': 49, 'min_members': 1, 'merged': 8, 'unlabelled_points': 6}
+CHOSEN variant fp32; 8 parts
+PART 0: faces=5844 caps=3 manifold=ok volume=0.00288
+PART 1: faces=7110 caps=2 manifold=ok volume=0.00486
+PART 2: faces=10126 caps=1 manifold=ok volume=0.01485
+PART 3: faces=14124 caps=4 manifold=ok volume=0.01230
+PART 4: faces=2016 caps=1 manifold=ok volume=0.00070
+PART 5: faces=1120 caps=1 manifold=ok volume=0.00050
+PART 6: faces=1088 caps=1 manifold=ok volume=0.00047
+PART 7: faces=156 caps=1 manifold=ok volume=-0.00000
+PEG male=0 hole=3 r=0.0565 ok=True
+PEG male=1 hole=3 r=0.0366 ok=True
+PEG male=5 hole=2 r=0.0294 ok=True
+PEG male=6 hole=2 r=0.0251 ok=True
+PEG male=0 hole=2 r=0.0273 ok=True
+PEG male=3 hole=2 r=0.0260 ok=True
+PEG male=4 hole=0 r=0.0171 ok=True
+PEG male=7 hole=3 r=0.0059 ok=True
+PEG male=5 hole=0 r=0.0072 ok=True
+PEG male=7 hole=2 r=0.0061 ok=True
+RESULTS {"reference": {"parts": 9, "prompts": 128, "nms_clusters": 23, "kept_clusters": 23, "min_members": 1, "merged": 10, "unlabelled_points": 0}, "variants": {"fp32": {"variant": "fp32", "threads": 4, "arena": 0, "rss_after_inputs_mb": 71, "enc_load_s": 0.61, "rss_enc_loaded_mb": 503, "enc_run_s": 10.03, "rss_enc_done_mb": 575, "rss_enc_freed_mb": 191, "heads_load_s": 0.03, "heads_run_s": 68.55, "ok": true, "peak_rss_mb": 995, "total_s": 79.22, "enc_bytes": 438831708, "heads_bytes": 12478140, "feat_cos_mean": 0.9975261688232422, "feat_cos_min": 0.9301257133483887, "mask_agree_pct": 99.46084022521973, "iou_pred_maxdiff": 0.1722579300403595, "point_label_agree_pct": 78.961181640625, "face_label_agree_pct": 80.12740807450096, "parts": 8, "post_prompts": 128, "post_nms_clusters": 22, "post_kept_clusters": 22, "post_min_members": 1, "post_merged": 10, "post_unlabelled_points": 0}, "int8": {"variant": "int8", "threads": 4, "arena": 0, "rss_after_inputs_mb": 71, "enc_load_s": 0.43, "rss_enc_loaded_mb": 196, "enc_run_s": 6.23, "rss_enc_done_mb": 288, "rss_enc_freed_mb": 223, "heads_load_s": 0.03, "heads_run_s": 57.67, "ok": true, "peak_rss_mb": 709, "total_s": 64.36, "enc_bytes": 111157149, "heads_bytes": 8393393, "feat_cos_mean": 0.9192458987236023, "feat_cos_min": 0.7775791883468628, "mask_agree_pct": 92.10472106933594, "iou_pred_maxdiff": 0.270910382270813, "point_label_agree_pct": 85.4248046875, "face_label_agree_pct": 85.52736068507899, "parts": 8, "post_prompts": 128, "post_nms_clusters": 49, "post_kept_clusters": 49, "post_min_members": 1, "post_merged": 8, "post_unlabelled_points": 6}, "fp16": {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 71, "enc_load_s": 0.9, "rss_enc_loaded_mb": 96, "enc_run_s": 15.39, "rss_enc_done_mb": 944, "rss_enc_freed_mb": 734, "ok": false, "error": "Fail('[ONNXRuntimeError] : 1 : FAIL : Load model from work/heads_fp16.onnx failed:Type Error: Type parameter (T) of Optype (MatMul) bound to different types (tensor(float) and tensor(float16) in node (/MatMul_32).')", "peak_rss_mb": 1172, "total_s": 16.29, "enc_bytes": 219716858, "heads_bytes": 6271724}}, "chosen_variant": "fp32", "split_s": 0.2, "split_all_manifold": true, "split_all_watertight": true, "pegs_ok": 10, "pegs_total": 11, "zip_bytes": 978003}

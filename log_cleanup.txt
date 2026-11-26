@@ -1,0 +1,16 @@
+19:06:23 | INFO: Data are loaded, start creating Blender stuff
+19:06:23 | INFO: Blender create Mesh node Mesh_0.002
+19:06:23 | INFO: glTF import finished in 0.09s
+rig_cleanup: twist bones for {'upper_arm.L': ['upper_arm_twist1.L', 'upper_arm_twist2.L'], 'upper_arm.R': ['upper_arm_twist1.R', 'upper_arm_twist2.R'], 'forearm.L': ['forearm_twist1.L', 'forearm_twist2.L'], 'forearm.R': ['forearm_twist1.R', 'forearm_twist2.R'], 'thigh.L': ['thigh_twist1.L'], 'thigh.R': ['thigh_twist1.R'], 'shin.L': ['shin_twist1.L'], 'shin.R': ['shin_twist1.R']}
+Info: 6390 vertex weights limited
+rig_cleanup: Photo character affected groups 20 corrective keys [('corr_elbow.L', 'forearm.L', 254, 0.007992280223313285), ('corr_elbow.R', 'forearm.R', 232, 0.009088849328376345), ('corr_knee.L', 'shin.L', 362, 0.00688377932325613), ('corr_knee.R', 'shin.R', 394, 0.009091416962701866)]
+19:06:24 | INFO: Starting glTF 2.0 export
+19:06:24 | INFO: Extracting primitive: Mesh_0.002
+19:06:25 | INFO: Primitives created: 1
+19:06:25 | INFO: Finished glTF 2.0 export in 0.3015272617340088 s
+INFO Draco mesh compression is available, use library at /opt/blender/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+
+rig_cleanup: done {"name": "char2 rig cleanup", "vertices": 28110, "triangles": 40000, "rig": {"bones": 58, "added_bones": 12, "skinning": "UniRig + twist bones", "baked_animation": false}}
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
+
+Blender quit

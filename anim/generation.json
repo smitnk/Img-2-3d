@@ -1,0 +1,11 @@
+{
+ "name": "Rig cleanup",
+ "vertices": 28128,
+ "triangles": 40000,
+ "rig": {
+  "bones": 58,
+  "added_bones": 12,
+  "skinning": "UniRig + twist bones",
+  "baked_animation": true
+ }
+}

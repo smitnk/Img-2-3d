@@ -1,0 +1,11 @@
+{
+ "name": "char2 rig cleanup",
+ "vertices": 28110,
+ "triangles": 40000,
+ "rig": {
+  "bones": 58,
+  "added_bones": 12,
+  "skinning": "UniRig + twist bones",
+  "baked_animation": false
+ }
+}

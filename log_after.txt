@@ -1,0 +1,23 @@
+19:06:25 | INFO: Data are loaded, start creating Blender stuff
+19:06:25 | INFO: Blender create Mesh node Mesh_0.002
+19:06:25 | INFO: glTF import finished in 0.11s
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2024-10-14 23:31:34)
+Saved: 'out/after_bend_full.png'
+Time: 00:00.48 (Saving: 00:00.15)
+
+Saved: 'out/after_bend_arm.png'
+Time: 00:00.40 (Saving: 00:00.07)
+
+Saved: 'out/after_twist_full.png'
+Time: 00:00.30 (Saving: 00:00.07)
+
+Saved: 'out/after_twist_arm.png'
+Time: 00:00.38 (Saving: 00:00.07)
+
+after: restored 12 twist constraints from node extras
+RATIO forearm.L twist=0.982 bend=0.995
+MIN forearm.L twist=0.959 (at s=0.65) bend=0.790 (at s=0.25)
+RATIO forearm.R twist=0.974 bend=0.974
+MIN forearm.R twist=0.954 (at s=0.65) bend=0.642 (at s=0.25)
+
+Blender quit

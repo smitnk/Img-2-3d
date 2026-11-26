@@ -1,0 +1,4 @@
+animations: 2 channels: 175
+weights channels: 1 twist rotation channels: 12
+last-frame rotation angle (deg): {'hand.L': 90.0, 'forearm_twist1.L': 29.7, 'forearm_twist2.L': 59.4} expected hand 90, twist1 ~29.7, twist2 ~59.4
+ANIM CHECK OK

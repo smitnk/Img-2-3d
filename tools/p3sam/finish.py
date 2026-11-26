@@ -45,7 +45,7 @@ def main():
     ref_feat = rz["feat"].astype(np.float32)
     res = {"meta": meta, "reference": {"parts": int(len(np.unique(ref_fl))), **ref_info}, "variants": {}}
     fls = {}
-    for v in ("fp32", "int8", "fp16"):
+    for v in ("fp32", "int8", "w4", "fp16"):
         jf = f"{w}/ort_{v}.json"
         if not os.path.exists(jf):
             continue

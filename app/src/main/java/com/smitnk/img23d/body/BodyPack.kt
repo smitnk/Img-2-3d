@@ -118,6 +118,10 @@ class HunyuanPaintPack(context: Context) : AssetPack(File(context.filesDir, "hun
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")
 
+/** Photo enhance: Real-ESRGAN x4plus-anime for ncnn (.param + .bin, ~9 MB, BSD-3), release esrgan-v1 (esrgan-pack.yml). */
+class EsrganPack(context: Context) : AssetPack(File(context.filesDir, "esrgan"), BuildConfig.ESRGAN_BASE_URL, "esrgan_info.json",
+    1, "realesrgan-x4plus-anime.bin")
+
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */
 data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)
 

@@ -28,6 +28,7 @@ android {
         buildConfigField("String", "UNIRIG_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/unirig-v1/\"")
         buildConfigField("String", "HUNYUANPAINT_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanpaint-v1/\"")
         buildConfigField("String", "HUNYUANMV_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanmv-v1/\"")
+        buildConfigField("String", "ESRGAN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/esrgan-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }
 
@@ -60,6 +61,7 @@ android {
         compose = true
         buildConfig = true
     }
+    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     packaging { jniLibs { useLegacyPackaging = false } }
     lint { disable += setOf("ExpiredTargetSdkVersion", "OldTargetApi") }
 }

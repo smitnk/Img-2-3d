@@ -17,6 +17,8 @@ import com.smitnk.img23d.blender.BuilderSpec
 import com.smitnk.img23d.body.BodyMorph
 import com.smitnk.img23d.body.BodyPack
 import com.smitnk.img23d.body.TexPack
+import com.smitnk.img23d.body.EsrganPack
+import com.smitnk.img23d.ai.PhotoEnhancer
 import com.smitnk.img23d.body.CurioPack
 import com.smitnk.img23d.body.HunyuanPaintPack
 import com.smitnk.img23d.body.UnirigPack
@@ -130,6 +132,7 @@ data class UiState(
     val body: BodySpec = BodySpec(),
     val bodyPack: PackStatus = PackStatus.NotInstalled,
     val texPack: PackStatus = PackStatus.NotInstalled,
+    val esrganPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanMvPack: PackStatus = PackStatus.NotInstalled,
     val unirigPack: PackStatus = PackStatus.NotInstalled,
@@ -320,6 +323,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- Body Creator ----------
     val bodyPack = BodyPack(app)
     val texPack = TexPack(app)
+    val esrganPack = EsrganPack(app)
     val hunyuanPack = HunyuanPack(app)
     val hunyuanMvPack = HunyuanMvPack(app)
     val curioPack = CurioPack(app)
@@ -332,6 +336,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     init { // after bodyPack is initialized (Kotlin runs initializers in declaration order)
         if (bodyPack.isReady()) _state.update { it.copy(bodyPack = PackStatus.Ready) }
         if (texPack.isReady()) _state.update { it.copy(texPack = PackStatus.Ready) }
+        if (esrganPack.isReady()) _state.update { it.copy(esrganPack = PackStatus.Ready) }
         if (hunyuanPack.isReady()) _state.update { it.copy(hunyuanPack = PackStatus.Ready) }
         if (hunyuanMvPack.isReady()) _state.update { it.copy(hunyuanMvPack = PackStatus.Ready) }
         if (unirigPack.isReady()) _state.update { it.copy(unirigPack = PackStatus.Ready) }
@@ -340,7 +345,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, hunyuanPack, hunyuanMvPack, unirigPack, hunyuanPaintPack)
+    private fun packs() = listOf(bodyPack, texPack, esrganPack, hunyuanPack, hunyuanMvPack, unirigPack, hunyuanPaintPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         if (_state.value.packFolder != null) return@launch
@@ -367,6 +372,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(packFolder = null,
                 bodyPack = if (bodyPack.isReady()) PackStatus.Ready else it.bodyPack,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
+                esrganPack = if (esrganPack.isReady()) PackStatus.Ready else it.esrganPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
@@ -401,6 +407,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _state.update {
             it.copy(packFolder = null, modelStatus = if (models.isReady()) ModelStatus.Ready else it.modelStatus,
                 texPack = if (texPack.isReady()) PackStatus.Ready else it.texPack,
+                esrganPack = if (esrganPack.isReady()) PackStatus.Ready else it.esrganPack,
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
@@ -446,6 +453,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun installHunyuanPaintPack() = packTask("hunyuanpaint") {
         runCatching { hunyuanPaintPack.install { st -> _state.update { it.copy(hunyuanPaintPack = st) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanPaintPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
+
+    fun uninstallEsrganPack() = packTask("esrgan", replace = true) {
+        withContext(Dispatchers.IO) { esrganPack.uninstall() }
+        _state.update { it.copy(esrganPack = PackStatus.NotInstalled) }
+    }
+
+    fun installEsrganPack() = packTask("esrgan") {
+        runCatching { esrganPack.install { st -> _state.update { it.copy(esrganPack = st) } } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(esrganPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun uninstallTexPack() = packTask("texgen", replace = true) {
@@ -645,16 +662,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------- jobs ----------
     fun runPhoto(mode: PhotoMode) {
-        val bmp = _state.value.image ?: return
+        val rawBmp = _state.value.image ?: return
         val useMv = s.hunyuanMv && hunyuanMvPack.isReady()
         val useHunyuan = useMv || (s.hunyuan && hunyuanPack.isReady())
-        val views = if (useMv) _state.value.views else emptyMap()
+        val rawViews = if (useMv) _state.value.views else emptyMap()
+        val enhance = s.enhancePhoto
+        if (enhance && !esrganPack.isReady()) { go(Dest.Settings); return }
         if (!useHunyuan && _state.value.modelStatus != ModelStatus.Ready) { go(Dest.Settings); return }
         if (mode == PhotoMode.CHARACTER && !runtime.isReady()) { go(Dest.Settings); return }
         val steps = if (mode == PhotoMode.CHARACTER) 2 else 1
         viewCutouts = emptyMap()
         launchJob(if (mode == PhotoMode.CHARACTER) "Photo → Character" else "Photo → 3D",
             if (useHunyuan) "Hunyuan3D" else "TripoSR", steps) { report ->
+            // optional: Real-ESRGAN x4 then back down to the engine's input size, on the photo and (2mv) every extra view
+            var bmp = rawBmp
+            var views = rawViews
+            if (enhance) {
+                val enhancer = PhotoEnhancer(esrganPack, s.threadCount())
+                val total = 1 + rawViews.size
+                var n = 0
+                fun label() = if (total == 1) "Enhancing photo" else "Enhancing photo (view ${n + 1}/$total)"
+                fun one(b: Bitmap) = enhancer.enhance(b) { f -> report.stage(label(), f) }.also { n++ }
+                report.stage(label(), null)
+                bmp = one(rawBmp)
+                views = rawViews.toSortedMap().mapValues { (_, b) -> one(b) }
+                report.line("Photo enhance: ${enhancer.backend}")
+            }
             val (res, opt) = if (useHunyuan) hunyuan3d(bmp, report, useMv, views) else tripoSR(bmp, report)
             val engine = if (useMv) "Hunyuan3D-2mv ${s.hunyuanOctree}³ · ${views.size + 1} view${if (views.isEmpty()) "" else "s"}${if (s.hunyuanFast) " fast" else ""}"
                 else if (useHunyuan) "Hunyuan3D-2mini ${s.hunyuanOctree}³${if (s.hunyuanFast) " fast" else ""}" else "TripoSR ${opt.resolution}³"

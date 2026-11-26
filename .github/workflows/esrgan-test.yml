@@ -1,0 +1,33 @@
+name: Photo enhance core test (ncnn CPU, linux x86_64)
+
+# Builds the app's Real-ESRGAN JNI core (without the JNI part) for the host against the prebuilt ncnn ubuntu release and runs it
+# on a small synthetic image: output must be exactly 4x, differ from bicubic, beat bicubic against the ground truth, tile cleanly.
+on:
+  push:
+    paths: ["app/src/main/cpp/esrgan/**", "tests/esrgan/**", ".github/workflows/esrgan-test.yml"]
+  pull_request:
+    paths: ["app/src/main/cpp/esrgan/**", "tests/esrgan/**", ".github/workflows/esrgan-test.yml"]
+  workflow_dispatch:
+env:
+  MODEL_URL: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip
+  MODEL_SHA256: e5aa6eb131234b87c0c51f82b89390f5e3e642b7b70f2b9bbe95b6a285a40c96
+jobs:
+  host-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Model files (official, pinned)
+        run: |
+          set -e
+          curl -fsSL -o re.zip "$MODEL_URL"
+          echo "$MODEL_SHA256  re.zip" | sha256sum -c -
+          mkdir re && unzip -q re.zip -d re
+      - name: Build core (downloads pinned ncnn ubuntu release)
+        run: |
+          set -e
+          cmake -S tests/esrgan -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+      - name: Run
+        run: |
+          set -o pipefail
+          ./build/esrgan_test re/models/realesrgan-x4plus-anime.param re/models/realesrgan-x4plus-anime.bin 2>&1 | tee esrgan-test.log

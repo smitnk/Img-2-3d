@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22)
+project(esrgan_host_test LANGUAGES C CXX)
+# host build of the same core the app uses (ncnn CPU path on linux x86_64)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../app/src/main/cpp/esrgan esrgan)
+add_executable(esrgan_test esrgan_test.cpp)
+target_link_libraries(esrgan_test PRIVATE esrgan_core)

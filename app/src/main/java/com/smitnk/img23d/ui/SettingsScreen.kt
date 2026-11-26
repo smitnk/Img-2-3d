@@ -140,6 +140,21 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 },
             )
 
+            SectionHeader("Photo")
+            EngineCard(
+                icon = Icons.Rounded.AutoFixHigh, title = "Enhance photo", summary = "Sharper, cleaner photo before 3D", size = "≈9 MB",
+                details = "Real-ESRGAN x4plus-anime on ncnn (BSD-3). Uses the phone's GPU (Vulkan) and falls back to the CPU with smaller tiles. " +
+                    "When on, the photo (and every extra view for 2mv) is upscaled 4x and scaled back down to the size the 3D engine reads, before TripoSR or Hunyuan runs.",
+                ready = state.esrganPack == PackStatus.Ready,
+                progress = (state.esrganPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.esrganPack as? PackStatus.Failed)?.message, failed = state.esrganPack is PackStatus.Failed,
+                onInstall = vm::installEsrganPack, onRemove = vm::uninstallEsrganPack,
+                onSave = { cb.pickFolder { vm.backupOne("esrgan", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("esrgan", it) } },
+                extra = {
+                    ToggleRow("Enhance photo before 3D", "Also on the photo screen. Slower when the phone has no usable GPU", s.enhancePhoto) { on -> vm.updateSettings { it.copy(enhancePhoto = on) } }
+                },
+            )
+
             SectionHeader("Texture")
             EngineCard(
                 icon = Icons.Rounded.Brush, title = "Texture AI", summary = "Paint textures on your models", size = "≈1.2 GB",

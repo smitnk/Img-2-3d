@@ -18,6 +18,7 @@ data class Settings(
     val refineVoxel: Float = 0.008f,
     val refineSmooth: Int = 4,
     val paintAi: Boolean = false, // AI-painted sides: slow and often worse than TripoSR's colours
+    val enhancePhoto: Boolean = false, // Real-ESRGAN x4 on the photo(s) before any photo -> 3D engine
     val engine: String = "triposr", // Photo → 3D engine: triposr | hunyuan (2mini) | hunyuanmv (2mv, multi-view)
     val hunyuanOctree: Int = 256,
     val hunyuanFast: Boolean = false, // fewer surface queries + big cores only
@@ -55,7 +56,7 @@ class SettingsStore(context: Context) {
             .putBoolean("vertexColors", s.vertexColors).putFloat("foregroundRatio", s.foregroundRatio)
             .putBoolean("rig", s.rig).putBoolean("saveBlend", s.saveBlend)
             .putFloat("refineHeight", s.refineHeight).putFloat("refineVoxel", s.refineVoxel)
-            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putString("engine", s.engine).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putFloat("refineDecimate", s.refineDecimate)
+            .putInt("refineSmooth", s.refineSmooth).putBoolean("paintAi", s.paintAi).putString("engine", s.engine).putBoolean("enhancePhoto", s.enhancePhoto).putInt("hunyuanOctree", s.hunyuanOctree).putBoolean("hunyuanFast", s.hunyuanFast).putFloat("refineDecimate", s.refineDecimate)
             .putBoolean("refineRig", s.refineRig).putInt("threads", s.threads).putBoolean("keepScreenOn", s.keepScreenOn)
             .putString("apiKey", s.apiKey).putString("apiModel", s.apiModel)
             .putBoolean("dynamicColor", s.dynamicColor).putBoolean("autoRotate", s.autoRotate)
@@ -79,6 +80,7 @@ class SettingsStore(context: Context) {
             paintAi = prefs.getBoolean("paintAi", d.paintAi),
             // older builds stored two switches
             engine = prefs.getString("engine", null)?.takeIf { it != "trellis" } ?: if (prefs.getBoolean("hunyuan", false)) "hunyuan" else d.engine,
+            enhancePhoto = prefs.getBoolean("enhancePhoto", d.enhancePhoto),
             hunyuanOctree = prefs.getInt("hunyuanOctree", d.hunyuanOctree),
             hunyuanFast = prefs.getBoolean("hunyuanFast", d.hunyuanFast),
             refineDecimate = prefs.getFloat("refineDecimate", d.refineDecimate),

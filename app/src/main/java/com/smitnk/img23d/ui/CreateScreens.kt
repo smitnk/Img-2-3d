@@ -130,7 +130,8 @@ fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppView
         else -> state.modelStatus == ModelStatus.Ready
     }
     val blenderReady = state.runtime == RuntimeStatus.Ready
-    val ready = tripoReady && (!character || blenderReady)
+    val esrganReady = !settings.enhancePhoto || state.esrganPack == packReady
+    val ready = tripoReady && esrganReady && (!character || blenderReady)
     FormWithAction(if (character) "Make character" else "Generate 3D", Icons.Rounded.AutoAwesome, ready && state.image != null, { vm.runPhoto(mode) }) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Engine", style = MaterialTheme.typography.titleSmall)
@@ -141,6 +142,7 @@ fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppView
             }
         }
         if (!tripoReady) EngineWarning("This engine is not installed (or needs an update). Tap to open Settings → Engines and tap Install.") { vm.tab(Dest.Settings) }
+        if (!esrganReady) EngineWarning("Enhance photo is on but its engine is not installed. Tap to open Settings → Photo and tap Install, or turn it off below.") { vm.tab(Dest.Settings) }
         if (character && !blenderReady) EngineWarning("Blender engine is not installed. Tap to open Settings → Engines.") { vm.tab(Dest.Settings) }
         val img = state.image
         Box(
@@ -170,6 +172,10 @@ fun PhotoScreen(mode: PhotoMode, state: UiState, settings: Settings, vm: AppView
             if (state.views.isNotEmpty()) androidx.compose.material3.TextButton(onClick = { vm.clearViews() }) { Text("Clear extra views") }
         }
         PipelineSteps(character)
+        Panel {
+            SectionHeader("Enhance photo")
+            ToggleRow("Enhance photo first", "Real-ESRGAN x4, then back to the engine's size. Applies to every view. Off = unchanged", settings.enhancePhoto) { v -> vm.updateSettings { it.copy(enhancePhoto = v) } }
+        }
         Panel {
             SectionHeader("TripoSR")
             ResolutionPicker(settings.resolution) { r -> vm.updateSettings { it.copy(resolution = r) } }

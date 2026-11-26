@@ -61,7 +61,6 @@ android {
         compose = true
         buildConfig = true
     }
-    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     packaging { jniLibs { useLegacyPackaging = false } }
     lint { disable += setOf("ExpiredTargetSdkVersion", "OldTargetApi") }
 }

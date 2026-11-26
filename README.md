@@ -56,6 +56,8 @@ Requires JDK 17, Android SDK 35, Gradle 8.11.
 
 Licenses: TripoSR MIT (`LICENSE-TripoSR`), torchmcubes MIT (`core/LICENSE-torchmcubes`).
 
+> **Tencent Hunyuan3D models:** the license of the Tencent Hunyuan3D models (Hunyuan3D-2, Hunyuan3D-2 Paint, Hunyuan3D-Part / P3-SAM) excludes use in the European Union, the United Kingdom and South Korea. Do not use or redistribute those models there.
+
 ## Img-2-3D Studio: two engines, one app
 
 The app runs two independent on-device engines and shares one library, viewer and export path between them.

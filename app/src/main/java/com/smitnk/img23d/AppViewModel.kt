@@ -27,6 +27,7 @@ import com.smitnk.img23d.core.TextureDiffusion
 import com.smitnk.img23d.body.BodySpec
 import com.smitnk.img23d.body.PackStatus
 import com.smitnk.img23d.viewer.GltfMesh
+import com.smitnk.img23d.repair.MeshRepair
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
 import com.smitnk.img23d.blender.ExportPreset
@@ -696,6 +697,36 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val b = blender("smart_mesh.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} $label", "--use", use, "--faces", faces.toString()), report)
             saveBlender(b, "${m.name} $label", Source.REFINED, thumbFile = m.thumbnail, detail = "Smart Mesh ($label, ${faces / 1000}k quads, CurioMesh) of ${m.name}")
                 .also { n -> m.copyPhotosTo(n) }
+        }
+    }
+
+    /**
+     * Repair Mesh (no AI, no download): weld duplicate vertices, fill holes, make the mesh a watertight manifold and drop floating
+     * bits smaller than [minPiecePct] % of the volume. Saved as a new "<name> repaired" model; the original is untouched.
+     */
+    fun repairMesh(m: Model, minPiecePct: Float) {
+        launchJob("Repair Mesh", "Manifold", 1) { report ->
+            report.stage("Reading ${m.name}", null)
+            val src = GltfMesh(m.glb.readBytes())
+            report.line("Read ${"%,d".format(src.indices.size / 3)} triangles, ${"%,d".format(src.positions.size / 3)} vertices")
+            report.stage("Welding, filling holes, making watertight", null)
+            val t0 = System.currentTimeMillis()
+            val r = MeshRepair.repair(src.positions, src.indices, src.colors, minPiecePct.toDouble())
+            val ms = System.currentTimeMillis() - t0
+            report.line("Welded ${r.welded} vertices, filled ${r.holesFilled} holes, removed ${r.piecesRemoved} floating pieces")
+            report.line(if (r.watertight) "Watertight: yes" else "Watertight: no (${r.status})")
+            if (r.indices.isEmpty()) throw IllegalStateException("Nothing was left after repairing this mesh.")
+            report.stage("Saving", null)
+            val glb = r.toMesh().toGlb(true)
+            val info = JSONObject().put("trisBefore", r.trisBefore).put("trisAfter", r.trisAfter).put("watertight", r.watertight)
+                .put("piecesRemoved", r.piecesRemoved).put("holesFilled", r.holesFilled).put("welded", r.welded).put("minPiecePct", minPiecePct.toDouble())
+            library.add(
+                name = "${m.name} repaired", source = Source.REFINED, writeGlb = { f -> f.writeBytes(glb) },
+                vertices = r.positions.size / 3, faces = r.indices.size / 3, timings = mapOf("repair" to ms), peakMemMb = 0,
+                detail = "Repaired ${m.name}: ${"%,d".format(r.trisBefore)} → ${"%,d".format(r.trisAfter)} triangles, watertight ${if (r.watertight) "yes" else "no"}. " +
+                    "Colours kept as vertex colours; UVs, textures and rig are not kept.",
+                thumbnailFrom = m.thumbnail, extra = JSONObject().put("repair", info),
+            ).also { n -> m.copyPhotosTo(n) }
         }
     }
 

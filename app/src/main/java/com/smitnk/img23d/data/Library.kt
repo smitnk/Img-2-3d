@@ -25,6 +25,8 @@ data class Model(
     val peakMemMb: Int,
     val detail: String,
     val quality: Quality? = null,
+    /** Extra metadata saved with the model (Blender info; "repair" = Repair Mesh before/after stats). */
+    val extra: JSONObject? = null,
 ) {
     val glb get() = File(dir, "model.glb")
     val blend get() = File(dir, "model.blend").takeIf { it.isFile }
@@ -35,6 +37,8 @@ data class Model(
     /** Every saved source view as (label, file), front first, then left / back / right: what Hunyuan Paint gets as its references. */
     val photos: List<Pair<String, File>> get() = PHOTO_FILES.mapNotNull { (label, name) -> File(dir, name).takeIf { it.isFile }?.let { label to it } }
     val totalMs get() = timingsMs.values.sum()
+    /** Before / after stats when this model came out of Repair Mesh. */
+    val repair get() = extra?.optJSONObject("repair")
 
     companion object {
         /** View label -> file name in the model folder. Hunyuan3D-2mv view slots: 0 front (photo.png), 1 left, 2 back, 3 right. */
@@ -125,6 +129,7 @@ class Library(context: Context) {
             timingsMs = t.keys().asSequence().associateWith { t.getLong(it) },
             peakMemMb = j.optInt("peakPssMb"), detail = j.optString("detail"),
             quality = Quality.from(j.optJSONObject("quality")),
+            extra = j.optJSONObject("extra"),
         )
     }.getOrNull()
 }

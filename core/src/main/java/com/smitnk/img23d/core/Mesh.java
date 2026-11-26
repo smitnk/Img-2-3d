@@ -54,8 +54,11 @@ public final class Mesh {
     }
 
     /** Writes a binary glTF 2.0 file (Y-up, vertex colors, double-sided). */
-    public void writeGlb(OutputStream out) throws IOException {
-        float[] p = yUpPositions();
+    public void writeGlb(OutputStream out) throws IOException { writeGlb(out, false); }
+
+    /** [alreadyYUp] true: positions are already glTF Y-up (e.g. read back from a GLB), so no TripoSR axis swap. */
+    public void writeGlb(OutputStream out, boolean alreadyYUp) throws IOException {
+        float[] p = alreadyYUp ? positions : yUpPositions();
         float[] n = vertexNormals(p, indices);
         int vc = vertexCount();
         boolean hasColor = colors != null;
@@ -113,9 +116,11 @@ public final class Mesh {
         return "{\"buffer\":0,\"byteOffset\":" + off + ",\"byteLength\":" + len + ",\"target\":" + target + "}";
     }
 
-    public byte[] toGlb() {
+    public byte[] toGlb() { return toGlb(false); }
+
+    public byte[] toGlb(boolean alreadyYUp) {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        try { writeGlb(bo); } catch (IOException e) { throw new IllegalStateException(e); }
+        try { writeGlb(bo, alreadyYUp); } catch (IOException e) { throw new IllegalStateException(e); }
         return bo.toByteArray();
     }
 }

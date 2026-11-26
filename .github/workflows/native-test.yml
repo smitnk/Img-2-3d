@@ -1,0 +1,20 @@
+name: Native mesh-repair test
+
+on:
+  push:
+    paths: ["app/src/main/cpp/**", "tests/native/**", ".github/workflows/native-test.yml"]
+  pull_request:
+    paths: ["app/src/main/cpp/**", "tests/native/**"]
+  workflow_dispatch:
+
+jobs:
+  repair-host-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build mesh_repair.cpp + manifold for linux x86_64
+        run: |
+          cmake -S tests/native -B build/native -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/native -j"$(nproc)"
+      - name: Run (cube with a missing face + floater, duplicate vertices, slider, non-manifold)
+        run: ctest --test-dir build/native --output-on-failure -V

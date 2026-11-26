@@ -193,6 +193,11 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Pill(Icons.Rounded.ViewInAr, "%,d faces".format(m.faces))
                 if (m.bones > 0) Pill(Icons.Rounded.Tune, "${m.bones} bones")
+                m.repair?.let { r ->
+                    Pill(Icons.Rounded.AutoFixHigh, "%,d → %,d tris".format(r.optInt("trisBefore"), r.optInt("trisAfter")))
+                    val ok = r.optBoolean("watertight")
+                    Pill(if (ok) Icons.Rounded.Verified else Icons.Rounded.Warning, "Watertight: ${if (ok) "yes" else "no"}")
+                }
                 Pill(Icons.Rounded.Timer, "%.1f s".format(m.totalMs / 1000f))
                 if (m.peakMemMb > 0) Pill(Icons.Rounded.Memory, "peak ${m.peakMemMb} MB")
             }
@@ -259,6 +264,26 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                         androidx.compose.material3.DropdownMenuItem(text = { Text(label) }, onClick = { open = false; vm.smartMesh(m, use, faces) })
                     }
                 }
+            }
+            Column { // Repair Mesh: any model, no download, runs natively in a few seconds
+                var repairOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+                var minPiece by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(1f) }
+                OutlinedButton(onClick = { repairOpen = true }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Repair Mesh: fill holes, make watertight")
+                }
+                if (repairOpen) AlertDialog(
+                    onDismissRequest = { repairOpen = false }, title = { Text("Repair Mesh") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("Welds duplicate points, fills holes and makes the model watertight (good for 3D printing and game engines). " +
+                                "Saved as a new model, \"${m.name} repaired\"; this one is not changed. Textures and UVs are not kept (colours are), and a rig is dropped.",
+                                style = MaterialTheme.typography.bodySmall)
+                            LabeledSlider("Remove floating pieces smaller than (% of volume)", minPiece, 0f..10f, "%.1f%%", steps = 19) { minPiece = it }
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { repairOpen = false; vm.repairMesh(m, minPiece) }) { Text("Repair") } },
+                    dismissButton = { TextButton(onClick = { repairOpen = false }) { Text("Cancel") } },
+                )
             }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED) OutlinedButton(onClick = { vm.rigUnirig(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Rig with UniRig (AI skeleton + weights, ~20 min)")

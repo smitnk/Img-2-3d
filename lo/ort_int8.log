@@ -1,34 +1,24 @@
-Traceback (most recent call last):
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/p3sam/ort_run.py", line 109, in <module>
-    main()
-  File "/home/runner/work/Img-2-3d/Img-2-3d/tools/p3sam/ort_run.py", line 61, in main
-    prompts = np.load(f"{w}/ref.npz")["prompts"]
-              ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/numpy/lib/npyio.py", line 427, in load
-    fid = stack.enter_context(open(os_fspath(file), "rb"))
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'work/ref.npz'
-Command exited with non-zero status 1
+ORT {"variant": "int8", "threads": 4, "arena": 0, "rss_after_inputs_mb": 67, "enc_load_s": 0.45, "rss_enc_loaded_mb": 400, "enc_run_s": 5.36, "rss_enc_done_mb": 501, "rss_enc_freed_mb": 225, "heads_load_s": 0.02, "heads_run_s": 31.4, "ok": true, "peak_rss_mb": 867, "total_s": 37.23, "enc_bytes": 329795204, "heads_bytes": 8393483}
 	Command being timed: "python tools/p3sam/ort_run.py --work work --variant int8"
-	User time (seconds): 0.16
-	System time (seconds): 0.23
-	Percent of CPU this job got: 211%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.18
+	User time (seconds): 111.34
+	System time (seconds): 36.85
+	Percent of CPU this job got: 387%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:38.28
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 73220
+	Maximum resident set size (kbytes): 887684
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 11705
-	Voluntary context switches: 28
-	Involuntary context switches: 76
+	Minor (reclaiming a frame) page faults: 20071493
+	Voluntary context switches: 2175
+	Involuntary context switches: 24639
 	Swaps: 0
 	File system inputs: 0
-	File system outputs: 0
+	File system outputs: 52640
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0
 	Page size (bytes): 4096
-	Exit status: 1
+	Exit status: 0

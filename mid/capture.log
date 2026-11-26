@@ -1,0 +1,42 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading checkpoint from HuggingFace: sonata ...
+SONATA CONFIG {'in_channels': 9, 'order': ('z', 'z-trans', 'hilbert', 'hilbert-trans'), 'stride': (2, 2, 2, 2), 'enc_depths': (3, 3, 3, 12, 3), 'enc_channels': (48, 96, 192, 384, 512), 'enc_num_head': (3, 6, 12, 24, 32), 'enc_patch_size': (1024, 1024, 1024, 1024, 1024), 'mlp_ratio': 4, 'qkv_bias': True, 'qk_scale': None, 'attn_drop': 0.0, 'proj_drop': 0.0, 'drop_path': 0.3, 'shuffle_orders': True, 'pre_norm': True, 'enable_rpe': False, 'enable_flash': True, 'upcast_attention': False, 'upcast_softmax': False, 'traceable': True, 'enc_mode': True, 'mask_token': True}
+flash attention: False
+WEIGHTS loaded 513 tensors; missing=0 unexpected=0
+PARAMS total 112.7M sonata 108.5M fp32 430 MB
+MESH vertices=20002 faces=40000 watertight=True bodies=1
+STOCK features (24576, 512) in 7.47s; voxels per stage {0: 23086, 1: 19195, 2: 10523, 3: 3310, 4: 860}; patch K per stage {0: 1024, 1: 1024, 2: 1024, 3: 1024, 4: 860}; rss 1964 MB
+SPCONV-CPU table entries differing from the exact neighbour table (of 623322): {'threads1_run0': 0, 'threads1_run1': 0, 'threads4_run0': 5191, 'threads4_run1': 5076}
+SPCONV-CPU full model, 1 thread(s): cos vs exact-conv reference mean 1.000000 min 1.0000 max abs 1.968e-04
+SPCONV-CPU full model, 4 thread(s): cos vs exact-conv reference mean 0.949996 min 0.7522 max abs 8.333e-01
+STATIC encoder vs stock: max abs 0.000e+00 mean 0.000e+00 refmax 1.756e+00 min cos 1.000000 PASS
+STATIC heads vs stock: max logit diff 0.000e+00 iou diff 0.000e+00 mask agreement 100.0000%
+/home/runner/work/Img-2-3d/Img-2-3d/tools/p3sam/p3.py:122: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+  step = max(1, budget_patches_heads // H)
+EXPORT work/enc.onnx: 418.5 MB
+EXPORT work/heads.onnx: 11.9 MB
+EXPORT work/heads_fp16.onnx: 6.0 MB
+CAPTURE DONE {"points": 24576, "prompts": 128, "seed": 42, "torch": "2.5.1+cpu", "sonata_config": {"in_channels": 9, "order": ["z", "z-trans", "hilbert", "hilbert-trans"], "stride": [2, 2, 2, 2], "enc_depths": [3, 3, 3, 12, 3], "enc_channels": [48, 96, 192, 384, 512], "enc_num_head": [3, 6, 12, 24, 32], "enc_patch_size": [1024, 1024, 1024, 1024, 1024], "mlp_ratio": 4, "qkv_bias": true, "qk_scale": null, "attn_drop": 0.0, "proj_drop": 0.0, "drop_path": 0.3, "shuffle_orders": true, "pre_norm": true, "enable_rpe": false, "enable_flash": false, "upcast_attention": false, "upcast_softmax": false, "traceable": true, "enc_mode": true, "mask_token": true}, "missing_keys": 0, "unexpected_keys": 0, "params_total": 112728649, "params_sonata": 108461376, "mesh": {"vertices": 20002, "faces": 40000, "watertight": true}, "torch_features_s": 7.47, "stages_n": {"0": 23086, "1": 19195, "2": 10523, "3": 3310, "4": 860}, "stages_K": {"0": 1024, "1": 1024, "2": 1024, "3": 1024, "4": 860}, "spconv_cpu_check": {"threads1_run0": 0, "threads1_run1": 0, "threads4_run0": 5191, "threads4_run1": 5076, "stock_with_spconv_threads1": {"mean_cos": 1.0, "min_cos": 0.9999997019767761, "max_abs": 0.00019675493240356445}, "stock_with_spconv_threads4": {"mean_cos": 0.9499964714050293, "min_cos": 0.752223014831543, "max_abs": 0.8333191871643066}}, "static_torch_enc_s": 7.52, "static_vs_stock_feat": {"max_abs": 0.0, "mean_abs": 0.0, "ref_max": 1.7557969093322754, "min_cos": 0.9999998807907104}, "enc_inputs_mb": 17.1, "static_torch_heads_s": 73.12, "static_vs_stock_heads": {"max_abs_logit": 0.0, "max_abs_iou": 0.0, "mask_agree": 1.0}, "onnx_bytes": {"enc_fp32": 438850935, "heads_fp32": 12478128, "heads_fp16": 6250986}, "capture_peak_rss_mb": 14654, "capture_total_s": 424.7}
+	Command being timed: "python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work --points 24576 --prompts 128 --seed 42 --skip-stock"
+	User time (seconds): 1446.12
+	System time (seconds): 143.50
+	Percent of CPU this job got: 372%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:07.21
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15005820
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 638
+	Minor (reclaiming a frame) page faults: 91166250
+	Voluntary context switches: 17666
+	Involuntary context switches: 209918
+	Swaps: 0
+	File system inputs: 263976
+	File system outputs: 2724112
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

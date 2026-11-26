@@ -1,0 +1,374 @@
+{
+ "meta": {
+  "points": 24576,
+  "prompts": 128,
+  "seed": 42,
+  "torch": "2.5.1+cpu",
+  "sonata_config": {
+   "in_channels": 9,
+   "order": [
+    "z",
+    "z-trans",
+    "hilbert",
+    "hilbert-trans"
+   ],
+   "stride": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "enc_depths": [
+    3,
+    3,
+    3,
+    12,
+    3
+   ],
+   "enc_channels": [
+    48,
+    96,
+    192,
+    384,
+    512
+   ],
+   "enc_num_head": [
+    3,
+    6,
+    12,
+    24,
+    32
+   ],
+   "enc_patch_size": [
+    1024,
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "mlp_ratio": 4,
+   "qkv_bias": true,
+   "qk_scale": null,
+   "attn_drop": 0.0,
+   "proj_drop": 0.0,
+   "drop_path": 0.3,
+   "shuffle_orders": true,
+   "pre_norm": true,
+   "enable_rpe": false,
+   "enable_flash": false,
+   "upcast_attention": false,
+   "upcast_softmax": false,
+   "traceable": true,
+   "enc_mode": true,
+   "mask_token": true
+  },
+  "missing_keys": 0,
+  "unexpected_keys": 0,
+  "params_total": 112728649,
+  "params_sonata": 108461376,
+  "mesh": {
+   "vertices": 20002,
+   "faces": 40000,
+   "watertight": true
+  },
+  "torch_features_s": 7.47,
+  "stages_n": {
+   "0": 23086,
+   "1": 19195,
+   "2": 10523,
+   "3": 3310,
+   "4": 860
+  },
+  "stages_K": {
+   "0": 1024,
+   "1": 1024,
+   "2": 1024,
+   "3": 1024,
+   "4": 860
+  },
+  "spconv_cpu_check": {
+   "threads1_run0": 0,
+   "threads1_run1": 0,
+   "threads4_run0": 5191,
+   "threads4_run1": 5076,
+   "stock_with_spconv_threads1": {
+    "mean_cos": 1.0,
+    "min_cos": 0.9999997019767761,
+    "max_abs": 0.00019675493240356445
+   },
+   "stock_with_spconv_threads4": {
+    "mean_cos": 0.9499964714050293,
+    "min_cos": 0.752223014831543,
+    "max_abs": 0.8333191871643066
+   }
+  },
+  "static_torch_enc_s": 7.52,
+  "static_vs_stock_feat": {
+   "max_abs": 0.0,
+   "mean_abs": 0.0,
+   "ref_max": 1.7557969093322754,
+   "min_cos": 0.9999998807907104
+  },
+  "enc_inputs_mb": 17.1,
+  "static_torch_heads_s": 73.12,
+  "static_vs_stock_heads": {
+   "max_abs_logit": 0.0,
+   "max_abs_iou": 0.0,
+   "mask_agree": 1.0
+  },
+  "onnx_bytes": {
+   "enc_fp32": 438850935,
+   "heads_fp32": 12478128,
+   "heads_fp16": 6250986
+  },
+  "capture_peak_rss_mb": 14654,
+  "capture_total_s": 424.7
+ },
+ "reference": {
+  "parts": 5,
+  "prompts": 128,
+  "nms_clusters": 6,
+  "kept_clusters": 6,
+  "min_members": 1,
+  "merged": 5,
+  "unlabelled_points": 0
+ },
+ "variants": {
+  "fp32": {
+   "variant": "fp32",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 68,
+   "enc_load_s": 0.52,
+   "rss_enc_loaded_mb": 501,
+   "enc_run_s": 8.02,
+   "rss_enc_done_mb": 558,
+   "rss_enc_freed_mb": 193,
+   "heads_load_s": 0.02,
+   "heads_run_s": 59.8,
+   "ok": true,
+   "peak_rss_mb": 1015,
+   "total_s": 68.36,
+   "enc_bytes": 438852985,
+   "heads_bytes": 12478363,
+   "feat_cos_mean": 1.0,
+   "feat_cos_min": 0.9999997019767761,
+   "mask_agree_pct": 100.0,
+   "iou_pred_maxdiff": 5.644559860229492e-05,
+   "point_label_agree_pct": 100.0,
+   "face_label_agree_pct": 99.9999999999999,
+   "parts": 5,
+   "post_prompts": 128,
+   "post_nms_clusters": 6,
+   "post_kept_clusters": 6,
+   "post_min_members": 1,
+   "post_merged": 5,
+   "post_unlabelled_points": 0
+  },
+  "int8": {
+   "variant": "int8",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 68,
+   "enc_load_s": 0.35,
+   "rss_enc_loaded_mb": 195,
+   "enc_run_s": 5.06,
+   "rss_enc_done_mb": 278,
+   "rss_enc_freed_mb": 260,
+   "heads_load_s": 0.02,
+   "heads_run_s": 40.86,
+   "ok": true,
+   "peak_rss_mb": 1046,
+   "total_s": 46.29,
+   "enc_bytes": 111178233,
+   "heads_bytes": 8393100,
+   "feat_cos_mean": 0.9874245524406433,
+   "feat_cos_min": 0.9655042290687561,
+   "mask_agree_pct": 99.78513717651367,
+   "iou_pred_maxdiff": 0.15747404098510742,
+   "point_label_agree_pct": 74.62158203125,
+   "face_label_agree_pct": 74.92617528436423,
+   "parts": 6,
+   "post_prompts": 128,
+   "post_nms_clusters": 7,
+   "post_kept_clusters": 7,
+   "post_min_members": 1,
+   "post_merged": 6,
+   "post_unlabelled_points": 0
+  },
+  "w4": {
+   "variant": "w4",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 68,
+   "ok": false,
+   "error": "NoSuchFile(\"[ONNXRuntimeError] : 3 : NO_SUCHFILE : Load model from work/enc_w4.onnx failed:Load model work/enc_w4.onnx failed. File doesn't exist\")",
+   "peak_rss_mb": 70,
+   "total_s": 0
+  },
+  "fp16": {
+   "variant": "fp16",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 68,
+   "enc_load_s": 0.73,
+   "rss_enc_loaded_mb": 96,
+   "enc_run_s": 12.18,
+   "rss_enc_done_mb": 353,
+   "rss_enc_freed_mb": 191,
+   "heads_load_s": 0.02,
+   "heads_run_s": 83.88,
+   "ok": true,
+   "peak_rss_mb": 1122,
+   "total_s": 96.81,
+   "enc_bytes": 219755962,
+   "heads_bytes": 6250986,
+   "feat_cos_mean": 0.9996433258056641,
+   "feat_cos_min": 0.9986132979393005,
+   "mask_agree_pct": 99.96267954508463,
+   "iou_pred_maxdiff": 0.024770498275756836,
+   "point_label_agree_pct": 99.9267578125,
+   "face_label_agree_pct": 99.97219807181288,
+   "parts": 5,
+   "post_prompts": 128,
+   "post_nms_clusters": 6,
+   "post_kept_clusters": 6,
+   "post_min_members": 1,
+   "post_merged": 5,
+   "post_unlabelled_points": 0
+  }
+ },
+ "chosen_variant": "fp16",
+ "split": {
+  "parts": {
+   "0": {
+    "faces_in": 27790,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.021256920616897507,
+    "genus": 0,
+    "out_faces": 28816,
+    "out_vertices": 14410,
+    "watertight": true,
+    "bytes": 519480
+   },
+   "1": {
+    "faces_in": 10854,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.015128811250950138,
+    "genus": 0,
+    "out_faces": 12400,
+    "out_vertices": 6202,
+    "watertight": true,
+    "bytes": 223988
+   },
+   "2": {
+    "faces_in": 976,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.00044858330775987706,
+    "genus": 0,
+    "out_faces": 1624,
+    "out_vertices": 814,
+    "watertight": true,
+    "bytes": 30008
+   },
+   "3": {
+    "faces_in": 962,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.00040350956773225924,
+    "genus": 0,
+    "out_faces": 1528,
+    "out_vertices": 766,
+    "watertight": true,
+    "bytes": 28284
+   },
+   "4": {
+    "faces_in": 140,
+    "caps": 1,
+    "status": "ok_flipped",
+    "manifold": true,
+    "volume": 2.4295464799335103e-06,
+    "genus": 0,
+    "out_faces": 772,
+    "out_vertices": 384,
+    "watertight": true,
+    "bytes": 14628
+   }
+  },
+  "pegs": [
+   {
+    "male": 1,
+    "hole": 0,
+    "radius": 0.035947903286173165,
+    "contact_radius": 0.08986975821543292,
+    "contact_edges": 137,
+    "ok": true,
+    "volume_added": 0.00034552563977553394,
+    "volume_removed": 0.00029920064768098817
+   },
+   {
+    "male": 3,
+    "hole": 1,
+    "radius": 0.025465514168475808,
+    "contact_radius": 0.06366378542118951,
+    "contact_edges": 94,
+    "ok": true,
+    "volume_added": 8.321275882169655e-05,
+    "volume_removed": 5.717122786500287e-06
+   },
+   {
+    "male": 2,
+    "hole": 1,
+    "radius": 0.026382091013420896,
+    "contact_radius": 0.06595522753355224,
+    "contact_edges": 86,
+    "ok": true,
+    "volume_added": 9.501698035445133e-05,
+    "volume_removed": 2.6988491092014635e-05
+   },
+   {
+    "male": 4,
+    "hole": 0,
+    "radius": 0.005710043260643889,
+    "contact_radius": 0.014275108151609721,
+    "contact_edges": 16,
+    "ok": true,
+    "volume_added": 1.6726322617754615e-06,
+    "volume_removed": 1.0465625495427455e-06
+   },
+   {
+    "male": 4,
+    "hole": 1,
+    "radius": 0.006211747202441865,
+    "contact_radius": 0.01552936800610466,
+    "contact_edges": 14,
+    "ok": true,
+    "volume_added": 1.7177611616325446e-06,
+    "volume_removed": 1.5002778605780615e-06
+   },
+   {
+    "male": 2,
+    "hole": 0,
+    "radius": 0.0072736408822351925,
+    "contact_radius": 0.01818410220558798,
+    "contact_edges": 10,
+    "ok": true,
+    "volume_added": 2.8133330223574678e-06,
+    "volume_removed": 1.5210055915697296e-06
+   }
+  ]
+ },
+ "split_s": 0.1,
+ "split_all_manifold": true,
+ "split_all_watertight": true,
+ "pegs_ok": 6,
+ "pegs_total": 6,
+ "zip_bytes": 929950
+}

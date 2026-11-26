@@ -1,0 +1,24 @@
+ORT {"variant": "fp16", "threads": 4, "arena": 0, "rss_after_inputs_mb": 68, "enc_load_s": 0.73, "rss_enc_loaded_mb": 96, "enc_run_s": 12.18, "rss_enc_done_mb": 353, "rss_enc_freed_mb": 191, "heads_load_s": 0.02, "heads_run_s": 83.88, "ok": true, "peak_rss_mb": 1122, "total_s": 96.81, "enc_bytes": 219755962, "heads_bytes": 6250986}
+	Command being timed: "python tools/p3sam/ort_run.py --work work --variant fp16"
+	User time (seconds): 338.50
+	System time (seconds): 29.39
+	Percent of CPU this job got: 374%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:38.29
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1148324
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 7
+	Minor (reclaiming a frame) page faults: 18039285
+	Voluntary context switches: 5790
+	Involuntary context switches: 49319
+	Swaps: 0
+	File system inputs: 88
+	File system outputs: 78880
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

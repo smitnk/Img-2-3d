@@ -110,10 +110,10 @@ def main():
         return dict(mask_agree=float((a == b).mean()), iou_maxdiff=float(np.abs(I - ref_iou).max()), run_s=round(dt, 2), mb=round(size(path) / 2 ** 20, 1))
 
     def node_type(n):
-        return "conv" if "/convs." in n else re.sub(r"_\d+$", "", n)
+        return "conv" if "/convs." in n else re.sub(r"_\d+(?=/)", "", n)
 
     def pick_and_write(part, kind, key, bar_fn):
-        cand = {k: v for k, v in res[part].items() if k.startswith(kind + ":") and "error" not in v}
+        cand = {k: v for k, v in res[part].items() if k.startswith(kind + ":") and "error" not in v and "u8s8" not in k}
         if not cand:
             return
         ok = {k: v for k, v in cand.items() if bar_fn(v)}
@@ -147,11 +147,11 @@ def main():
     print(f"SWEEP enc: {len(names)} MatMul/Gemm nodes in {len(types)} types: {res['enc']['types']}", flush=True)
     res["enc"]["fp32"] = enc_eval(src)
     print(f"SWEEP enc fp32 {res['enc']['fp32']}", flush=True)
-    base = attempt("enc", src, "int8", "all", [], enc_eval)
-    attempt("enc", src, "int8", "all_rr", [], enc_eval, rr=True)
+    attempt("enc", src, "int8", "all_u8s8", [], enc_eval)  # full-range u8 activations: saturates on AVX2 x86 without VNNI (fine on ARM dotprod)
+    base = attempt("enc", src, "int8", "all", [], enc_eval, rr=True)
     gain = {}
     for t, ex in types.items():
-        r = attempt("enc", src, "int8", f"no[{t}]", ex, enc_eval)
+        r = attempt("enc", src, "int8", f"no[{t}]", ex, enc_eval, rr=True)
         if r and base:
             gain[t] = r["cos_mean"] - base["cos_mean"]
     order = sorted(gain, key=lambda t: -gain[t])
@@ -159,7 +159,7 @@ def main():
     cum = []
     for t in order[:4]:
         cum += types[t]
-        attempt("enc", src, "int8", f"greedy{len([k for k in res['enc'] if k.startswith('int8:greedy')]) + 1}", list(cum), enc_eval)
+        attempt("enc", src, "int8", f"greedy{len([k for k in res['enc'] if k.startswith('int8:greedy')]) + 1}", list(cum), enc_eval, rr=True)
     attempt("enc", src, "w4", "all", [], enc_eval)
     pick_and_write("enc", "int8", "cos_mean", lambda v: v["cos_mean"] >= 0.997 and v["cos_min"] >= 0.98)
     pick_and_write("enc", "w4", "cos_mean", lambda v: v["cos_mean"] >= 0.995)
@@ -167,7 +167,7 @@ def main():
     # ---------------- heads
     src = f"{w}/heads_fp32.onnx"
     res["heads"]["fp32"] = heads_eval(src)
-    attempt("heads", src, "int8", "all", [], heads_eval)
+    attempt("heads", src, "int8", "all", [], heads_eval, rr=True)
     attempt("heads", src, "w4", "all", [], heads_eval)
     pick_and_write("heads", "int8", "mask_agree", lambda v: v["mask_agree"] >= 0.985)
     pick_and_write("heads", "w4", "mask_agree", lambda v: v["mask_agree"] >= 0.985)

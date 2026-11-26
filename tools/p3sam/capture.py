@@ -159,8 +159,9 @@ def main():
     print(f"STATIC heads vs stock: max logit diff {np.abs(l2 - logits_ref).max():.3e} iou diff {np.abs(i2 - iou_ref).max():.3e} mask agreement {agree * 100:.4f}%", flush=True)
     np.savez_compressed(f"{a.work}/ref.npz", feat=feat_ref.astype(np.float16), logits=logits_ref.astype(np.float16), iou=iou_ref, prompts=prompts, prompt_idx=sel)
 
-    # ---- export
+    # ---- export (nn.Linear as MatMul + Add instead of Gemm: onnxruntime's dynamic int8 / 4-bit quantisers only handle MatMul, and nodes can be excluded by name)
     if not a.no_export:
+        torch.nn.Linear.forward = lambda self, x: torch.matmul(x, self.weight.t()) + self.bias
         sizes = {}
         sizes["enc_fp32"] = P.export_onnx(enc, args, names, ["feat"], {**dyn, "feat": {0: "n0"}}, f"{a.work}/enc.onnx")
         K0 = min(a.kchunk, len(prompts))

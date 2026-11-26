@@ -16,7 +16,7 @@ def int8(src, dst, ops=("MatMul", "Gemm")):
     for f in (dst, dst + ".data"):
         if os.path.exists(f):
             os.remove(f)
-    quantize_dynamic(src, dst, weight_type=QuantType.QInt8, per_channel=True, op_types_to_quantize=list(ops), use_external_data_format=True)
+    quantize_dynamic(src, dst, weight_type=QuantType.QInt8, per_channel=True, reduce_range=True, op_types_to_quantize=list(ops), use_external_data_format=True)
 
 
 def fp16(src, dst):

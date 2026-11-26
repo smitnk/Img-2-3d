@@ -17,6 +17,7 @@ jobs:
       matrix:
         include:
           - { name: lo, points: 16384, prompts: 128 }
+          - { name: hi, points: 32768, prompts: 256 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

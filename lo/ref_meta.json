@@ -70,7 +70,7 @@
   "faces": 40000,
   "watertight": true
  },
- "torch_features_s": 5.79,
+ "torch_features_s": 9.2,
  "stages_n": {
   "0": 15654,
   "1": 13810,
@@ -85,12 +85,28 @@
   "3": 1024,
   "4": 852
  },
- "static_torch_enc_s": 6.62,
- "static_vs_stock_feat": {
-  "max_abs": 0.8849664926528931,
-  "mean_abs": 0.07167956233024597,
-  "ref_max": 1.899872899055481,
-  "min_cos": 0.7483565807342529
+ "spconv_cpu_check": {
+  "threads1_run0": 0,
+  "threads1_run1": 0,
+  "threads4_run0": 73,
+  "threads4_run1": 71,
+  "stock_with_spconv_threads1": {
+   "mean_cos": 1.0,
+   "min_cos": 0.9999997019767761,
+   "max_abs": 0.000194549560546875
+  },
+  "stock_with_spconv_threads4": {
+   "mean_cos": 0.9990875720977783,
+   "min_cos": 0.9415469169616699,
+   "max_abs": 0.26283425092697144
+  }
  },
- "enc_inputs_mb": 12.6
+ "static_torch_enc_s": 9.99,
+ "static_vs_stock_feat": {
+  "max_abs": 0.0,
+  "mean_abs": 0.0,
+  "ref_max": 1.6119871139526367,
+  "min_cos": 0.9999998807907104
+ },
+ "enc_inputs_mb": 12.7
 }

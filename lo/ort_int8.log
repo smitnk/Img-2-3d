@@ -10,20 +10,20 @@ Traceback (most recent call last):
 FileNotFoundError: [Errno 2] No such file or directory: 'work/ref.npz'
 Command exited with non-zero status 1
 	Command being timed: "python tools/p3sam/ort_run.py --work work --variant int8"
-	User time (seconds): 0.18
-	System time (seconds): 0.17
-	Percent of CPU this job got: 223%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.16
+	User time (seconds): 0.16
+	System time (seconds): 0.23
+	Percent of CPU this job got: 211%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.18
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 73100
+	Maximum resident set size (kbytes): 73220
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 11688
-	Voluntary context switches: 25
-	Involuntary context switches: 281
+	Minor (reclaiming a frame) page faults: 11705
+	Voluntary context switches: 28
+	Involuntary context switches: 76
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 0

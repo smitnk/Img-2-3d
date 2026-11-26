@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         run: |
           /usr/bin/time -v python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work \
-            --points ${{ matrix.points }} --prompts ${{ matrix.prompts }} 2>&1 | tee out/capture.log | grep -vE "^\s+(Page size|Swaps|File system|Socket|Signals|Voluntary|Involuntary|Exit status)" | tail -150
+            --points ${{ matrix.points }} --prompts ${{ matrix.prompts }} $(cat tools/p3sam/extra_args.txt 2>/dev/null) 2>&1 | tee out/capture.log | grep -vE "^\s+(Page size|Swaps|File system|Socket|Signals|Voluntary|Involuntary|Exit status)" | tail -150
           ls -la work
       - name: Quantize (int8 dynamic, fp16)
         if: steps.capture.outcome == 'success'

@@ -139,6 +139,17 @@ def install_recording(p3, sm, rec):
                     if best is None or mism < best[0]:
                         best = (mism, t, sc)
             rec.policy = dict(offs=offs, tie=best[1], sc=best[2])
+            mine = O.build_nbr(coords, 3, best[1], offs, best[2])
+            n = len(coords)
+            ud = n - len(np.unique(coords, axis=0))
+            r_, k_ = np.nonzero(mine != tab)
+            print(f"SPCONV DIAG n={n} duplicate_coords={ud} coords min={coords.min(0).tolist()} max={coords.max(0).tolist()} "
+                  f"spatial_shape={list(x.spatial_shape)} differing entries={len(r_)} rows={len(set(r_.tolist()))}", flush=True)
+            for r, k in list(zip(r_, k_))[:12]:
+                src_t = coords[tab[r, k]] if tab[r, k] < n else None
+                src_m = coords[mine[r, k]] if mine[r, k] < n else None
+                print(f"SPCONV DIAG row {r} k={k} dst={coords[r].tolist()} offs[k]={offs[k].tolist()} spconv_src={None if src_t is None else src_t.tolist()} "
+                      f"(rel {None if src_t is None else (src_t - coords[r]).tolist()}) mine_src={None if src_m is None else src_m.tolist()}", flush=True)
             print(f"SPCONV PROBE stage0 inconsistent={bad} build_nbr mismatching entries={best[0]} of {tab.size} "
                   f"({'PASS' if bad == 0 and best[0] == 0 else 'FAIL'}) tie={best[1]} self_center={best[2]} "
                   f"natural_order={bool((offs == O.natural_offsets(3)).all())}", flush=True)

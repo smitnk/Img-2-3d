@@ -35,6 +35,7 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--kchunk", type=int, default=4)
     ap.add_argument("--no-export", action="store_true")
+    ap.add_argument("--skip-heads", action="store_true")
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
     torch.set_num_threads(os.cpu_count())
@@ -101,6 +102,10 @@ def main():
     np.savez_compressed(f"{a.work}/enc_inputs.npz", inverse=inv, **ins)
     meta["enc_inputs_mb"] = round(sum(v.nbytes for v in ins.values()) / 2 ** 20, 1)
 
+    if a.skip_heads:
+        json.dump(meta, open(f"{a.work}/ref_meta.json", "w"), indent=1)
+        print("SKIP HEADS", flush=True)
+        return
     # ---- prompts + stock heads
     sel = P.fps(pts_norm, a.prompts)
     prompts = pts_norm[sel]

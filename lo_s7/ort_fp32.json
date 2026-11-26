@@ -1,0 +1,18 @@
+{
+ "variant": "fp32",
+ "threads": 4,
+ "arena": 0,
+ "rss_after_inputs_mb": 66,
+ "enc_load_s": 0.5,
+ "rss_enc_loaded_mb": 500,
+ "enc_run_s": 6.96,
+ "rss_enc_done_mb": 582,
+ "rss_enc_freed_mb": 198,
+ "heads_load_s": 0.02,
+ "heads_run_s": 39.35,
+ "ok": true,
+ "peak_rss_mb": 991,
+ "total_s": 46.83,
+ "enc_bytes": 438833284,
+ "heads_bytes": 12478363
+}

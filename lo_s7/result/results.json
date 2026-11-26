@@ -1,0 +1,398 @@
+{
+ "meta": {
+  "points": 16384,
+  "prompts": 128,
+  "seed": 7,
+  "torch": "2.5.1+cpu",
+  "sonata_config": {
+   "in_channels": 9,
+   "order": [
+    "z",
+    "z-trans",
+    "hilbert",
+    "hilbert-trans"
+   ],
+   "stride": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "enc_depths": [
+    3,
+    3,
+    3,
+    12,
+    3
+   ],
+   "enc_channels": [
+    48,
+    96,
+    192,
+    384,
+    512
+   ],
+   "enc_num_head": [
+    3,
+    6,
+    12,
+    24,
+    32
+   ],
+   "enc_patch_size": [
+    1024,
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "mlp_ratio": 4,
+   "qkv_bias": true,
+   "qk_scale": null,
+   "attn_drop": 0.0,
+   "proj_drop": 0.0,
+   "drop_path": 0.3,
+   "shuffle_orders": true,
+   "pre_norm": true,
+   "enable_rpe": false,
+   "enable_flash": false,
+   "upcast_attention": false,
+   "upcast_softmax": false,
+   "traceable": true,
+   "enc_mode": true,
+   "mask_token": true
+  },
+  "missing_keys": 0,
+  "unexpected_keys": 0,
+  "params_total": 112728649,
+  "params_sonata": 108461376,
+  "mesh": {
+   "vertices": 20002,
+   "faces": 40000,
+   "watertight": true
+  },
+  "torch_features_s": 6.84,
+  "stages_n": {
+   "0": 15689,
+   "1": 13723,
+   "2": 8929,
+   "3": 3187,
+   "4": 850
+  },
+  "stages_K": {
+   "0": 1024,
+   "1": 1024,
+   "2": 1024,
+   "3": 1024,
+   "4": 850
+  },
+  "spconv_cpu_check": {
+   "threads1_run0": 0,
+   "threads1_run1": 0,
+   "threads4_run0": 2497,
+   "threads4_run1": 2345,
+   "stock_with_spconv_threads1": {
+    "mean_cos": 1.0,
+    "min_cos": 0.9999997019767761,
+    "max_abs": 0.000168532133102417
+   },
+   "stock_with_spconv_threads4": {
+    "mean_cos": 0.9954670667648315,
+    "min_cos": 0.9446606040000916,
+    "max_abs": 0.35397595167160034
+   }
+  },
+  "static_torch_enc_s": 6.76,
+  "static_vs_stock_feat": {
+   "max_abs": 0.0,
+   "mean_abs": 0.0,
+   "ref_max": 1.7868053913116455,
+   "min_cos": 0.9999998807907104
+  },
+  "enc_inputs_mb": 12.7,
+  "static_torch_heads_s": 48.24,
+  "static_vs_stock_heads": {
+   "max_abs_logit": 0.0,
+   "max_abs_iou": 0.0,
+   "mask_agree": 1.0
+  },
+  "onnx_bytes": {
+   "enc_fp32": 438831249,
+   "heads_fp32": 12478128,
+   "heads_fp16": 6250986
+  },
+  "capture_peak_rss_mb": 13346,
+  "capture_total_s": 294.8
+ },
+ "reference": {
+  "parts": 6,
+  "prompts": 128,
+  "nms_clusters": 26,
+  "kept_clusters": 26,
+  "min_members": 1,
+  "merged": 6,
+  "unlabelled_points": 0
+ },
+ "variants": {
+  "fp32": {
+   "variant": "fp32",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 66,
+   "enc_load_s": 0.5,
+   "rss_enc_loaded_mb": 500,
+   "enc_run_s": 6.96,
+   "rss_enc_done_mb": 582,
+   "rss_enc_freed_mb": 198,
+   "heads_load_s": 0.02,
+   "heads_run_s": 39.35,
+   "ok": true,
+   "peak_rss_mb": 991,
+   "total_s": 46.83,
+   "enc_bytes": 438833284,
+   "heads_bytes": 12478363,
+   "feat_cos_mean": 1.0,
+   "feat_cos_min": 0.9999997019767761,
+   "mask_agree_pct": 99.99890327453613,
+   "iou_pred_maxdiff": 9.620189666748047e-05,
+   "point_label_agree_pct": 100.0,
+   "face_label_agree_pct": 99.9999999999998,
+   "parts": 6,
+   "post_prompts": 128,
+   "post_nms_clusters": 26,
+   "post_kept_clusters": 26,
+   "post_min_members": 1,
+   "post_merged": 6,
+   "post_unlabelled_points": 0
+  },
+  "int8": {
+   "variant": "int8",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 67,
+   "enc_load_s": 0.34,
+   "rss_enc_loaded_mb": 193,
+   "enc_run_s": 4.46,
+   "rss_enc_done_mb": 294,
+   "rss_enc_freed_mb": 229,
+   "heads_load_s": 0.02,
+   "heads_run_s": 26.42,
+   "ok": true,
+   "peak_rss_mb": 703,
+   "total_s": 31.24,
+   "enc_bytes": 111142472,
+   "heads_bytes": 8393100,
+   "feat_cos_mean": 0.984107494354248,
+   "feat_cos_min": 0.9648947715759277,
+   "mask_agree_pct": 96.90093994140625,
+   "iou_pred_maxdiff": 0.14376765489578247,
+   "point_label_agree_pct": 77.252197265625,
+   "face_label_agree_pct": 78.63976520696305,
+   "parts": 5,
+   "post_prompts": 128,
+   "post_nms_clusters": 22,
+   "post_kept_clusters": 22,
+   "post_min_members": 1,
+   "post_merged": 5,
+   "post_unlabelled_points": 0
+  },
+  "w4": {
+   "variant": "w4",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 67,
+   "ok": false,
+   "error": "NoSuchFile(\"[ONNXRuntimeError] : 3 : NO_SUCHFILE : Load model from work/enc_w4.onnx failed:Load model work/enc_w4.onnx failed. File doesn't exist\")",
+   "peak_rss_mb": 67,
+   "total_s": 0
+  },
+  "fp16": {
+   "variant": "fp16",
+   "threads": 4,
+   "arena": 0,
+   "rss_after_inputs_mb": 67,
+   "enc_load_s": 0.65,
+   "rss_enc_loaded_mb": 93,
+   "enc_run_s": 10.6,
+   "rss_enc_done_mb": 744,
+   "rss_enc_freed_mb": 534,
+   "heads_load_s": 0.02,
+   "heads_run_s": 49.63,
+   "ok": true,
+   "peak_rss_mb": 1010,
+   "total_s": 60.9,
+   "enc_bytes": 219725369,
+   "heads_bytes": 6250986,
+   "feat_cos_mean": 0.9997303485870361,
+   "feat_cos_min": 0.9989333748817444,
+   "mask_agree_pct": 99.62682723999023,
+   "iou_pred_maxdiff": 0.019197463989257812,
+   "point_label_agree_pct": 77.960205078125,
+   "face_label_agree_pct": 79.02014869977181,
+   "parts": 5,
+   "post_prompts": 128,
+   "post_nms_clusters": 26,
+   "post_kept_clusters": 26,
+   "post_min_members": 1,
+   "post_merged": 5,
+   "post_unlabelled_points": 0
+  }
+ },
+ "chosen_variant": "fp32",
+ "split": {
+  "parts": {
+   "0": {
+    "faces_in": 7520,
+    "caps": 4,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.004081408512245464,
+    "genus": -3,
+    "out_faces": 7926,
+    "out_vertices": 3973,
+    "watertight": true,
+    "bytes": 143552
+   },
+   "1": {
+    "faces_in": 18738,
+    "caps": 4,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.015796539594582402,
+    "genus": 0,
+    "out_faces": 19634,
+    "out_vertices": 9819,
+    "watertight": true,
+    "bytes": 354200
+   },
+   "2": {
+    "faces_in": 11230,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.015644865824111905,
+    "genus": 0,
+    "out_faces": 13094,
+    "out_vertices": 6547,
+    "watertight": true,
+    "bytes": 236452
+   },
+   "3": {
+    "faces_in": 1086,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.0004671292947604345,
+    "genus": 0,
+    "out_faces": 1476,
+    "out_vertices": 740,
+    "watertight": true,
+    "bytes": 27348
+   },
+   "4": {
+    "faces_in": 2148,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.0003775044569649854,
+    "genus": 0,
+    "out_faces": 2782,
+    "out_vertices": 1393,
+    "watertight": true,
+    "bytes": 50860
+   },
+   "5": {
+    "faces_in": 974,
+    "caps": 1,
+    "status": "ok",
+    "manifold": true,
+    "volume": 0.00045344423519589147,
+    "genus": 0,
+    "out_faces": 1348,
+    "out_vertices": 676,
+    "watertight": true,
+    "bytes": 25044
+   }
+  },
+  "pegs": [
+   {
+    "male": 0,
+    "hole": 1,
+    "radius": 0.06958585043625058,
+    "contact_radius": 0.27656352864263056,
+    "contact_edges": 315,
+    "ok": true,
+    "volume_added": 0.003377704921418147,
+    "volume_removed": 0.0011012927961127923
+   },
+   {
+    "male": 1,
+    "hole": 2,
+    "radius": 0.0407190590655184,
+    "contact_radius": 0.101797647663796,
+    "contact_edges": 164,
+    "ok": true,
+    "volume_added": 0.0003593434713590332,
+    "volume_removed": 0.00024552999580240015
+   },
+   {
+    "male": 4,
+    "hole": 1,
+    "radius": 0.02914796548145145,
+    "contact_radius": 0.07286991370362862,
+    "contact_edges": 134,
+    "ok": true,
+    "volume_added": 0.00018316186989659583,
+    "volume_removed": 0.00016811606184491228
+   },
+   {
+    "male": 5,
+    "hole": 2,
+    "radius": 0.02676193212768116,
+    "contact_radius": 0.0669048303192029,
+    "contact_edges": 78,
+    "ok": true,
+    "volume_added": 9.876521436024479e-05,
+    "volume_removed": 3.5760315776237755e-05
+   },
+   {
+    "male": 3,
+    "hole": 2,
+    "radius": 0.025903060314978646,
+    "contact_radius": 0.06475765078744661,
+    "contact_edges": 76,
+    "ok": true,
+    "volume_added": 8.897724405483191e-05,
+    "volume_removed": 3.040399850797945e-05
+   },
+   {
+    "male": 0,
+    "hole": 2,
+    "radius": 0.03473171597136569,
+    "contact_radius": 0.08682928992841422,
+    "contact_edges": 57,
+    "ok": true,
+    "volume_added": 0.0004199899549652787,
+    "volume_removed": 0.0001735488185634123
+   },
+   {
+    "a": 3,
+    "b": 1,
+    "skipped": "contact too small",
+    "contact_radius": 0.011413872161999147
+   },
+   {
+    "a": 3,
+    "b": 0,
+    "skipped": "contact too small",
+    "contact_radius": 0.006550363437109447
+   }
+  ]
+ },
+ "split_s": 0.1,
+ "split_all_manifold": true,
+ "split_all_watertight": true,
+ "pegs_ok": 6,
+ "pegs_total": 8,
+ "zip_bytes": 982203
+}

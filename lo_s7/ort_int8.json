@@ -1,0 +1,18 @@
+{
+ "variant": "int8",
+ "threads": 4,
+ "arena": 0,
+ "rss_after_inputs_mb": 67,
+ "enc_load_s": 0.34,
+ "rss_enc_loaded_mb": 193,
+ "enc_run_s": 4.46,
+ "rss_enc_done_mb": 294,
+ "rss_enc_freed_mb": 229,
+ "heads_load_s": 0.02,
+ "heads_run_s": 26.42,
+ "ok": true,
+ "peak_rss_mb": 703,
+ "total_s": 31.24,
+ "enc_bytes": 111142472,
+ "heads_bytes": 8393100
+}

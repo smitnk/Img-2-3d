@@ -1,0 +1,18 @@
+{
+ "variant": "fp16",
+ "threads": 4,
+ "arena": 0,
+ "rss_after_inputs_mb": 67,
+ "enc_load_s": 0.65,
+ "rss_enc_loaded_mb": 93,
+ "enc_run_s": 10.6,
+ "rss_enc_done_mb": 744,
+ "rss_enc_freed_mb": 534,
+ "heads_load_s": 0.02,
+ "heads_run_s": 49.63,
+ "ok": true,
+ "peak_rss_mb": 1010,
+ "total_s": 60.9,
+ "enc_bytes": 219725369,
+ "heads_bytes": 6250986
+}

@@ -1,0 +1,10 @@
+{
+ "variant": "w4",
+ "threads": 4,
+ "arena": 0,
+ "rss_after_inputs_mb": 67,
+ "ok": false,
+ "error": "NoSuchFile(\"[ONNXRuntimeError] : 3 : NO_SUCHFILE : Load model from work/enc_w4.onnx failed:Load model work/enc_w4.onnx failed. File doesn't exist\")",
+ "peak_rss_mb": 67,
+ "total_s": 0
+}

@@ -779,6 +779,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Clean up rig: twist bones (2 per upper arm / forearm, 1 per thigh / shin), re-split skin weights, corrective elbow / knee shape keys; ~1 min, rigged models only. */
+    fun cleanupRig(m: Model) {
+        if (m.bones <= 0) { fail("Clean up rig", "This model has no rig. Rig it first (Rig with UniRig)."); return }
+        blenderJob("Clean up rig (twist bones)") { report ->
+            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
+            val b = blender("rig_cleanup.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rig cleanup"), report)
+            saveBlender(b, "${m.name} rig cleanup", Source.REFINED, thumbFile = m.thumbnail, detail = "Twist bones + re-split weights + elbow/knee corrective shape keys of ${m.name}")
+                .also { n -> m.copyPhotosTo(n) }
+        }
+    }
+
     /**
      * Hunyuan Paint: all-sides AI texture from 1-4 photos (front first), ~15-40 min, ~1.6 GB peak, inside Blender on the phone.
      * [photos] null = the photo the model was made from. Its ~2 GB pack installs from Settings (first tap starts it).

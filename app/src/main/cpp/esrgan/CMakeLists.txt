@@ -43,7 +43,7 @@ target_compile_features(esrgan_core PUBLIC cxx_std_17)
 target_link_libraries(esrgan_core PUBLIC ncnn)
 
 if(ANDROID)
-  add_library(img23d_esrgan SHARED jni.cpp)
+  add_library(img23d_esrgan SHARED jni.cpp ndk_compat.cpp)
   target_link_libraries(img23d_esrgan PRIVATE esrgan_core log)
   # drop unused ncnn code (layers/shaders of other models stay linked by ncnn's registry, but the rest goes)
   target_compile_options(img23d_esrgan PRIVATE -ffunction-sections -fdata-sections)

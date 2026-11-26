@@ -1,0 +1,87 @@
+name: P3-SAM (Auto Split) CPU/ONNX test
+
+on:
+  push:
+    branches: [batch-repair-enhance]
+    paths: ["tools/p3sam/**", ".github/workflows/p3sam-test.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: "p3sam-${{ github.ref }}", cancel-in-progress: true }
+jobs:
+  p3sam:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: lo, points: 16384, prompts: 128 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Python deps (CPU torch 2.5.1, PyG CPU wheels, spconv CPU, onnx, onnxruntime, manifold3d)
+        run: |
+          mkdir -p out work
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --only-binary=:all: --no-cache-dir torch_scatter torch_cluster -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+          pip install -q spconv "numpy==1.26.4" scipy trimesh timm addict einops huggingface_hub safetensors psutil matplotlib \
+            onnx==1.17.0 onnxruntime==1.20.1 onnxconverter-common manifold3d pillow networkx shapely scikit-learn
+          pip list 2>/dev/null | grep -iE "^(torch|torch[-_]scatter|torch[-_]cluster|spconv|cumm|numpy|onnx|onnxruntime|manifold3d|trimesh|safetensors|huggingface[-_]hub) " | tee out/pip_versions.txt
+      - name: Download P3-SAM code + weights, Sonata config, test GLB
+        run: |
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, hf_hub_download
+          snapshot_download(repo_id="tencent/Hunyuan3D-Part", repo_type="space", local_dir="src",
+                            allow_patterns=["XPart/partgen/**/*.py", "XPart/partgen/**/*.json", "P3-SAM/**/*.py", "README.md"])
+          p = hf_hub_download(repo_id="tencent/Hunyuan3D-Part", filename="p3sam/p3sam.safetensors", local_dir="weights")
+          import os; print(p, os.path.getsize(p) / 2**20, "MB")
+          p = hf_hub_download(repo_id="tencent/Hunyuan3D-Part", filename="LICENSE.txt", local_dir="weights")
+          PY
+          git fetch -q --depth 1 origin render-scene
+          git show FETCH_HEAD:tools/scene/char2.glb > char2.glb
+          ls -la weights/p3sam char2.glb; find src -name "*.py" | head -50
+      - name: Stage 1 - torch reference + record + ONNX export
+        id: capture
+        continue-on-error: true
+        run: |
+          /usr/bin/time -v python tools/p3sam/capture.py --src src --weights weights/p3sam/p3sam.safetensors --mesh char2.glb --work work \
+            --points ${{ matrix.points }} --prompts ${{ matrix.prompts }} 2>&1 | tee out/capture.log | grep -vE "^\s+(Page size|Swaps|File system|Socket|Signals|Voluntary|Involuntary|Exit status)" | tail -150
+          ls -la work
+      - name: Quantize (int8 dynamic, fp16)
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        run: python tools/p3sam/quant.py work 2>&1 | tee out/quant.log | tail -30; ls -la work/*.onnx*
+      - name: Stage 2 - ONNX Runtime CPU (fp32, int8, fp16; one process each)
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        run: |
+          for v in fp32 int8 fp16; do
+            echo "=== $v ==="
+            /usr/bin/time -v python tools/p3sam/ort_run.py --work work --variant $v 2>&1 | tee out/ort_$v.log | grep -E "ORT|Maximum resident|Elapsed|Error|error" | tail -8
+          done
+      - name: Stage 3 - compare, label, cut + pegs, export
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python tools/p3sam/finish.py --work work --out out/result 2>&1 | tee out/finish.log | tail -60
+          cp work/ref_meta.json work/ort_*.json out/ 2>/dev/null || true
+          ls -la out/result
+      - name: Push results to branch p3sam-out
+        if: always()
+        run: |
+          cp -r out result_${{ matrix.name }} 2>/dev/null || true
+          git config --global user.name "p3sam-ci"; git config --global user.email "ci@users.noreply.github.com"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf pub && mkdir pub && cd pub && git init -q && git remote add origin "$URL"
+          git fetch -q --depth 1 origin p3sam-out 2>/dev/null && git checkout -q -b p3sam-out FETCH_HEAD || git checkout -q -b p3sam-out
+          rm -rf "${{ matrix.name }}" && mkdir -p "${{ matrix.name }}"
+          cp -r ../out/* "${{ matrix.name }}/"
+          echo "run ${{ github.run_id }} sha ${{ github.sha }}" > "${{ matrix.name }}/RUN.txt"
+          git add -A && git commit -q -m "p3sam ${{ matrix.name }} run ${{ github.run_id }}" || true
+          for i in 1 2 3 4 5; do git push -q origin p3sam-out && break || { git pull -q --rebase origin p3sam-out; sleep 3; }; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "p3sam-${{ matrix.name }}", path: out }

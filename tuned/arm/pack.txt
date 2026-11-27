@@ -1,9 +1,0 @@
-475.2401056289673
-  MB total;
-  LICENSE.txt
-  SOURCE.txt
-  p3sam_enc.onnx
-  p3sam_enc.onnx.data
-  p3sam_heads.onnx
-  p3sam_heads.onnx.data
-  p3sam_py.zip

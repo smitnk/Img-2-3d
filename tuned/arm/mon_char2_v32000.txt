@@ -1,2 +1,0 @@
-MON 04:55:59 rss_mb=715 free_mb=14315
-MON 04:56:29 rss_mb=500 free_mb=14331

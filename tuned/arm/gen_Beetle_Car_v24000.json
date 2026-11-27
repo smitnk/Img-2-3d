@@ -1,1 +1,0 @@
-{"script": "p3sam_split", "name": "Beetle_Car", "vertices": 249968, "triangles": 500000, "parts": 6, "pegs_ok": 5, "pegs_total": 5, "grid": 0.02284, "voxels": [23993, 6150, 1500, 340, 78], "closed_parts": 6, "manifold_parts": 6, "seconds": {"encoder": 7.0, "heads": 62.2, "post": 8.2, "split": 1.9, "total": 81.2}, "peak_rss_mb": 1058, "zip_bytes": 7231443}

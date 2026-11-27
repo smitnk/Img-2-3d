@@ -1,0 +1,6 @@
+MESH char2: 20002 vertices, 40000 faces, watertight=True
+P3S grid 0.0050, voxels per stage [81046, 44557, 13652, 3564, 894]; tables 0.4s; rss 191 MB
+P3S encoder loaded 2.6s; rss 204 MB
+P3S encoder run 13.7s; peak rss 2080 MB
+P3S heads 400 prompts 494.5s; peak rss 2080 MB
+RAW {"tag": "char2__ref__1", "mesh": "char2", "cfg": "ref", "seed": 1, "grid": 0.005, "voxels": [81046, 44557, 13652, 3564, 894], "enc_s": 16.9, "total_s": 512.0}

@@ -115,8 +115,19 @@ class UnirigPack(context: Context) : AssetPack(File(context.filesDir, "unirig"),
 class HunyuanPaintPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanpaint"), BuildConfig.HUNYUANPAINT_BASE_URL, "hunyuanpaint_info.json",
     3, "hunyuanpaint_py.zip") // v2: --steps / --guidance in the scripts, v3: auto big-core threads + pinning, no nice, --ref-views, triangle count in stats
 
+/**
+ * P3-SAM part segmentation (Tencent Hunyuan3D-Part, ONNX fp32 + numpy / scipy / onnxruntime libs), for Auto Split into parts,
+ * release p3sam-v1 (p3sam-pack.yml). Tencent Hunyuan3D-Part licence: not for the EU, UK or South Korea.
+ */
+class P3samPack(context: Context) : AssetPack(File(context.filesDir, "p3sam"), BuildConfig.P3SAM_BASE_URL, "p3sam_info.json",
+    1, "p3sam_py.zip")
+
 class HunyuanMvPack(context: Context) : AssetPack(File(context.filesDir, "hunyuanmv"), BuildConfig.HUNYUANMV_BASE_URL, "hunyuan_info.json",
     1, "u2net.onnx")
+
+/** Photo enhance: Real-ESRGAN x4plus-anime for ncnn (.param + .bin, ~9 MB, BSD-3), release esrgan-v1 (esrgan-pack.yml). */
+class EsrganPack(context: Context) : AssetPack(File(context.filesDir, "esrgan"), BuildConfig.ESRGAN_BASE_URL, "esrgan_info.json",
+    1, "realesrgan-x4plus-anime.bin")
 
 /** One wearable or look from the pack's assets.json (MakeHuman system assets). */
 data class BodyAsset(val kind: String, val name: String, val label: String, val thumb: File?)

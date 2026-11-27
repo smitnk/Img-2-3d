@@ -18,6 +18,8 @@ android {
         versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a") }
+        // Mesh Repair (JNI + manifold, fetched by CMake at an exact tag): no TBB, no assimp, no python bindings.
+        externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static"); cppFlags += listOf("-std=c++17", "-O2") } }
         buildConfigField("String", "RUNTIME_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/blender-runtime-v1/\"")
         buildConfigField("String", "BODY_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/body-assets-v1/\"")
         buildConfigField("String", "TEXGEN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/texgen-v1/\"")
@@ -25,7 +27,9 @@ android {
         buildConfigField("String", "CURIO_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/curiomesh-v1/\"")
         buildConfigField("String", "UNIRIG_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/unirig-v1/\"")
         buildConfigField("String", "HUNYUANPAINT_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanpaint-v1/\"")
+        buildConfigField("String", "P3SAM_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/p3sam-v1/\"")
         buildConfigField("String", "HUNYUANMV_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanmv-v1/\"")
+        buildConfigField("String", "ESRGAN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/esrgan-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")
     }
 
@@ -49,6 +53,7 @@ android {
             signingConfig = signingConfigs.findByName("ci") ?: signingConfigs.getByName("debug")
         }
     }
+    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

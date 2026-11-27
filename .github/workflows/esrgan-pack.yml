@@ -1,0 +1,37 @@
+name: Photo enhance engine pack (Real-ESRGAN ncnn)
+
+# Takes the official Real-ESRGAN-ncnn-vulkan model files (xinntao/Real-ESRGAN release v0.2.5.0, BSD-3), verifies the
+# zip against a pinned SHA-256, writes esrgan_info.json (version / files / sha256) and publishes release esrgan-v1.
+on:
+  push:
+    paths: ["tools/esrgan/**", ".github/workflows/esrgan-pack.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: esrgan-pack, cancel-in-progress: true }
+env:
+  ZIP_URL: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip
+  ZIP_SHA256: e5aa6eb131234b87c0c51f82b89390f5e3e642b7b70f2b9bbe95b6a285a40c96
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download + verify official model files
+        run: |
+          set -e
+          curl -fsSL -o re.zip "$ZIP_URL"
+          echo "$ZIP_SHA256  re.zip" | sha256sum -c -
+          mkdir re && unzip -q re.zip -d re
+          ls -l re/models
+      - name: Build pack
+        run: python3 tools/esrgan/make_pack.py re/models pack
+      - name: Publish esrgan-v1
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd pack
+          gh release view esrgan-v1 >/dev/null 2>&1 || gh release create esrgan-v1 --title "Photo enhance v1" \
+            --notes "Real-ESRGAN x4plus-anime for ncnn (BSD-3, xinntao/Real-ESRGAN-ncnn-vulkan models). Engine pack for the app's Enhance photo step."
+          gh release upload esrgan-v1 --clobber realesrgan-x4plus-anime.param realesrgan-x4plus-anime.bin
+          gh release upload esrgan-v1 --clobber esrgan_info.json
+          gh api repos/${{ github.repository }}/releases/tags/esrgan-v1 --jq '"release id " + (.id|tostring)'

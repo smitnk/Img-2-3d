@@ -140,6 +140,21 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 },
             )
 
+            SectionHeader("Photo")
+            EngineCard(
+                icon = Icons.Rounded.AutoFixHigh, title = "Enhance photo", summary = "Sharper, cleaner photo before 3D", size = "≈9 MB",
+                details = "Real-ESRGAN x4plus-anime on ncnn (BSD-3). Uses the phone's GPU (Vulkan) and falls back to the CPU with smaller tiles. " +
+                    "When on, the photo (and every extra view for 2mv) is upscaled 4x and scaled back down to the size the 3D engine reads, before TripoSR or Hunyuan runs.",
+                ready = state.esrganPack == PackStatus.Ready,
+                progress = (state.esrganPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.esrganPack as? PackStatus.Failed)?.message, failed = state.esrganPack is PackStatus.Failed,
+                onInstall = vm::installEsrganPack, onRemove = vm::uninstallEsrganPack,
+                onSave = { cb.pickFolder { vm.backupOne("esrgan", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("esrgan", it) } },
+                extra = {
+                    ToggleRow("Enhance photo before 3D", "Also on the photo screen. Slower when the phone has no usable GPU", s.enhancePhoto) { on -> vm.updateSettings { it.copy(enhancePhoto = on) } }
+                },
+            )
+
             SectionHeader("Texture")
             EngineCard(
                 icon = Icons.Rounded.Brush, title = "Texture AI", summary = "Paint textures on your models", size = "≈1.2 GB",
@@ -162,6 +177,19 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 error = (state.hunyuanPaintPack as? PackStatus.Failed)?.message, failed = state.hunyuanPaintPack is PackStatus.Failed,
                 onInstall = vm::installHunyuanPaintPack, onRemove = vm::uninstallHunyuanPaintPack,
                 onSave = { cb.pickFolder { vm.backupOne("hunyuanpaint", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuanpaint", it) } },
+            )
+
+            SectionHeader("Parts")
+            EngineCard(
+                icon = Icons.Rounded.AutoFixHigh, title = "Auto Split (P3-SAM)", summary = "Cuts a model into closed parts, with pegs", size = "≈475 MB",
+                details = "Tencent Hunyuan3D-Part P3-SAM part segmentation (fp32 ONNX, 113M parameters) plus numpy / scipy / onnxruntime and manifold3d libs, runs inside Blender on the phone. " +
+                    "Needs about 1 GB free RAM, 3–6 min. Use: open a model in Library → Auto Split into parts. " +
+                    "Licence: Tencent Hunyuan3D-Part (Tencent Hunyuan Community License): not for use in the EU, UK or South Korea; the sources are in the pack's LICENSE file.",
+                ready = state.p3samPack == PackStatus.Ready,
+                progress = (state.p3samPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.p3samPack as? PackStatus.Failed)?.message, failed = state.p3samPack is PackStatus.Failed,
+                onInstall = vm::installP3samPack, onRemove = vm::uninstallP3samPack,
+                onSave = { cb.pickFolder { vm.backupOne("p3sam", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("p3sam", it) } },
             )
 
             SectionHeader("Rigging")

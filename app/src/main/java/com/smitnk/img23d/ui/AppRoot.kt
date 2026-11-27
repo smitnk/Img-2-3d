@@ -46,6 +46,8 @@ class AppCallbacks(
     val pickPhotos: ((List<android.net.Uri>) -> Unit) -> Unit,
     val export: (Model, Boolean) -> Unit,
     val share: (Model) -> Unit,
+    val exportFile: (java.io.File, String, String) -> Unit,
+    val shareFile: (java.io.File, String, String) -> Unit,
     val pickFolder: ((android.net.Uri) -> Unit) -> Unit,
     val copy: (String, String) -> Unit,
 )

@@ -71,6 +71,8 @@ class MainActivity : ComponentActivity() {
             pickScript = { scriptPicker.launch(arrayOf("text/x-python", "text/plain", "application/x-python-code", "application/octet-stream")) },
             export = { m, blend -> saveAs(if (blend) m.blend!! else m.glb, m.name, if (blend) "blend" else "glb") },
             share = ::share,
+            exportFile = ::saveAs,
+            shareFile = ::shareFile,
             pickFolder = { then -> pendingFolder = then; folderPicker.launch(null) },
             copy = { label, text ->
                 getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(label, text))
@@ -100,6 +102,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         vm.refreshEngines()
+    }
+
+    private fun shareFile(file: java.io.File, mime: String, title: String) {
+        val uri = FileProvider.getUriForFile(this, "$packageName.files", file)
+        val send = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        startActivity(Intent.createChooser(send, title))
     }
 
     private fun share(m: Model) {

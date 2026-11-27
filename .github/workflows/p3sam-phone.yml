@@ -1,0 +1,133 @@
+name: P3-SAM phone pack + Auto Split run in the phone's Blender (aarch64) -> release p3sam-v1
+
+# Needs a live "p3sam-dyn-onnx" artifact of p3sam-tune.yml (7 days; re-run that workflow or pass its run id).
+# Builds the pack (ONNX graphs + scripts + cp312 aarch64 wheels), runs the app's real Blender wrapper (app/src/main/assets/blender/p3sam_split.py) in the
+# blender-runtime-v1 userland on an ARM64 runner under phone-like limits (taskset cores, systemd-run MemoryMax=2G), reports peak RSS + time,
+# and with publish=true uploads release p3sam-v1.
+on:
+  push:
+    branches: [batch-repair-enhance]
+    paths: [".github/workflows/p3sam-phone.yml"]
+  workflow_dispatch:
+    inputs:
+      tune_run: { description: "run id of p3sam-tune.yml (default: newest with a live artifact)", required: false }
+      publish: { description: "publish release p3sam-v1", type: boolean, default: false }
+      cores: { description: "cores for the measurement (taskset)", default: "0-3" }
+permissions:
+  contents: write
+  actions: read
+concurrency: { group: p3sam-phone, cancel-in-progress: true }
+env:
+  ORT_VERSION: 1.20.0
+  SCIPY_VERSION: 1.13.1
+  GH_TOKEN: ${{ github.token }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+jobs:
+  arm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender runtime (the phone's userland) + meshes + ONNX artifact
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get install -y -qq time unzip
+          mkdir out w w/in w/out pack
+          gh release download blender-runtime-v1 -R $GITHUB_REPOSITORY -p blender-runtime-arm64.tar.gz
+          mkdir x && sudo tar -xzf blender-runtime-arm64.tar.gz -C x && rm blender-runtime-arm64.tar.gz
+          R=$(dirname $(dirname $(dirname $(sudo find x -path '*opt/blender/blender' -type f | head -1)))); echo "R=$PWD/$R" >> $GITHUB_ENV
+          git fetch -q --depth 1 origin render-scene && git show FETCH_HEAD:tools/scene/char2.glb > w/in/char2.glb
+          pip install -q --break-system-packages huggingface_hub
+          python3 - <<'PY'
+          from huggingface_hub import hf_hub_download
+          import shutil
+          for n in ("Beetle_Car", "Female_Warrior"):
+              shutil.copy(hf_hub_download(repo_id="tencent/Hunyuan3D-Part", repo_type="space", filename=f"P3-SAM/demo/assets/{n}.glb", local_dir="hf"), f"w/in/{n}.glb")
+          shutil.copy(hf_hub_download(repo_id="tencent/Hunyuan3D-Part", filename="LICENSE.txt", local_dir="hf"), "LICENSE.txt")
+          PY
+          ls -la w/in
+          bash tools/unirig/phone/fetch_artifact.sh p3sam-tune.yml p3sam-dyn-onnx onnx "${{ inputs.tune_run }}"; ls -la onnx
+          sudo mount --bind /proc $R/proc; sudo mount --bind /dev $R/dev; sudo mount --bind /sys $R/sys
+          sudo mkdir -p $R/w $R/opt/p3sam && sudo mount --bind $PWD/w $R/w && sudo mount --bind $PWD/pack $R/opt/p3sam
+          sudo chroot $R /opt/blender/blender -b --factory-startup --python-expr "import sys,numpy; print('BLENDERPY', sys.version.split()[0], 'numpy', numpy.__version__, sys.version_info[:2])" 2>&1 | grep -E "Blender [0-9]|BLENDERPY" | tee out/blender_python.txt
+      - name: Wheels for Blender's Python + pack
+        run: |
+          PY=$(grep -o "([0-9]*, [0-9]*)" out/blender_python.txt | tr -d '(), ' | head -1); echo "blender python tag $PY"
+          pip download -q --no-deps --only-binary=:all: --implementation cp --python-version $PY --abi cp$PY \
+            --platform manylinux2014_aarch64 --platform manylinux_2_17_aarch64 --platform manylinux_2_27_aarch64 --platform manylinux_2_28_aarch64 \
+            onnxruntime==$ORT_VERSION scipy==$SCIPY_VERSION manifold3d -d whl
+          ls -la whl | tee out/wheels.txt
+          python3 tools/p3sam/phone/make_pack.py --onnx onnx --whl whl --license LICENSE.txt --out pack --version 1 | tee out/pack.txt
+          ls -la pack
+          sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python-expr \
+            "import sys, zipfile; zipfile.ZipFile('/opt/p3sam/p3sam_py.zip').extractall('/opt/p3sam/p3sam_py'); sys.path.insert(0, '/opt/p3sam/p3sam_py/pylibs'); import numpy, scipy, onnxruntime as o, manifold3d as m; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, 'manifold3d ok', m.Manifold.cube is not None)" 2>&1 | tail -5 | tee out/libs.txt
+          grep -q "^LIBS" out/libs.txt
+      - name: "Auto Split in the phone's Blender (taskset cores, 2 GB cgroup cap), time + peak RSS per mesh"
+        run: |
+          cp app/src/main/assets/blender/p3sam_split.py w/
+          CORES="${{ inputs.cores || '0-3' }}"; NT=$(python3 -c "a,b=('$CORES'.split('-')+['0'])[:2]; print(int(b)-int(a)+1 if b!='0' else 1)")
+          if sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 true 2>/dev/null; then SYSD=1; echo "cgroup cap 2G: yes" | tee out/limits.txt
+          else SYSD=0; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
+          echo "cores $CORES threads $NT" | tee -a out/limits.txt
+          for m in char2 Beetle_Car Female_Warrior; do
+            for bud in 16000 24000 32000; do
+              [ "$m" != char2 ] && [ $bud = 32000 ] && continue
+              n=${m}_v$bud
+              if [ $SYSD = 1 ]; then LIM="sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c $CORES"; else LIM="sudo taskset -c $CORES"; fi
+              ( while sleep 30; do echo "MON $(date +%T) rss_mb=$(( $(ps -C blender -o rss= | sort -n | tail -1) / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/mon_$n.txt 2>/dev/null &
+              MON=$!
+              /usr/bin/time -v -o out/time_$n.txt $LIM chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 \
+                --python /w/p3sam_split.py -- --mesh /w/in/$m.glb --out /w/out/$n --name $m --target 0 --pegs 1 --threads $NT --budget $bud > out/log_$n.txt 2>&1 \
+                && echo "OK $n" || echo "FAILED $n (exit $?)"
+              kill $MON 2>/dev/null || true
+              grep -E "Elapsed|Maximum resident" out/time_$n.txt || true
+              grep -E "^(Auto Split|P3S|PART|PEG)|Traceback|Error" out/log_$n.txt | cut -c1-300 | tail -40
+              cp w/out/$n/generation.json out/gen_$n.json 2>/dev/null || true
+            done
+          done
+          ls -la w/out/*
+      - name: Verify the outputs (GLBs load, parts closed)
+        if: always()
+        run: |
+          pip install -q --break-system-packages trimesh numpy
+          python3 - <<'PY' | tee out/verify.txt
+          import glob, json, zipfile, io, trimesh, numpy as np
+          for d in sorted(glob.glob("w/out/*")):
+              try:
+                  g = json.load(open(d + "/generation.json"))
+                  z = zipfile.ZipFile(d + "/parts.zip")
+                  closed = 0
+                  for n in z.namelist():
+                      t = trimesh.load(io.BytesIO(z.read(n)), file_type="glb", force="mesh")
+                      closed += int(t.is_watertight)
+                  pv = trimesh.load(d + "/parts_preview.glb", force="mesh")
+                  print("VERIFY", d, "parts", g["parts"], "zip files", len(z.namelist()), "watertight(trimesh)", closed, "preview faces", len(pv.faces), "colors", pv.visual.kind, json.dumps(g["seconds"]), "peak_mb", g["peak_rss_mb"])
+              except Exception as e:
+                  print("VERIFY FAILED", d, repr(e))
+          PY
+      - name: Push results to p3sam-out/tuned/arm
+        if: always()
+        run: |
+          git config --global user.name "p3sam-ci"; git config --global user.email "ci@users.noreply.github.com"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          mkdir -p res && for d in w/out/*; do mkdir -p res/$(basename $d); cp $d/generation.json $d/parts_preview.glb $d/parts.zip res/$(basename $d)/ 2>/dev/null || true; done
+          rm -rf pub && mkdir pub && cd pub && git init -q && git remote add origin "$URL"
+          git fetch -q --depth 1 origin p3sam-out 2>/dev/null && git checkout -q -b p3sam-out FETCH_HEAD || git checkout -q -b p3sam-out
+          rm -rf tuned/arm && mkdir -p tuned/arm && cp -r ../out/* tuned/arm/ && cp -r ../res/* tuned/arm/ 2>/dev/null || true
+          echo "run ${{ github.run_id }} sha ${{ github.sha }}" > tuned/arm/RUN.txt
+          git add -A && git commit -q -m "p3sam arm run ${{ github.run_id }}" || true
+          for i in 1 2 3 4 5; do git push -q origin p3sam-out && break || { git pull -q --rebase origin p3sam-out; sleep 3; }; done
+      - name: Info json is complete
+        run: python3 -c "import json;d=json.load(open('pack/p3sam_info.json'));print(d['version'], sum(f['bytes'] for f in d['files'].values())/2**20, 'MB'); print(*d['files'])"
+      - name: Publish release p3sam-v1
+        if: inputs.publish
+        run: |
+          cd pack
+          gh release view p3sam-v1 >/dev/null 2>&1 || gh release create p3sam-v1 --title "Auto Split (P3-SAM) for phones v1" \
+            --notes "Tencent Hunyuan3D-Part P3-SAM as ONNX + numpy/scipy/onnxruntime/manifold3d libs for the app's Blender 4.2. Used by Auto Split into parts. Licence: Tencent Hunyuan3D-Part (not for the EU, UK, South Korea), see LICENSE.txt."
+          for f in $(gh release view p3sam-v1 --json assets -q '.assets[].name'); do [ -e "$f" ] || gh release delete-asset p3sam-v1 "$f" -y; done
+          for f in $(find . -maxdepth 1 -type f -printf '%f\n' | grep -v '^p3sam_info.json$'); do gh release upload p3sam-v1 --clobber "$f"; done
+          gh release upload p3sam-v1 --clobber p3sam_info.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: p3sam-arm-logs, path: out, retention-days: 7 }

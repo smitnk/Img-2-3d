@@ -1,0 +1,69 @@
+name: Rig cleanup (twist bones) test, Blender 4.2.3
+
+# Runs app/src/main/assets/blender/rig_cleanup.py on the owner's UniRig-rigged character (branch render-scene, tools/scene/char2.glb),
+# bends each elbow / twists each wrist 90 deg, measures the forearm cross-section (before vs after) and publishes preview PNGs to branch rigclean-out.
+on:
+  push:
+    branches: [batch-repair-enhance]
+    paths:
+      - "app/src/main/assets/blender/rig_cleanup.py"
+      - "tools/rigclean/**"
+      - ".github/workflows/rig-cleanup.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: rig-cleanup, cancel-in-progress: true }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      B: /opt/blender/blender
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender 4.2.3 + GL libs
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 libglu1-mesa libgl1-mesa-dri xz-utils
+          F=Blender4.2/blender-4.2.3-linux-x64.tar.xz
+          for M in https://download.blender.org/release https://mirror.clarkson.edu/blender/release https://ftp.halifax.rwth-aachen.de/blender/release; do
+            if curl -fL --retry 2 -A "Mozilla/5.0" -o blender.tar.xz "$M/$F" && xz -t blender.tar.xz; then break; fi
+            rm -f blender.tar.xz
+          done
+          test -s blender.tar.xz
+          sudo mkdir -p /opt/blender && sudo tar -xJf blender.tar.xz -C /opt/blender --strip-components=1
+          $B -b --version | head -1
+      - name: Test asset (render-scene:tools/scene/char2.glb)
+        run: |
+          git fetch -q --depth 1 origin render-scene
+          git show FETCH_HEAD:tools/scene/char2.glb > char2.glb
+          ls -la char2.glb
+          mkdir -p out
+      - name: Baseline, no cleanup (print only)
+        run: |
+          set -o pipefail
+          xvfb-run -a $B -b --factory-startup --python-exit-code 1 --python tools/rigclean/rig_test.py -- --glb char2.glb --label before --out out 2>&1 | tee out/log_before.txt | grep -E "^(RATIO|MIN|before:)|Error|Traceback" || true
+      - name: Run rig_cleanup.py
+        run: |
+          set -o pipefail
+          $B -b --factory-startup --python-exit-code 1 --python app/src/main/assets/blender/rig_cleanup.py -- --in char2.glb --out out/clean --name "char2 rig cleanup" 2>&1 | tee out/log_cleanup.txt | grep -E "rig_cleanup|Error|Traceback"
+          ls -la out/clean
+      - name: After cleanup, measure (fails below 0.60)
+        run: |
+          set -o pipefail
+          xvfb-run -a $B -b --factory-startup --python-exit-code 1 --python tools/rigclean/rig_test.py -- --glb out/clean/rigcleanup.glb --label after --out out --enforce 0.60 2>&1 | tee out/log_after.txt | grep -E "^(RATIO|MIN|FAIL|after:)|Error|Traceback"
+          ls out/*.png
+      - name: Animated GLB, twist + shape-key bake
+        run: |
+          set -o pipefail
+          $B -b --factory-startup --python-exit-code 1 --python tools/rigclean/make_anim.py -- char2.glb anim_in.glb 2>&1 | tail -3
+          $B -b --factory-startup --python-exit-code 1 --python app/src/main/assets/blender/rig_cleanup.py -- --in anim_in.glb --out out/anim 2>&1 | grep -E "rig_cleanup|Traceback"
+          python3 tools/rigclean/check_anim.py out/anim/rigcleanup.glb | tee out/log_anim.txt
+      - name: Publish previews to branch rigclean-out
+        if: always()
+        env: { TOKEN: "${{ github.token }}" }
+        run: |
+          cd out && rm -f anim/*.glb
+          git init -q -b rigclean-out && git config user.name ci && git config user.email ci@example.com
+          git add -A && git commit -q -m "rig cleanup previews ${GITHUB_SHA}" 
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:rigclean-out

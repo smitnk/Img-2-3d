@@ -157,14 +157,28 @@ def faces_from_points(G, pts, lab, smooth=2):
     return fl
 
 
-def split_components(G, fl):
-    """Every connected piece of a label becomes its own label."""
+def split_components(G, fl, min_frac=0.01):
+    """A label that falls into several connected pieces keeps its small pieces (they are floating details of the same part: bolts, buttons)
+    but every piece of at least min_frac of the surface area becomes its own label."""
     same = fl[G.pairs[:, 0]] == fl[G.pairs[:, 1]]
     a, b = G.pairs[same, 0], G.pairs[same, 1]
     n = len(fl)
     g = sp.coo_matrix((np.ones(len(a)), (a, b)), shape=(n, n))
     nc, cc = sp.csgraph.connected_components(g, directed=False)
-    return cc.astype(np.int64)
+    carea = np.bincount(cc, weights=G.area, minlength=nc)
+    clab = np.zeros(nc, np.int64)
+    clab[cc] = fl
+    big = carea >= min_frac * G.area.sum()
+    # the biggest piece of every label keeps the label, other big pieces get their own; small pieces stay with their label
+    out = fl.copy()
+    for l in np.unique(fl):
+        comps = np.nonzero((clab == l) & big)[0]
+        if len(comps) <= 1:
+            continue
+        comps = comps[np.argsort(-carea[comps])]
+        for c in comps[1:]:
+            out[cc == c] = n + int(c)
+    return renumber(out)
 
 
 def region_graph(G, fl):
@@ -193,20 +207,17 @@ def merge_small(G, fl, min_frac=0.01, target=None, min_parts=1):
         if R <= min_parts:
             break
         deg = np.asarray((B > 0).sum(1)).ravel()
-        order = np.argsort(area)
-        pick = None
-        for r in order:
-            if deg[r] == 0:
-                continue
-            if (target is not None and R > target) or area[r] < min_frac * total:
-                pick = r
-                break
+        r = int(np.argmin(area))
+        if not ((target is not None and R > target) or area[r] < min_frac * total):
             break
-        if pick is None:
-            break
-        row = B.getrow(pick)
-        nb = row.indices[np.argmax(row.data)]
-        fl[fl == pick] = nb
+        if deg[r] > 0:
+            row = B.getrow(r)
+            nb = row.indices[np.argmax(row.data)]
+        else:  # a floating shell: the part whose surface is nearest
+            mine = fl == r
+            _, nn = cKDTree(G.centers[~mine]).query(G.centers[mine])
+            nb = np.bincount(fl[~mine][nn]).argmax()
+        fl[fl == r] = nb
         fl = renumber(fl)
     return fl
 
@@ -224,7 +235,7 @@ def segment(G, pts, masks, iou, params=None, target=None, log=print):
         inst = instances(masks, iou, pts, q)
         lab = point_labels(inst, N)
         fl = faces_from_points(G, pts, lab, q["smooth"])
-        fl = split_components(G, fl)
+        fl = split_components(G, fl, q["min_frac"])
         fl = merge_small(G, fl, q["min_frac"], target=target)
         best = fl
         info = dict(level=li, instances=len(inst), parts=int(fl.max()) + 1)

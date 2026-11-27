@@ -1,4 +1,4 @@
-"""Raw P3-SAM masks for meshes x seeds x point counts through the numpy + ONNX path (deterministic), dumped for post-processing tuning.
+"""Raw P3-SAM masks for meshes x seeds x configs through the numpy + ONNX path (deterministic), dumped for post-processing tuning.
 
 usage: python tune_run.py --work work --meshes a.glb b.glb --out raw [--seeds 1 2 3] [--points 16384 24576] [--prompts 128]
 writes raw/<mesh>_<points>_<seed>.npz (points, normals, masks packed, iou, prompts) and raw/<mesh>.npz (mesh) + raw/runs.json

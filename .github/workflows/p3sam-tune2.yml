@@ -1,0 +1,60 @@
+name: P3-SAM tune 2 (voxel budget vs the 100k-point reference; numpy + onnxruntime only)
+
+# Needs the "p3sam-dyn-onnx" artifact of p3sam-tune.yml. The reference is what the model was built for (100k points, 400 prompts, grid 0.005);
+# the candidates are phone-sized (voxel budget, 16k head points, 128 prompts).
+on:
+  workflow_dispatch:
+    inputs:
+      tune_run: { description: "run id of p3sam-tune.yml", required: false }
+permissions:
+  contents: write
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        mesh: [char2, Beetle_Car, Female_Warrior]
+        kind: [ref, cand]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Deps, ONNX artifact, mesh
+        run: |
+          mkdir -p out work raw assets
+          pip install -q "numpy==1.26.4" scipy trimesh onnxruntime==1.20.1 psutil huggingface_hub fast_simplification manifold3d
+          bash tools/unirig/phone/fetch_artifact.sh p3sam-tune.yml p3sam-dyn-onnx work "${{ inputs.tune_run }}"; ls -la work
+          case "${{ matrix.mesh }}" in
+            char2) git fetch -q --depth 1 origin render-scene && git show FETCH_HEAD:tools/scene/char2.glb > assets/char2.glb ;;
+            *) python -c "
+          from huggingface_hub import hf_hub_download
+          import shutil
+          shutil.copy(hf_hub_download(repo_id='tencent/Hunyuan3D-Part', repo_type='space', filename='P3-SAM/demo/assets/${{ matrix.mesh }}.glb', local_dir='hf'), 'assets/${{ matrix.mesh }}.glb')" ;;
+          esac
+          ls -la assets
+      - name: Reference (100k points, grid 0.005, 400 prompts) - one seed
+        if: matrix.kind == 'ref'
+        run: |
+          python tools/p3sam/tune_run2.py --work work --meshes assets/${{ matrix.mesh }}.glb --out raw --seeds 1 \
+            --configs '[{"name":"ref","dense":100000,"grid":0.005,"heads":50000,"prompts":400}]' 2>&1 | tee out/run.log | grep -E "RAW|MESH|P3S|Error|Traceback" | tail -20
+      - name: Candidates (adaptive voxel budget) x 3 seeds
+        if: matrix.kind == 'cand'
+        run: |
+          python tools/p3sam/tune_run2.py --work work --meshes assets/${{ matrix.mesh }}.glb --out raw --seeds 1 2 3 \
+            --configs '[{"name":"v12k","dense":100000,"budget":12000,"heads":16384,"prompts":128},{"name":"v16k","dense":100000,"budget":16000,"heads":16384,"prompts":128},{"name":"v24k","dense":100000,"budget":24000,"heads":16384,"prompts":128},{"name":"p16k","dense":16384,"grid":0.005,"heads":16384,"prompts":128,"seeds":[1]}]' 2>&1 | tee out/run.log | grep -E "RAW|MESH|P3S|Error|Traceback" | tail -40
+      - name: Push to p3sam-out/tuned2
+        if: always()
+        run: |
+          git config --global user.name "p3sam-ci"; git config --global user.email "ci@users.noreply.github.com"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf pub && mkdir pub && cd pub && git init -q && git remote add origin "$URL"
+          git fetch -q --depth 1 origin p3sam-out 2>/dev/null && git checkout -q -b p3sam-out FETCH_HEAD || git checkout -q -b p3sam-out
+          D=tuned2/${{ matrix.mesh }}_${{ matrix.kind }}; rm -rf $D && mkdir -p $D && cp -r ../raw/* $D/ && cp ../out/run.log $D/ 2>/dev/null || true
+          git add -A && git commit -q -m "p3sam tune2 ${{ matrix.mesh }} ${{ matrix.kind }} run ${{ github.run_id }}" || true
+          for i in 1 2 3 4 5 6 7 8; do git push -q origin p3sam-out && break || { git pull -q --rebase origin p3sam-out; sleep $((RANDOM % 8 + 2)); }; done

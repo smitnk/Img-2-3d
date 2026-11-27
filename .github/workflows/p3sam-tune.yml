@@ -1,9 +1,6 @@
 name: P3-SAM tune (dynamic ONNX graph, numpy pipeline, raw masks for post-processing tuning)
 
 on:
-  push:
-    branches: [batch-repair-enhance]
-    paths: ["tools/p3sam/dyn*.py", "tools/p3sam/load_mesh.py", "tools/p3sam/tune_run.py", "tools/p3sam/phone/p3s_np.py", "tools/p3sam/p3.py", ".github/workflows/p3sam-tune.yml"]
   workflow_dispatch:
 permissions:
   contents: write

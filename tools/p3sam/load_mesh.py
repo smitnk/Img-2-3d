@@ -7,7 +7,7 @@ import trimesh
 
 def load_mesh(path, max_faces=60000):
     m = trimesh.load(path, force="mesh")
-    m.merge_vertices()
+    m.merge_vertices(merge_tex=True, merge_norm=True)
     m.update_faces(m.nondegenerate_faces())
     m.remove_unreferenced_vertices()
     if len(m.faces) > max_faces:

@@ -14,6 +14,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "phone"))
 import p3s_post as PP  # noqa: E402
+import p3s_split as SP  # noqa: E402
 
 
 def load(raw):
@@ -22,7 +23,7 @@ def load(raw):
     for r in runs:
         if r["mesh"] not in meshes:
             z = np.load(f"{raw}/{r['mesh']}.npz")
-            meshes[r["mesh"]] = (z["v"].astype(np.float64), z["f"].astype(np.int64))
+            meshes[r["mesh"]] = SP.clean(z["v"].astype(np.float64), z["f"].astype(np.int64))  # weld like the phone does
             graphs[r["mesh"]] = PP.FaceGraph(*meshes[r["mesh"]])
     data = {}
     for r in runs:

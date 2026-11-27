@@ -156,6 +156,29 @@ def voxelize(pts_norm, normals, grid=GRID):
     return gc, feat0, inv
 
 
+def count_voxels(pts_norm, grid):
+    pts = np.asarray(pts_norm, np.float64)
+    mn, mx = pts.min(0), pts.max(0)
+    coord = pts - np.array([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, mn[2]])
+    g = np.floor(coord / grid).astype(np.int64)
+    g -= g.min(0)
+    S = int(g.max()) + 1
+    return len(np.unique((g[:, 0] * S + g[:, 1]) * S + g[:, 2]))
+
+
+def adaptive_grid(pts_norm, budget, lo=GRID, hi=0.06):
+    """Smallest grid size >= GRID (the size Sonata was trained at) whose voxelization has at most `budget` voxels (bisection on the size)."""
+    if count_voxels(pts_norm, lo) <= budget:
+        return lo
+    for _ in range(14):
+        mid = 0.5 * (lo + hi)
+        if count_voxels(pts_norm, mid) <= budget:
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
 def natural_offsets(K=3):
     return np.stack(np.meshgrid(*[np.arange(K)] * 3, indexing="ij"), -1).reshape(-1, 3) - K // 2
 
@@ -280,13 +303,18 @@ class P3Sam:
     def __init__(self, enc_path, heads_path, threads=0, log=print):
         self.enc_path, self.heads_path, self.threads, self.log = enc_path, heads_path, threads, log
 
-    def features(self, pts_norm, normals):
-        """(N,512) float32 features of the points."""
+    def features(self, pts_norm, normals, sub=None, budget=None, grid_size=GRID):
+        """(len(sub) or N, 512) float32 features: the encoder runs on all points (voxel size grid_size, or the smallest one that gives at most
+        `budget` voxels), the result is read back for the points `sub` (indices; default all)."""
         t = time.time()
-        grid, feat0, inv = voxelize(pts_norm, normals)
+        if budget:
+            grid_size = adaptive_grid(pts_norm, budget)
+        self.grid_size = grid_size
+        grid, feat0, inv = voxelize(pts_norm, normals, grid_size)
         T, ns = build_tables(grid)
         T["feat0"] = feat0
-        self.log(f"P3S voxels per stage {ns}; tables {(time.time() - t):.1f}s; rss {rss_mb():.0f} MB")
+        self.voxels = ns
+        self.log(f"P3S grid {grid_size:.4f}, voxels per stage {ns}; tables {(time.time() - t):.1f}s; rss {rss_mb():.0f} MB")
         t = time.time()
         s = session(self.enc_path, self.threads)
         self.log(f"P3S encoder loaded {(time.time() - t):.1f}s; rss {rss_mb():.0f} MB")
@@ -295,7 +323,7 @@ class P3Sam:
         self.log(f"P3S encoder run {(time.time() - t):.1f}s; peak rss {hwm_mb():.0f} MB")
         del s, T
         trim_malloc()
-        return f0[inv].astype(np.float32)
+        return f0[inv if sub is None else inv[sub]].astype(np.float32)
 
     def masks(self, feats, pts_norm, prompts, kchunk=4):
         """-> logits (N,K,3) float16, iou (K,3) float32"""

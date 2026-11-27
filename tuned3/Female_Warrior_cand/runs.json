@@ -1,0 +1,114 @@
+[
+ {
+  "tag": "Female_Warrior__v32k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v32k",
+  "seed": 1,
+  "grid": 0.01922,
+  "voxels": [
+   31983,
+   8335,
+   1883,
+   399,
+   83
+  ],
+  "enc_s": 6.5,
+  "total_s": 83.7
+ },
+ {
+  "tag": "Female_Warrior__v32k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v32k",
+  "seed": 2,
+  "grid": 0.01919,
+  "voxels": [
+   31968,
+   8408,
+   1888,
+   400,
+   84
+  ],
+  "enc_s": 5.5,
+  "total_s": 55.7
+ },
+ {
+  "tag": "Female_Warrior__v48k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v48k",
+  "seed": 1,
+  "grid": 0.01468,
+  "voxels": [
+   47969,
+   14543,
+   3445,
+   739,
+   145
+  ],
+  "enc_s": 7.6,
+  "total_s": 56.9
+ },
+ {
+  "tag": "Female_Warrior__v48k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v48k",
+  "seed": 2,
+  "grid": 0.01466,
+  "voxels": [
+   47987,
+   14563,
+   3462,
+   744,
+   144
+  ],
+  "enc_s": 7.5,
+  "total_s": 56.8
+ },
+ {
+  "tag": "Female_Warrior__v64k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v64k",
+  "seed": 1,
+  "grid": 0.01132,
+  "voxels": [
+   63973,
+   23901,
+   5950,
+   1297,
+   262
+  ],
+  "enc_s": 10.5,
+  "total_s": 59.8
+ },
+ {
+  "tag": "Female_Warrior__v64k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v64k",
+  "seed": 2,
+  "grid": 0.01129,
+  "voxels": [
+   63988,
+   23956,
+   5977,
+   1294,
+   263
+  ],
+  "enc_s": 10.6,
+  "total_s": 60.5
+ },
+ {
+  "tag": "Female_Warrior__v48k_h24__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v48k_h24",
+  "seed": 1,
+  "grid": 0.01468,
+  "voxels": [
+   47969,
+   14543,
+   3445,
+   739,
+   145
+  ],
+  "enc_s": 7.6,
+  "total_s": 125.8
+ }
+]

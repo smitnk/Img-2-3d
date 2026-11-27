@@ -1,0 +1,36 @@
+MESH Female_Warrior: 29809 vertices, 60000 faces, watertight=False
+P3S grid 0.0192, voxels per stage [31983, 8335, 1883, 399, 83]; tables 0.2s; rss 417 MB
+P3S encoder loaded 2.4s; rss 391 MB
+P3S encoder run 3.8s; peak rss 1167 MB
+P3S heads 128 prompts 77.1s; peak rss 1167 MB
+RAW {"tag": "Female_Warrior__v32k__1", "mesh": "Female_Warrior", "cfg": "v32k", "seed": 1, "grid": 0.01922, "voxels": [31983, 8335, 1883, 399, 83], "enc_s": 6.5, "total_s": 83.7}
+P3S grid 0.0192, voxels per stage [31968, 8408, 1888, 400, 84]; tables 0.2s; rss 373 MB
+P3S encoder loaded 2.6s; rss 379 MB
+P3S encoder run 2.7s; peak rss 1246 MB
+P3S heads 128 prompts 50.1s; peak rss 1246 MB
+RAW {"tag": "Female_Warrior__v32k__2", "mesh": "Female_Warrior", "cfg": "v32k", "seed": 2, "grid": 0.01919, "voxels": [31968, 8408, 1888, 400, 84], "enc_s": 5.5, "total_s": 55.7}
+P3S grid 0.0147, voxels per stage [47969, 14543, 3445, 739, 145]; tables 0.3s; rss 386 MB
+P3S encoder loaded 2.7s; rss 393 MB
+P3S encoder run 4.6s; peak rss 1473 MB
+P3S heads 128 prompts 49.2s; peak rss 1473 MB
+RAW {"tag": "Female_Warrior__v48k__1", "mesh": "Female_Warrior", "cfg": "v48k", "seed": 1, "grid": 0.01468, "voxels": [47969, 14543, 3445, 739, 145], "enc_s": 7.6, "total_s": 56.9}
+P3S grid 0.0147, voxels per stage [47987, 14563, 3462, 744, 144]; tables 0.3s; rss 403 MB
+P3S encoder loaded 2.6s; rss 409 MB
+P3S encoder run 4.5s; peak rss 1487 MB
+P3S heads 128 prompts 49.2s; peak rss 1487 MB
+RAW {"tag": "Female_Warrior__v48k__2", "mesh": "Female_Warrior", "cfg": "v48k", "seed": 2, "grid": 0.01466, "voxels": [47987, 14563, 3462, 744, 144], "enc_s": 7.5, "total_s": 56.8}
+P3S grid 0.0113, voxels per stage [63973, 23901, 5950, 1297, 262]; tables 0.4s; rss 410 MB
+P3S encoder loaded 2.6s; rss 417 MB
+P3S encoder run 7.4s; peak rss 1728 MB
+P3S heads 128 prompts 49.2s; peak rss 1728 MB
+RAW {"tag": "Female_Warrior__v64k__1", "mesh": "Female_Warrior", "cfg": "v64k", "seed": 1, "grid": 0.01132, "voxels": [63973, 23901, 5950, 1297, 262], "enc_s": 10.5, "total_s": 59.8}
+P3S grid 0.0113, voxels per stage [63988, 23956, 5977, 1294, 263]; tables 0.4s; rss 412 MB
+P3S encoder loaded 2.6s; rss 418 MB
+P3S encoder run 7.5s; peak rss 1744 MB
+P3S heads 128 prompts 49.8s; peak rss 1744 MB
+RAW {"tag": "Female_Warrior__v64k__2", "mesh": "Female_Warrior", "cfg": "v64k", "seed": 2, "grid": 0.01129, "voxels": [63988, 23956, 5977, 1294, 263], "enc_s": 10.6, "total_s": 60.5}
+P3S grid 0.0147, voxels per stage [47969, 14543, 3445, 739, 145]; tables 0.3s; rss 383 MB
+P3S encoder loaded 2.6s; rss 389 MB
+P3S encoder run 4.6s; peak rss 1744 MB
+P3S heads 192 prompts 118.0s; peak rss 1744 MB
+RAW {"tag": "Female_Warrior__v48k_h24__1", "mesh": "Female_Warrior", "cfg": "v48k_h24", "seed": 1, "grid": 0.01468, "voxels": [47969, 14543, 3445, 739, 145], "enc_s": 7.6, "total_s": 125.8}

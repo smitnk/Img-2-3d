@@ -30,6 +30,8 @@ data class Model(
 ) {
     val glb get() = File(dir, "model.glb")
     val blend get() = File(dir, "model.blend").takeIf { it.isFile }
+    /** Auto Split: one closed GLB per part, zipped. */
+    val partsZip get() = File(dir, "parts.zip").takeIf { it.isFile }
     val thumbnail get() = File(dir, "preprocessed.png").takeIf { it.isFile }
     val script get() = File(dir, "script.py").takeIf { it.isFile }
     /** The cut-out source photo (TripoSR models and what was made from them): the front view for Paint texture. */

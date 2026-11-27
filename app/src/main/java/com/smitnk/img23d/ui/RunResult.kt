@@ -286,6 +286,37 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
                     dismissButton = { TextButton(onClick = { repairOpen = false }) { Text("Cancel") } },
                 )
             }
+            Column { // Auto Split into parts (P3-SAM): colour per part + ZIP of closed per-part GLBs
+                var splitOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+                var target by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0f) } // 0 = auto
+                var pegs by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
+                var pegSize by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0.4f) }
+                val p3ready = vm.state.collectAsState().value.p3samPack == PackStatus.Ready
+                OutlinedButton(onClick = { if (p3ready) splitOpen = true else vm.autoSplit(m, 0, true, 0.4f) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp))
+                    Text(if (p3ready) "Auto Split into parts (AI, ~3–6 min)" else "Auto Split into parts: download AI")
+                }
+                if (splitOpen) AlertDialog(
+                    onDismissRequest = { splitOpen = false }, title = { Text("Auto Split into parts") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("The AI finds the parts of this model (head, arms, wheels…). Saved as a new model, \"${m.name} parts\", coloured per part, " +
+                                "with a ZIP of one closed (watertight) GLB per part. This model is not changed.", style = MaterialTheme.typography.bodySmall)
+                            LabeledSlider("Target parts", target, 0f..20f, if (target < 2f) "Auto" else "%.0f", steps = 19) { target = if (it < 2f) 0f else it.toInt().toFloat() }
+                            ToggleRow("Add pegs", "A peg on the smaller part and a matching hole in its neighbour, at the biggest joints", pegs) { pegs = it }
+                            if (pegs) LabeledSlider("Peg size (of the joint)", pegSize, 0.2f..0.6f, "%.2f", steps = 7) { pegSize = it }
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { splitOpen = false; vm.autoSplit(m, target.toInt(), pegs, pegSize) }) { Text("Split") } },
+                    dismissButton = { TextButton(onClick = { splitOpen = false }) { Text("Cancel") } },
+                )
+            }
+            m.partsZip?.let { z ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = { cb.shareFile(z, "application/zip", "Share parts") }, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Rounded.Share, null); Spacer(Modifier.width(6.dp)); Text("Share parts ZIP") }
+                    FilledTonalButton(onClick = { cb.exportFile(z, "${m.name}_parts", "zip") }, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Rounded.SaveAlt, null); Spacer(Modifier.width(6.dp)); Text("Save parts ZIP") }
+                }
+            }
             if (m.source == Source.PHOTO || m.source == Source.CHARACTER || m.source == Source.REFINED) OutlinedButton(onClick = { vm.rigUnirig(m) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.AutoFixHigh, null); Spacer(Modifier.width(8.dp)); Text("Rig with UniRig (AI skeleton + weights, ~20 min)")
             }

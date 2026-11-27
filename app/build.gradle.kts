@@ -27,6 +27,7 @@ android {
         buildConfigField("String", "CURIO_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/curiomesh-v1/\"")
         buildConfigField("String", "UNIRIG_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/unirig-v1/\"")
         buildConfigField("String", "HUNYUANPAINT_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanpaint-v1/\"")
+        buildConfigField("String", "P3SAM_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/p3sam-v1/\"")
         buildConfigField("String", "HUNYUANMV_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/hunyuanmv-v1/\"")
         buildConfigField("String", "ESRGAN_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/esrgan-v1/\"")
         buildConfigField("String", "MODEL_BASE_URL", "\"https://github.com/smitnk/Img-2-3d/releases/download/models-v1/\"")

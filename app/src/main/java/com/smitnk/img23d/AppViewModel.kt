@@ -21,6 +21,7 @@ import com.smitnk.img23d.body.EsrganPack
 import com.smitnk.img23d.ai.PhotoEnhancer
 import com.smitnk.img23d.body.CurioPack
 import com.smitnk.img23d.body.HunyuanPaintPack
+import com.smitnk.img23d.body.P3samPack
 import com.smitnk.img23d.body.UnirigPack
 import com.smitnk.img23d.body.HunyuanMvPack
 import com.smitnk.img23d.body.HunyuanPack
@@ -137,6 +138,7 @@ data class UiState(
     val hunyuanMvPack: PackStatus = PackStatus.NotInstalled,
     val unirigPack: PackStatus = PackStatus.NotInstalled,
     val hunyuanPaintPack: PackStatus = PackStatus.NotInstalled,
+    val p3samPack: PackStatus = PackStatus.NotInstalled,
     /** Backup / restore of packs to a user folder: progress text, or null when idle. */
     val packFolder: String? = null,
     /** Live morph of [body] (no Blender), rebuilt on every edit. */
@@ -329,6 +331,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val curioPack = CurioPack(app)
     val unirigPack = UnirigPack(app)
     val hunyuanPaintPack = HunyuanPaintPack(app)
+    val p3samPack = P3samPack(app)
     private var hunyuan: HunyuanShape? = null
     private var morph: BodyMorph? = null
     private var morphJob: Job? = null
@@ -341,11 +344,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (hunyuanMvPack.isReady()) _state.update { it.copy(hunyuanMvPack = PackStatus.Ready) }
         if (unirigPack.isReady()) _state.update { it.copy(unirigPack = PackStatus.Ready) }
         if (hunyuanPaintPack.isReady()) _state.update { it.copy(hunyuanPaintPack = PackStatus.Ready) }
+        if (p3samPack.isReady()) _state.update { it.copy(p3samPack = PackStatus.Ready) }
         File(app.filesDir, "trellis").deleteRecursively() // TRELLIS.2 was removed (2mv matches it in half the time): free its 2.8 GB
         File(app.filesDir, "rigpack").deleteRecursively() // Rig with AI was removed: free its ~1 GB pack
     }
 
-    private fun packs() = listOf(bodyPack, texPack, esrganPack, hunyuanPack, hunyuanMvPack, unirigPack, hunyuanPaintPack)
+    private fun packs() = listOf(bodyPack, texPack, esrganPack, hunyuanPack, hunyuanMvPack, unirigPack, hunyuanPaintPack, p3samPack)
 
     fun backupPacks(tree: android.net.Uri) = viewModelScope.launch {
         if (_state.value.packFolder != null) return@launch
@@ -376,7 +380,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
-                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack)
+                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack,
+                p3samPack = if (p3samPack.isReady()) PackStatus.Ready else it.p3samPack)
         }
         if (found.isEmpty()) fail("Nothing to restore", "That folder has no pack backup. Pick the folder you backed up to (it holds bodypack / texgen / hunyuan / hunyuanmv).")
     }
@@ -411,7 +416,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 hunyuanPack = if (hunyuanPack.isReady()) PackStatus.Ready else it.hunyuanPack,
                 hunyuanMvPack = if (hunyuanMvPack.isReady()) PackStatus.Ready else it.hunyuanMvPack,
                 unirigPack = if (unirigPack.isReady()) PackStatus.Ready else it.unirigPack,
-                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack)
+                hunyuanPaintPack = if (hunyuanPaintPack.isReady()) PackStatus.Ready else it.hunyuanPaintPack,
+                p3samPack = if (p3samPack.isReady()) PackStatus.Ready else it.p3samPack)
         }
     }
 
@@ -453,6 +459,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun installHunyuanPaintPack() = packTask("hunyuanpaint") {
         runCatching { hunyuanPaintPack.install { st -> _state.update { it.copy(hunyuanPaintPack = st) } } }
             .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(hunyuanPaintPack = PackStatus.Failed(e.message ?: e.toString())) } }
+    }
+
+    fun uninstallP3samPack() = packTask("p3sam", replace = true) {
+        withContext(Dispatchers.IO) { p3samPack.uninstall() }
+        _state.update { it.copy(p3samPack = PackStatus.NotInstalled) }
+    }
+
+    fun installP3samPack() = packTask("p3sam") {
+        runCatching { p3samPack.install { st -> _state.update { it.copy(p3samPack = st) } } }
+            .onFailure { e -> if (e !is CancellationException) _state.update { it.copy(p3samPack = PackStatus.Failed(e.message ?: e.toString())) } }
     }
 
     fun uninstallEsrganPack() = packTask("esrgan", replace = true) {
@@ -776,6 +792,34 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val b = blender("unirig_rig.py", listOf("--in", "/opt/job/input.glb", "--name", "${m.name} rigged"), report) // 2 threads, nice 10 by default: the phone stays usable
             saveBlender(b, "${m.name} rigged", Source.REFINED, thumbFile = m.thumbnail, detail = "UniRig skeleton + skin weights of ${m.name}")
                 .also { n -> m.copyPhotosTo(n) }
+        }
+    }
+
+    /**
+     * Auto Split into parts (P3-SAM, Tencent Hunyuan3D-Part) inside Blender on the phone, ~3-6 min, ~1 GB peak.
+     * [target] = wanted number of parts (0 = auto), [pegs] = a peg on one part and a matching hole in its neighbour at the biggest joints,
+     * [pegSize] = peg radius relative to the joint (0.2..0.6). Saves "<name> parts" (colour per part) and keeps the ZIP of closed per-part GLBs with it.
+     */
+    fun autoSplit(m: Model, target: Int, pegs: Boolean, pegSize: Float) {
+        if (!runtime.isReady()) { go(Dest.Settings); return }
+        if (!p3samPack.isReady()) { installP3samPack(); go(Dest.Settings); return }
+        launchJob("Auto Split into parts", "Blender", 1) { report ->
+            val ram = android.app.ActivityManager.MemoryInfo().also {
+                getApplication<Application>().getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it)
+            }.totalMem
+            if (ram < 5_000_000_000L) throw IllegalStateException("Auto Split needs about 1 GB of free memory, so a phone with at least 6 GB RAM. This phone has %.1f GB.".format(ram / 1e9))
+            m.glb.copyTo(File(runner.jobIn.apply { mkdirs() }, "input.glb"), overwrite = true)
+            val b = blender("p3sam_split.py", listOf("--mesh", "/opt/job/input.glb", "--name", "${m.name} parts",
+                "--target", target.toString(), "--pegs", if (pegs) "1" else "0", "--peg-size", pegSize.toString(),
+                "--threads", s.threads.toString()), report)
+            val zip = File(b.glb.parentFile, "parts.zip")
+            val parts = b.info.optInt("parts")
+            saveBlender(b, "${m.name} parts", Source.REFINED, thumbFile = m.thumbnail,
+                detail = "Auto Split of ${m.name} into $parts parts (P3-SAM)${if (pegs) ", with pegs and holes" else ""}. parts.zip holds one closed GLB per part.")
+                .also { n ->
+                    m.copyPhotosTo(n)
+                    if (zip.isFile) zip.copyTo(File(n.dir, "parts.zip"), overwrite = true)
+                }
         }
     }
 

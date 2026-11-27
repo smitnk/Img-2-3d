@@ -179,6 +179,19 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
                 onSave = { cb.pickFolder { vm.backupOne("hunyuanpaint", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("hunyuanpaint", it) } },
             )
 
+            SectionHeader("Parts")
+            EngineCard(
+                icon = Icons.Rounded.AutoFixHigh, title = "Auto Split (P3-SAM)", summary = "Cuts a model into closed parts, with pegs", size = "≈P3SAM_SIZE",
+                details = "Tencent Hunyuan3D-Part P3-SAM part segmentation (fp32 ONNX, 113M parameters) plus numpy / scipy / onnxruntime and manifold3d libs, runs inside Blender on the phone. " +
+                    "Needs about 1 GB free RAM, 3–6 min. Use: open a model in Library → Auto Split into parts. " +
+                    "Licence: Tencent Hunyuan3D-Part (Tencent Hunyuan Community License): not for use in the EU, UK or South Korea; the sources are in the pack's LICENSE file.",
+                ready = state.p3samPack == PackStatus.Ready,
+                progress = (state.p3samPack as? PackStatus.Downloading)?.let { "Downloading ${it.done shr 20} / ${it.total shr 20} MB" to (if (it.total > 0) it.done.toFloat() / it.total else null) },
+                error = (state.p3samPack as? PackStatus.Failed)?.message, failed = state.p3samPack is PackStatus.Failed,
+                onInstall = vm::installP3samPack, onRemove = vm::uninstallP3samPack,
+                onSave = { cb.pickFolder { vm.backupOne("p3sam", it) } }, onLoad = { cb.pickFolder { vm.restoreOne("p3sam", it) } },
+            )
+
             SectionHeader("Rigging")
             EngineCard(
                 icon = Icons.Rounded.AutoFixHigh, title = "UniRig", summary = "Auto-rig: skeleton + skin weights", size = "≈2.5 GB",

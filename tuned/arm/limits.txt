@@ -1,0 +1,2 @@
+cgroup cap 2G: yes
+cores 0-3 threads 4

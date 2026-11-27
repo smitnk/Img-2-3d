@@ -1,0 +1,1 @@
+{"script": "p3sam_split", "name": "char2", "vertices": 20044, "triangles": 40080, "parts": 2, "pegs_ok": 0, "pegs_total": 0, "grid": 0.03166, "voxels": [15998, 4300, 1117, 283, 64], "closed_parts": 2, "manifold_parts": 2, "seconds": {"encoder": 6.0, "heads": 59.1, "post": 0.1, "split": 0.1, "total": 65.4}, "peak_rss_mb": 812, "zip_bytes": 590808}

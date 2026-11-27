@@ -1,0 +1,1 @@
+{"script": "p3sam_split", "name": "Female_Warrior", "vertices": 249573, "triangles": 499588, "parts": 4, "pegs_ok": 3, "pegs_total": 3, "grid": 0.02267, "voxels": [23974, 5946, 1301, 262, 49], "closed_parts": 4, "manifold_parts": 4, "seconds": {"encoder": 6.5, "heads": 60.3, "post": 6.2, "split": 1.9, "total": 76.7}, "peak_rss_mb": 1059, "zip_bytes": 7370693}

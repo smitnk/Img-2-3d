@@ -1,0 +1,16 @@
+05:09:35 | INFO: Data are loaded, start creating Blender stuff
+05:09:35 | INFO: Blender create Mesh node texture_v128_768
+05:09:36 | INFO: glTF import finished in 0.56s
+Auto Split: 320345 vertices, 500000 triangles read
+P3S mesh 249968 vertices, 500000 triangles
+P3S grid 0.0285, voxels per stage [15994, 3976, 939, 203, 49]; tables 0.2s; rss 377 MB
+P3S encoder loaded 4.3s; rss 409 MB
+P3S encoder run 1.3s; peak rss 989 MB
+P3S heads 128 prompts 60.7s; peak rss 989 MB
+P3S 1 parts ({'level': 0, 'instances': 1, 'parts': 1}); post 3.6s
+PART 0: faces=500000 caps=0 manifold=ok volume=0.05954
+P3S done {"script": "p3sam_split", "name": "Beetle_Car", "vertices": 249968, "triangles": 500000, "parts": 1, "pegs_ok": 0, "pegs_total": 0, "grid": 0.02851, "voxels": [15994, 3976, 939, 203, 49], "closed_parts": 1, "manifold_parts": 1, "seconds": {"encoder": 5.9, "heads": 60.7, "post": 3.6, "split": 1.5, "total": 73.4}, "peak_rss_mb": 989, "zip_bytes": 7231518}
+Auto Split done
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

@@ -1,0 +1,17 @@
+05:08:26 | INFO: Data are loaded, start creating Blender stuff
+05:08:26 | INFO: Blender create Mesh node Mesh_0.002
+05:08:26 | INFO: glTF import finished in 0.13s
+Auto Split: 28152 vertices, 40080 triangles read
+P3S mesh 20044 vertices, 40080 triangles
+P3S grid 0.0210, voxels per stage [31991, 9496, 2495, 632, 152]; tables 0.3s; rss 221 MB
+P3S encoder loaded 4.2s; rss 252 MB
+P3S encoder run 3.3s; peak rss 969 MB
+P3S heads 128 prompts 60.0s; peak rss 969 MB
+P3S 2 parts ({'level': 0, 'instances': 2, 'parts': 2}); post 0.1s
+PART 0: faces=80 caps=0 manifold=ok volume=3.65871
+PART 1: faces=40000 caps=0 manifold=ok volume=0.03857
+P3S done {"script": "p3sam_split", "name": "char2", "vertices": 20044, "triangles": 40080, "parts": 2, "pegs_ok": 0, "pegs_total": 0, "grid": 0.02099, "voxels": [31991, 9496, 2495, 632, 152], "closed_parts": 2, "manifold_parts": 2, "seconds": {"encoder": 7.8, "heads": 60.0, "post": 0.1, "split": 0.1, "total": 68.3}, "peak_rss_mb": 969, "zip_bytes": 590808}
+Auto Split done
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
+
+Blender quit

@@ -1,0 +1,162 @@
+[
+ {
+  "tag": "Beetle_Car__v12k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v12k",
+  "seed": 1,
+  "grid": 0.03282,
+  "voxels": [
+   11999,
+   3028,
+   702,
+   168,
+   36
+  ],
+  "enc_s": 4.3,
+  "total_s": 74.7
+ },
+ {
+  "tag": "Beetle_Car__v12k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v12k",
+  "seed": 2,
+  "grid": 0.03279,
+  "voxels": [
+   11996,
+   3029,
+   703,
+   166,
+   35
+  ],
+  "enc_s": 4.4,
+  "total_s": 75.1
+ },
+ {
+  "tag": "Beetle_Car__v12k__3",
+  "mesh": "Beetle_Car",
+  "cfg": "v12k",
+  "seed": 3,
+  "grid": 0.03276,
+  "voxels": [
+   12000,
+   3035,
+   702,
+   167,
+   35
+  ],
+  "enc_s": 4.2,
+  "total_s": 74.0
+ },
+ {
+  "tag": "Beetle_Car__v16k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v16k",
+  "seed": 1,
+  "grid": 0.02846,
+  "voxels": [
+   15992,
+   3980,
+   942,
+   202,
+   48
+  ],
+  "enc_s": 4.6,
+  "total_s": 75.1
+ },
+ {
+  "tag": "Beetle_Car__v16k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v16k",
+  "seed": 2,
+  "grid": 0.02846,
+  "voxels": [
+   15983,
+   3979,
+   940,
+   203,
+   49
+  ],
+  "enc_s": 4.6,
+  "total_s": 74.3
+ },
+ {
+  "tag": "Beetle_Car__v16k__3",
+  "mesh": "Beetle_Car",
+  "cfg": "v16k",
+  "seed": 3,
+  "grid": 0.02842,
+  "voxels": [
+   15987,
+   3973,
+   944,
+   206,
+   50
+  ],
+  "enc_s": 4.7,
+  "total_s": 73.9
+ },
+ {
+  "tag": "Beetle_Car__v24k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v24k",
+  "seed": 1,
+  "grid": 0.02281,
+  "voxels": [
+   23993,
+   6176,
+   1494,
+   342,
+   78
+  ],
+  "enc_s": 5.3,
+  "total_s": 75.1
+ },
+ {
+  "tag": "Beetle_Car__v24k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v24k",
+  "seed": 2,
+  "grid": 0.02274,
+  "voxels": [
+   23998,
+   6234,
+   1554,
+   347,
+   78
+  ],
+  "enc_s": 5.3,
+  "total_s": 75.7
+ },
+ {
+  "tag": "Beetle_Car__v24k__3",
+  "mesh": "Beetle_Car",
+  "cfg": "v24k",
+  "seed": 3,
+  "grid": 0.02276,
+  "voxels": [
+   23989,
+   6207,
+   1543,
+   345,
+   78
+  ],
+  "enc_s": 5.3,
+  "total_s": 75.5
+ },
+ {
+  "tag": "Beetle_Car__p16k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "p16k",
+  "seed": 1,
+  "grid": 0.005,
+  "voxels": [
+   16265,
+   15732,
+   13101,
+   6541,
+   1884
+  ],
+  "enc_s": 15.2,
+  "total_s": 84.6
+ }
+]

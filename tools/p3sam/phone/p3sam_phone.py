@@ -21,7 +21,7 @@ import p3s_split as SP  # noqa: E402
 
 PROMPTS = 128  # prompts for the heads
 DENSE = 100000  # surface points through the encoder (dense enough that the voxel surface is closed, like the 100k the model was built for)
-BUDGET = 16000  # at most this many voxels: the voxel size grows from 0.005 (training size) until the surface fits
+BUDGET = 24000  # at most this many voxels: the voxel size grows from 0.005 (training size) until the surface fits
 HEADS = 16384  # points the prompt heads see (they cost points x prompts)
 
 

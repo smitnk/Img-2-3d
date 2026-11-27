@@ -181,7 +181,7 @@ fun SettingsScreen(state: UiState, s: Settings, vm: AppViewModel, cb: AppCallbac
 
             SectionHeader("Parts")
             EngineCard(
-                icon = Icons.Rounded.AutoFixHigh, title = "Auto Split (P3-SAM)", summary = "Cuts a model into closed parts, with pegs", size = "≈P3SAM_SIZE",
+                icon = Icons.Rounded.AutoFixHigh, title = "Auto Split (P3-SAM)", summary = "Cuts a model into closed parts, with pegs", size = "≈475 MB",
                 details = "Tencent Hunyuan3D-Part P3-SAM part segmentation (fp32 ONNX, 113M parameters) plus numpy / scipy / onnxruntime and manifold3d libs, runs inside Blender on the phone. " +
                     "Needs about 1 GB free RAM, 3–6 min. Use: open a model in Library → Auto Split into parts. " +
                     "Licence: Tencent Hunyuan3D-Part (Tencent Hunyuan Community License): not for use in the EU, UK or South Korea; the sources are in the pack's LICENSE file.",

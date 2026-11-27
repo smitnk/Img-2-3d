@@ -14,7 +14,7 @@ import scipy.sparse as sp
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial import cKDTree
 
-DEFAULTS = dict(nms_iou=0.75, min_support=2, min_iou_pred=0.0, vote=0.5, merge_bbox=0.0, min_frac=0.01, smooth=2)
+DEFAULTS = dict(nms_iou=0.6, min_support=2, min_iou_pred=0.6, vote=0.5, merge_bbox=0.0, min_frac=0.04, smooth=2)
 
 
 def unpack_masks(packed, n):

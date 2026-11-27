@@ -1,0 +1,18 @@
+[
+ {
+  "tag": "Female_Warrior__ref__1",
+  "mesh": "Female_Warrior",
+  "cfg": "ref",
+  "seed": 1,
+  "grid": 0.005,
+  "voxels": [
+   92222,
+   70614,
+   29708,
+   7666,
+   1730
+  ],
+  "enc_s": 27.8,
+  "total_s": 522.1
+ }
+]

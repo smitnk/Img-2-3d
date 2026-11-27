@@ -1,0 +1,6 @@
+MESH Beetle_Car: 29974 vertices, 60000 faces, watertight=False
+P3S grid 0.0050, voxels per stage [92190, 70707, 30349, 8112, 2045]; tables 1.1s; rss 485 MB
+P3S encoder loaded 3.0s; rss 459 MB
+P3S encoder run 26.5s; peak rss 2703 MB
+P3S heads 400 prompts 646.9s; peak rss 2703 MB
+RAW {"tag": "Beetle_Car__ref__1", "mesh": "Beetle_Car", "cfg": "ref", "seed": 1, "grid": 0.005, "voxels": [92190, 70707, 30349, 8112, 2045], "enc_s": 30.8, "total_s": 678.7}

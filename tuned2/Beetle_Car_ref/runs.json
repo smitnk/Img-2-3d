@@ -1,0 +1,18 @@
+[
+ {
+  "tag": "Beetle_Car__ref__1",
+  "mesh": "Beetle_Car",
+  "cfg": "ref",
+  "seed": 1,
+  "grid": 0.005,
+  "voxels": [
+   92190,
+   70707,
+   30349,
+   8112,
+   2045
+  ],
+  "enc_s": 30.8,
+  "total_s": 678.7
+ }
+]

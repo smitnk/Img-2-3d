@@ -1,5 +1,4 @@
-AttributeError: module 'manifold3d' has no attribute '__version__'
-
-Error: script failed, expr: 'import sys, zipfile; zipfile.ZipFile('/opt/p3sam/p3sam_py.zip').extractall('/opt/p3sam/p3sam_py'); sys.path.insert(0, '/opt/p3sam/p3sam_py/pylibs'); import numpy, scipy, onnxruntime as o, manifold3d as m; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, 'manifold3d', m.__version__)', exiting.
+LIBS numpy 1.26.4 scipy 1.13.1 ort 1.20.0 manifold3d ok True
+Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
 
 Blender quit

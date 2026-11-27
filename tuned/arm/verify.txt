@@ -1,0 +1,7 @@
+VERIFY w/out/Beetle_Car_v16000 parts 5 zip files 5 watertight(trimesh) 5 preview faces 500000 colors texture {"encoder": 5.9, "heads": 61.0, "post": 7.1, "split": 1.9, "total": 77.6} peak_mb 996
+VERIFY w/out/Beetle_Car_v24000 parts 11 zip files 11 watertight(trimesh) 11 preview faces 500000 colors texture {"encoder": 6.9, "heads": 61.7, "post": 8.7, "split": 2.1, "total": 81.2} peak_mb 1058
+VERIFY w/out/Female_Warrior_v16000 parts 14 zip files 14 watertight(trimesh) 14 preview faces 499588 colors texture {"encoder": 6.4, "heads": 62.2, "post": 9.7, "split": 2.8, "total": 83.0} peak_mb 991
+VERIFY w/out/Female_Warrior_v24000 parts 18 zip files 18 watertight(trimesh) 18 preview faces 499588 colors texture {"encoder": 8.3, "heads": 61.9, "post": 2.9, "split": 2.7, "total": 77.7} peak_mb 1057
+VERIFY w/out/char2_v16000 parts 2 zip files 2 watertight(trimesh) 2 preview faces 40080 colors texture {"encoder": 6.4, "heads": 61.6, "post": 0.2, "split": 0.1, "total": 68.5} peak_mb 822
+VERIFY w/out/char2_v24000 parts 4 zip files 4 watertight(trimesh) 4 preview faces 40080 colors texture {"encoder": 7.4, "heads": 61.1, "post": 0.2, "split": 0.2, "total": 69.0} peak_mb 900
+VERIFY w/out/char2_v32000 parts 2 zip files 2 watertight(trimesh) 2 preview faces 40080 colors texture {"encoder": 8.2, "heads": 61.3, "post": 0.1, "split": 0.1, "total": 70.0} peak_mb 971

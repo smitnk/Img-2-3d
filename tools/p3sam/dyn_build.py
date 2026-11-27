@@ -39,6 +39,8 @@ def main():
     os.makedirs(a.work, exist_ok=True)
     torch.set_num_threads(os.cpu_count())
     res = {}
+    # Sonata shuffles the serialization orders at random (also in every GridPooling, whatever the config says): identity for a deterministic stock
+    torch.randperm = lambda n, *args, **kw: torch.arange(n)
     p3, sonata, sm, cfg = P.build_p3(a.src, shuffle=False)
     P.load_weights(p3, a.weights)
     p3.eval()
@@ -73,6 +75,16 @@ def main():
     # features: own voxelization vs the stock one (same grid cells; mean instead of random point)
     gc, f0, inv = N.voxelize(pn, nrm.astype(np.float32))
     res["voxels_own_vs_stock"] = [int(len(gc)), int(len(grid_stock))]
+    same_grid = np.array_equal(np.sort(gc.view(np.int64).reshape(-1, 3), axis=0), np.sort(grid_stock, axis=0))
+    S = int(max(gc.max(), grid_stock.max())) + 1
+    ko, ks = (gc[:, 0] * S + gc[:, 1]) * S + gc[:, 2], (grid_stock[:, 0] * S + grid_stock[:, 1]) * S + grid_stock[:, 2]
+    oo, os_ = np.argsort(ko), np.argsort(ks)
+    if np.array_equal(ko[oo], ks[os_]):
+        d = np.abs(f0[oo] - data["feat"].numpy()[os_]).mean(0)
+        res["feat0_mean_abs_diff_per_column"] = [round(float(x), 5) for x in d]
+    else:
+        res["feat0_mean_abs_diff_per_column"] = "voxel sets differ"
+    print("FEAT0 own vs stock (per column):", res["feat0_mean_abs_diff_per_column"], flush=True)
     print("VOXELS own", len(gc), "stock", len(grid_stock), flush=True)
 
     names = N.input_names()
@@ -121,6 +133,7 @@ def main():
             fo = s.run(None, {n: T2[n] for n in names})[0][inv]
             te = time.time() - t
             np.random.seed(0)
+            P.CONV["cache"].clear()
             fs_, _ = P.stock_features(p3, transform, pn, nrm.astype(np.float32))
             c = cosv(fo, fs_.numpy())
             r = dict(mesh=name, points=npts, voxels=ns2, tables_s=round(tt, 2), enc_s=round(te, 1), cos_mean=float(c.mean()), cos_min=float(c.min()), cos_p1=float(np.percentile(c, 1)))

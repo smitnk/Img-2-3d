@@ -15,7 +15,7 @@ GRID = 0.005  # Sonata GridSample size on the normalised cloud
 PATCH = 1024  # serialized-attention patch size (all stages)
 DEPTHS = (3, 3, 3, 12, 3)
 N_ORDERS = 4  # z, z-trans, hilbert, hilbert-trans; block i of a stage uses order i % 4
-COLOR = 1.0 / 127.5 * 1.0 - 1.0  # NormalizeColor of an all-ones colour
+COLOR = 1.0 / 255.0  # Sonata NormalizeColor (colour / 255) of an all-ones colour
 
 
 def used_orders(s):

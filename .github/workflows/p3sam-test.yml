@@ -1,9 +1,6 @@
 name: P3-SAM (Auto Split) CPU/ONNX test
 
 on:
-  push:
-    branches: [batch-repair-enhance]
-    paths: ["tools/p3sam/**", ".github/workflows/p3sam-test.yml"]
   workflow_dispatch:
 permissions:
   contents: write

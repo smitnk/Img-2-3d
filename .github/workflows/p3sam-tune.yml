@@ -1,0 +1,64 @@
+name: P3-SAM tune (dynamic ONNX graph, numpy pipeline, raw masks for post-processing tuning)
+
+on:
+  push:
+    branches: [batch-repair-enhance]
+    paths: ["tools/p3sam/dyn*.py", "tools/p3sam/load_mesh.py", "tools/p3sam/tune_run.py", "tools/p3sam/phone/p3s_np.py", "tools/p3sam/p3.py", ".github/workflows/p3sam-tune.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: "p3sam-tune-${{ github.ref }}", cancel-in-progress: true }
+jobs:
+  tune:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Python deps
+        run: |
+          mkdir -p out work raw
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --only-binary=:all: --no-cache-dir torch_scatter torch_cluster -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+          pip install -q spconv "numpy==1.26.4" scipy trimesh timm addict einops huggingface_hub safetensors psutil matplotlib \
+            onnx==1.17.0 onnxruntime==1.20.1 manifold3d pillow networkx shapely scikit-learn fast_simplification
+      - name: Code, weights, licence, test meshes
+        run: |
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, hf_hub_download
+          snapshot_download(repo_id="tencent/Hunyuan3D-Part", repo_type="space", local_dir="src",
+                            allow_patterns=["XPart/partgen/**/*.py", "XPart/partgen/**/*.json", "P3-SAM/**/*.py", "README.md"])
+          hf_hub_download(repo_id="tencent/Hunyuan3D-Part", filename="p3sam/p3sam.safetensors", local_dir="weights")
+          hf_hub_download(repo_id="tencent/Hunyuan3D-Part", filename="LICENSE.txt", local_dir="weights")
+          for n in ("Beetle_Car", "Female_Warrior"):
+              hf_hub_download(repo_id="tencent/Hunyuan3D-Part", repo_type="space", filename=f"P3-SAM/demo/assets/{n}.glb", local_dir="assets")
+          PY
+          git fetch -q --depth 1 origin render-scene
+          git show FETCH_HEAD:tools/scene/char2.glb > assets/char2.glb
+          ls -la weights/p3sam assets assets/P3-SAM/demo/assets
+      - name: Dynamic graph export + numpy-vs-stock parity
+        run: |
+          python tools/p3sam/dyn_build.py --src src --weights weights/p3sam/p3sam.safetensors --work work \
+            --meshes assets/char2.glb assets/P3-SAM/demo/assets/Beetle_Car.glb assets/P3-SAM/demo/assets/Female_Warrior.glb 2>&1 | tee out/dyn_build.log | grep -vE "Warning|warn" | tail -80
+          ls -la work; cp work/dyn_build.json out/ || true
+      - name: Raw masks, 3 meshes x 3 seeds x {16k, 24k} points
+        run: |
+          python tools/p3sam/tune_run.py --work work --out raw \
+            --meshes assets/char2.glb assets/P3-SAM/demo/assets/Beetle_Car.glb assets/P3-SAM/demo/assets/Female_Warrior.glb 2>&1 | tee out/tune_run.log | grep -E "RAW|MESH|P3S|Error|error" | tail -120
+          du -sh raw
+      - name: Push to p3sam-out/tuned
+        if: always()
+        run: |
+          git config --global user.name "p3sam-ci"; git config --global user.email "ci@users.noreply.github.com"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf pub && mkdir pub && cd pub && git init -q && git remote add origin "$URL"
+          git fetch -q --depth 1 origin p3sam-out 2>/dev/null && git checkout -q -b p3sam-out FETCH_HEAD || git checkout -q -b p3sam-out
+          rm -rf tuned/dyn && mkdir -p tuned/dyn && cp -r ../out/* tuned/dyn/ 2>/dev/null || true
+          rm -rf tuned/raw && mkdir -p tuned/raw && cp -r ../raw/* tuned/raw/ 2>/dev/null || true
+          echo "run ${{ github.run_id }} sha ${{ github.sha }}" > tuned/dyn/RUN.txt
+          git add -A && git commit -q -m "p3sam tuned dyn+raw run ${{ github.run_id }}" || true
+          for i in 1 2 3 4 5; do git push -q origin p3sam-out && break || { git pull -q --rebase origin p3sam-out; sleep 3; }; done
+      - uses: actions/upload-artifact@v4
+        with: { name: p3sam-dyn-onnx, path: work/p3sam_*, retention-days: 7 }

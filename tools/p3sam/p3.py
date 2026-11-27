@@ -43,7 +43,7 @@ def nbr_for(x):
 
 
 # ----------------------------------------------------------------------------------------------- stock model (torch, CPU)
-def build_p3(src, enable_cpu_patches=True):
+def build_p3(src, enable_cpu_patches=True, shuffle=True):
     """Stock P3-SAM modules on CPU. src = snapshot of the HF space tencent/Hunyuan3D-Part (P3-SAM/, XPart/)."""
     sys.path.insert(0, f"{src}/XPart/partgen")
     import spconv.pytorch as spconv
@@ -84,6 +84,7 @@ def build_p3(src, enable_cpu_patches=True):
     cfg["enable_flash"] = False
     cfg["upcast_attention"] = False
     cfg["upcast_softmax"] = False
+    cfg["shuffle_orders"] = shuffle
 
     class P3(nn.Module):
         def __init__(self):

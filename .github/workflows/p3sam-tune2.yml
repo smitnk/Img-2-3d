@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         mesh: [char2, Beetle_Car, Female_Warrior]
-        kind: [ref, cand]
+        kind: [cand]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -49,8 +49,8 @@ jobs:
       - name: Candidates (adaptive voxel budget) x 3 seeds
         if: matrix.kind == 'cand'
         run: |
-          python tools/p3sam/tune_run2.py --work work --meshes assets/${{ matrix.mesh }}.glb --out raw --seeds 1 2 3 \
-            --configs '[{"name":"v12k","dense":100000,"budget":12000,"heads":16384,"prompts":128},{"name":"v16k","dense":100000,"budget":16000,"heads":16384,"prompts":128},{"name":"v24k","dense":100000,"budget":24000,"heads":16384,"prompts":128},{"name":"p16k","dense":16384,"grid":0.005,"heads":16384,"prompts":128,"seeds":[1]}]' 2>&1 | tee out/run.log | grep -E "RAW|MESH|P3S|Error|Traceback" | tail -40
+          python tools/p3sam/tune_run2.py --work work --meshes assets/${{ matrix.mesh }}.glb --out raw --seeds 1 2 \
+            --configs '[{"name":"v32k","dense":100000,"budget":32000,"heads":16384,"prompts":128},{"name":"v48k","dense":100000,"budget":48000,"heads":16384,"prompts":128},{"name":"v64k","dense":100000,"budget":64000,"heads":16384,"prompts":128},{"name":"v48k_h24","dense":100000,"budget":48000,"heads":24576,"prompts":192,"seeds":[1]}]' 2>&1 | tee out/run.log | grep -E "RAW|MESH|P3S|Error|Traceback" | tail -40
       - name: Push to p3sam-out/tuned2
         if: always()
         run: |
@@ -58,6 +58,6 @@ jobs:
           URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           rm -rf pub && mkdir pub && cd pub && git init -q && git remote add origin "$URL"
           git fetch -q --depth 1 origin p3sam-out 2>/dev/null && git checkout -q -b p3sam-out FETCH_HEAD || git checkout -q -b p3sam-out
-          D=tuned2/${{ matrix.mesh }}_${{ matrix.kind }}; rm -rf $D && mkdir -p $D && cp -r ../raw/* $D/ && cp ../out/run.log $D/ 2>/dev/null || true
+          D=tuned3/${{ matrix.mesh }}_${{ matrix.kind }}; rm -rf $D && mkdir -p $D && cp -r ../raw/* $D/ && cp ../out/run.log $D/ 2>/dev/null || true
           git add -A && git commit -q -m "p3sam tune2 ${{ matrix.mesh }} ${{ matrix.kind }} run ${{ github.run_id }}" || true
           for i in 1 2 3 4 5 6 7 8; do git push -q origin p3sam-out && break || { git pull -q --rebase origin p3sam-out; sleep $((RANDOM % 8 + 2)); }; done

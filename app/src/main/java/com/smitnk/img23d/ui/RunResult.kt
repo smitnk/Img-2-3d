@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -163,7 +164,7 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
     val view = remember { mutableStateOf<ModelView?>(null) }
     LaunchedEffect(spin, view.value) { view.value?.setAutoRotate(spin) }
     Column(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp).clip(MaterialTheme.shapes.extraLarge)
+        Box(Modifier.fillMaxWidth().height(300.dp).padding(horizontal = 12.dp).clip(MaterialTheme.shapes.extraLarge)
             .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.surfaceContainerLowest)))) {
             val loaded = mesh
             when {
@@ -179,7 +180,7 @@ fun ResultScreen(m: Model, settings: Settings, vm: AppViewModel, cb: AppCallback
             Text("drag · pinch · two-finger pan · double-tap reset", Modifier.align(Alignment.BottomCenter).padding(8.dp),
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GradientBadge(m.source.art(), Icons.Rounded.ViewInAr, size = 40)
                 Spacer(Modifier.width(12.dp))

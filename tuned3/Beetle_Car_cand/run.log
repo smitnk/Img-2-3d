@@ -1,0 +1,36 @@
+MESH Beetle_Car: 29974 vertices, 60000 faces, watertight=False
+P3S grid 0.0194, voxels per stage [31999, 8745, 2068, 490, 101]; tables 0.2s; rss 420 MB
+P3S encoder loaded 2.5s; rss 395 MB
+P3S encoder run 2.7s; peak rss 1190 MB
+P3S heads 128 prompts 53.6s; peak rss 1190 MB
+RAW {"tag": "Beetle_Car__v32k__1", "mesh": "Beetle_Car", "cfg": "v32k", "seed": 1, "grid": 0.01936, "voxels": [31999, 8745, 2068, 490, 101], "enc_s": 5.5, "total_s": 59.2}
+P3S grid 0.0193, voxels per stage [31998, 8751, 2121, 496, 101]; tables 0.2s; rss 366 MB
+P3S encoder loaded 2.5s; rss 372 MB
+P3S encoder run 2.9s; peak rss 1242 MB
+P3S heads 128 prompts 54.1s; peak rss 1242 MB
+RAW {"tag": "Beetle_Car__v32k__2", "mesh": "Beetle_Car", "cfg": "v32k", "seed": 2, "grid": 0.01932, "voxels": [31998, 8751, 2121, 496, 101], "enc_s": 5.8, "total_s": 59.9}
+P3S grid 0.0147, voxels per stage [47999, 15035, 3749, 886, 196]; tables 0.3s; rss 389 MB
+P3S encoder loaded 2.7s; rss 395 MB
+P3S encoder run 5.1s; peak rss 1515 MB
+P3S heads 128 prompts 54.4s; peak rss 1515 MB
+RAW {"tag": "Beetle_Car__v48k__1", "mesh": "Beetle_Car", "cfg": "v48k", "seed": 1, "grid": 0.01475, "voxels": [47999, 15035, 3749, 886, 196], "enc_s": 8.1, "total_s": 62.6}
+P3S grid 0.0148, voxels per stage [47991, 15028, 3717, 885, 197]; tables 0.3s; rss 387 MB
+P3S encoder loaded 2.6s; rss 394 MB
+P3S encoder run 5.1s; peak rss 1515 MB
+P3S heads 128 prompts 51.2s; peak rss 1515 MB
+RAW {"tag": "Beetle_Car__v48k__2", "mesh": "Beetle_Car", "cfg": "v48k", "seed": 2, "grid": 0.01476, "voxels": [47991, 15028, 3717, 885, 197], "enc_s": 8.1, "total_s": 59.4}
+P3S grid 0.0113, voxels per stage [63987, 24499, 6439, 1609, 350]; tables 0.4s; rss 402 MB
+P3S encoder loaded 2.6s; rss 409 MB
+P3S encoder run 7.9s; peak rss 1779 MB
+P3S heads 128 prompts 51.7s; peak rss 1779 MB
+RAW {"tag": "Beetle_Car__v64k__1", "mesh": "Beetle_Car", "cfg": "v64k", "seed": 1, "grid": 0.01127, "voxels": [63987, 24499, 6439, 1609, 350], "enc_s": 10.9, "total_s": 62.7}
+P3S grid 0.0113, voxels per stage [63934, 24452, 6388, 1581, 349]; tables 0.4s; rss 413 MB
+P3S encoder loaded 2.6s; rss 420 MB
+P3S encoder run 7.9s; peak rss 1789 MB
+P3S heads 128 prompts 51.5s; peak rss 1789 MB
+RAW {"tag": "Beetle_Car__v64k__2", "mesh": "Beetle_Car", "cfg": "v64k", "seed": 2, "grid": 0.01128, "voxels": [63934, 24452, 6388, 1581, 349], "enc_s": 11.0, "total_s": 62.6}
+P3S grid 0.0147, voxels per stage [47999, 15035, 3749, 886, 196]; tables 0.3s; rss 387 MB
+P3S encoder loaded 2.6s; rss 393 MB
+P3S encoder run 4.8s; peak rss 1789 MB
+P3S heads 192 prompts 121.2s; peak rss 1789 MB
+RAW {"tag": "Beetle_Car__v48k_h24__1", "mesh": "Beetle_Car", "cfg": "v48k_h24", "seed": 1, "grid": 0.01475, "voxels": [47999, 15035, 3749, 886, 196], "enc_s": 7.7, "total_s": 129.1}

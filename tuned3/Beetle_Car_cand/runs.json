@@ -1,0 +1,114 @@
+[
+ {
+  "tag": "Beetle_Car__v32k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v32k",
+  "seed": 1,
+  "grid": 0.01936,
+  "voxels": [
+   31999,
+   8745,
+   2068,
+   490,
+   101
+  ],
+  "enc_s": 5.5,
+  "total_s": 59.2
+ },
+ {
+  "tag": "Beetle_Car__v32k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v32k",
+  "seed": 2,
+  "grid": 0.01932,
+  "voxels": [
+   31998,
+   8751,
+   2121,
+   496,
+   101
+  ],
+  "enc_s": 5.8,
+  "total_s": 59.9
+ },
+ {
+  "tag": "Beetle_Car__v48k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v48k",
+  "seed": 1,
+  "grid": 0.01475,
+  "voxels": [
+   47999,
+   15035,
+   3749,
+   886,
+   196
+  ],
+  "enc_s": 8.1,
+  "total_s": 62.6
+ },
+ {
+  "tag": "Beetle_Car__v48k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v48k",
+  "seed": 2,
+  "grid": 0.01476,
+  "voxels": [
+   47991,
+   15028,
+   3717,
+   885,
+   197
+  ],
+  "enc_s": 8.1,
+  "total_s": 59.4
+ },
+ {
+  "tag": "Beetle_Car__v64k__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v64k",
+  "seed": 1,
+  "grid": 0.01127,
+  "voxels": [
+   63987,
+   24499,
+   6439,
+   1609,
+   350
+  ],
+  "enc_s": 10.9,
+  "total_s": 62.7
+ },
+ {
+  "tag": "Beetle_Car__v64k__2",
+  "mesh": "Beetle_Car",
+  "cfg": "v64k",
+  "seed": 2,
+  "grid": 0.01128,
+  "voxels": [
+   63934,
+   24452,
+   6388,
+   1581,
+   349
+  ],
+  "enc_s": 11.0,
+  "total_s": 62.6
+ },
+ {
+  "tag": "Beetle_Car__v48k_h24__1",
+  "mesh": "Beetle_Car",
+  "cfg": "v48k_h24",
+  "seed": 1,
+  "grid": 0.01475,
+  "voxels": [
+   47999,
+   15035,
+   3749,
+   886,
+   196
+  ],
+  "enc_s": 7.7,
+  "total_s": 129.1
+ }
+]

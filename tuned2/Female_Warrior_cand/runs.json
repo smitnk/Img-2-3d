@@ -1,0 +1,162 @@
+[
+ {
+  "tag": "Female_Warrior__v12k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v12k",
+  "seed": 1,
+  "grid": 0.03225,
+  "voxels": [
+   11960,
+   2821,
+   600,
+   116,
+   23
+  ],
+  "enc_s": 3.9,
+  "total_s": 55.9
+ },
+ {
+  "tag": "Female_Warrior__v12k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v12k",
+  "seed": 2,
+  "grid": 0.03225,
+  "voxels": [
+   11967,
+   2825,
+   602,
+   118,
+   23
+  ],
+  "enc_s": 3.9,
+  "total_s": 83.2
+ },
+ {
+  "tag": "Female_Warrior__v12k__3",
+  "mesh": "Female_Warrior",
+  "cfg": "v12k",
+  "seed": 3,
+  "grid": 0.03223,
+  "voxels": [
+   11997,
+   2833,
+   600,
+   118,
+   23
+  ],
+  "enc_s": 3.8,
+  "total_s": 56.4
+ },
+ {
+  "tag": "Female_Warrior__v16k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v16k",
+  "seed": 1,
+  "grid": 0.02795,
+  "voxels": [
+   15994,
+   3779,
+   819,
+   165,
+   34
+  ],
+  "enc_s": 4.1,
+  "total_s": 56.1
+ },
+ {
+  "tag": "Female_Warrior__v16k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v16k",
+  "seed": 2,
+  "grid": 0.02795,
+  "voxels": [
+   15994,
+   3789,
+   823,
+   165,
+   34
+  ],
+  "enc_s": 4.1,
+  "total_s": 56.0
+ },
+ {
+  "tag": "Female_Warrior__v16k__3",
+  "mesh": "Female_Warrior",
+  "cfg": "v16k",
+  "seed": 3,
+  "grid": 0.02795,
+  "voxels": [
+   15999,
+   3786,
+   824,
+   165,
+   34
+  ],
+  "enc_s": 4.1,
+  "total_s": 56.4
+ },
+ {
+  "tag": "Female_Warrior__v24k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "v24k",
+  "seed": 1,
+  "grid": 0.02256,
+  "voxels": [
+   23999,
+   5979,
+   1315,
+   262,
+   49
+  ],
+  "enc_s": 4.7,
+  "total_s": 55.7
+ },
+ {
+  "tag": "Female_Warrior__v24k__2",
+  "mesh": "Female_Warrior",
+  "cfg": "v24k",
+  "seed": 2,
+  "grid": 0.02261,
+  "voxels": [
+   23979,
+   5994,
+   1309,
+   262,
+   49
+  ],
+  "enc_s": 4.8,
+  "total_s": 55.6
+ },
+ {
+  "tag": "Female_Warrior__v24k__3",
+  "mesh": "Female_Warrior",
+  "cfg": "v24k",
+  "seed": 3,
+  "grid": 0.02258,
+  "voxels": [
+   23975,
+   5977,
+   1313,
+   262,
+   49
+  ],
+  "enc_s": 4.7,
+  "total_s": 56.2
+ },
+ {
+  "tag": "Female_Warrior__p16k__1",
+  "mesh": "Female_Warrior",
+  "cfg": "p16k",
+  "seed": 1,
+  "grid": 0.005,
+  "voxels": [
+   16245,
+   15669,
+   13085,
+   6260,
+   1623
+  ],
+  "enc_s": 13.8,
+  "total_s": 64.2
+ }
+]

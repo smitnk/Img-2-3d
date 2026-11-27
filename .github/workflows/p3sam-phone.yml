@@ -60,7 +60,7 @@ jobs:
           python3 tools/p3sam/phone/make_pack.py --onnx onnx --whl whl --license LICENSE.txt --out pack --version 1 | tee out/pack.txt
           ls -la pack
           sudo chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python-expr \
-            "import sys, zipfile; zipfile.ZipFile('/opt/p3sam/p3sam_py.zip').extractall('/opt/p3sam/p3sam_py'); sys.path.insert(0, '/opt/p3sam/p3sam_py/pylibs'); import numpy, scipy, onnxruntime as o, manifold3d as m; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, 'manifold3d', m.__version__)" 2>&1 | tail -5 | tee out/libs.txt
+            "import sys, zipfile; zipfile.ZipFile('/opt/p3sam/p3sam_py.zip').extractall('/opt/p3sam/p3sam_py'); sys.path.insert(0, '/opt/p3sam/p3sam_py/pylibs'); import numpy, scipy, onnxruntime as o, manifold3d as m; print('LIBS numpy', numpy.__version__, 'scipy', scipy.__version__, 'ort', o.__version__, 'manifold3d ok', m.Manifold.cube is not None)" 2>&1 | tail -5 | tee out/libs.txt
           grep -q "^LIBS" out/libs.txt
       - name: "Auto Split in the phone's Blender (taskset cores, 2 GB cgroup cap), time + peak RSS per mesh"
         run: |

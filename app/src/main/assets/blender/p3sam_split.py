@@ -68,6 +68,7 @@ def main():
     p.add_argument("--pegs", type=int, default=1)
     p.add_argument("--peg-size", type=float, default=0.4)
     p.add_argument("--threads", type=int, default=0)
+    p.add_argument("--budget", type=int, default=0, help="max voxels (0 = the pack default)")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     root = unpack()
     sys.path.insert(0, os.path.join(root, "pylibs"))
@@ -77,7 +78,7 @@ def main():
     print(f"Auto Split: {len(v)} vertices, {len(f)} triangles read", flush=True)
     threads = a.threads if a.threads > 0 else min(4, os.cpu_count() or 4)
     p3sam_phone.run(v, f, PACK, a.out, target=a.target, pegs=bool(a.pegs), peg_size=a.peg_size, threads=threads, name=a.name,
-                    log=lambda s: print(s, flush=True))
+                    log=lambda s: print(s, flush=True), budget=a.budget or p3sam_phone.BUDGET)
     print("Auto Split done", flush=True)
 
 

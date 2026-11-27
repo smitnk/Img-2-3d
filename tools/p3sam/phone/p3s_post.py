@@ -26,8 +26,8 @@ def instances(masks, iou, pts, p):
     """masks (N,K) bool, iou (K,) -> list of boolean instance masks (N,), biggest first."""
     N, K = masks.shape
     keep = np.nonzero((iou >= p["min_iou_pred"]) & (masks.sum(0) > 0))[0]
-    if len(keep) == 0:
-        return []
+    if len(keep) == 0:  # nothing passes the IoU gate: one part
+        return [np.ones(N, bool)]
     order = keep[np.argsort(-iou[keep], kind="stable")]
     M = masks[:, order].T.astype(np.float32)
     area = M.sum(1)

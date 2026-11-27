@@ -19,21 +19,26 @@ import p3s_np as N  # noqa: E402
 import p3s_post as PP  # noqa: E402
 import p3s_split as SP  # noqa: E402
 
-PROMPTS = 128
+PROMPTS = 128  # prompts for the heads
+DENSE = 100000  # surface points through the encoder (dense enough that the voxel surface is closed, like the 100k the model was built for)
+BUDGET = 16000  # at most this many voxels: the voxel size grows from 0.005 (training size) until the surface fits
+HEADS = 16384  # points the prompt heads see (they cost points x prompts)
 
 
-def run(v, f, models, out, target=0, pegs=True, peg_size=0.4, points=16384, seed=1, threads=0, name="parts", log=print):
+def run(v, f, models, out, target=0, pegs=True, peg_size=0.4, points=HEADS, seed=1, threads=0, name="parts", log=print, dense=DENSE, budget=BUDGET):
     t0 = time.time()
     N.tame_malloc()
     os.makedirs(out, exist_ok=True)
     v, f = SP.clean(v, f)
     log(f"P3S mesh {len(v)} vertices, {len(f)} triangles")
-    pts, nrm, _ = N.sample_surface(v, f, points, seed)
+    pts, nrm, _ = N.sample_surface(v, f, dense, seed)
     pn = N.normalize_pc(pts).astype(np.float32)
+    sub = np.unique(np.linspace(0, len(pn) - 1, points).astype(np.int64))
     model = N.P3Sam(os.path.join(models, "p3sam_enc.onnx"), os.path.join(models, "p3sam_heads.onnx"), threads, log=log)
     t = time.time()
-    feats = model.features(pn, nrm.astype(np.float32))
+    feats = model.features(pn, nrm.astype(np.float32), sub, budget=budget)
     t_enc = time.time() - t
+    pts, pn = pts[sub], pn[sub]
     sel = N.fps(pn, PROMPTS)
     t = time.time()
     logits, iou = model.masks(feats, pn, pn[sel])
@@ -63,7 +68,7 @@ def run(v, f, models, out, target=0, pegs=True, peg_size=0.4, points=16384, seed
         _, c = np.unique(e, axis=0, return_counts=True)
         watertight.append(bool((c == 2).all()))
     stats = dict(script="p3sam_split", name=name, vertices=int(len(G.v)), triangles=int(len(G.f)), parts=int(info["parts"]), pegs_ok=int(sum(1 for q in res["pegs"] if q.get("ok"))),
-                 pegs_total=int(len(res["pegs"])), closed_parts=int(sum(watertight)), manifold_parts=int(sum(p["ok"] for p in res["parts"].values())),
+                 pegs_total=int(len(res["pegs"])), grid=round(float(model.grid_size), 5), voxels=model.voxels, closed_parts=int(sum(watertight)), manifold_parts=int(sum(p["ok"] for p in res["parts"].values())),
                  seconds=dict(encoder=round(t_enc, 1), heads=round(t_heads, 1), post=round(t_post, 1), split=round(t_split, 1), total=round(time.time() - t0, 1)),
                  peak_rss_mb=round(N.hwm_mb()), zip_bytes=os.path.getsize(os.path.join(out, "parts.zip")))
     json.dump(stats, open(os.path.join(out, "generation.json"), "w"))
@@ -80,7 +85,7 @@ def main():
     ap.add_argument("--target", type=int, default=0)
     ap.add_argument("--pegs", type=int, default=1)
     ap.add_argument("--peg-size", type=float, default=0.4)
-    ap.add_argument("--points", type=int, default=16384)
+    ap.add_argument("--points", type=int, default=HEADS)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--threads", type=int, default=0)
     ap.add_argument("--name", default="parts")

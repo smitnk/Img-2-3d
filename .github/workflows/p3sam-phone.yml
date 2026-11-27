@@ -5,6 +5,9 @@ name: P3-SAM phone pack + Auto Split run in the phone's Blender (aarch64) -> rel
 # blender-runtime-v1 userland on an ARM64 runner under phone-like limits (taskset cores, systemd-run MemoryMax=2G), reports peak RSS + time,
 # and with publish=true uploads release p3sam-v1.
 on:
+  push:
+    branches: [batch-repair-enhance]
+    paths: [".github/workflows/p3sam-phone.yml"]
   workflow_dispatch:
     inputs:
       tune_run: { description: "run id of p3sam-tune.yml (default: newest with a live artifact)", required: false }
@@ -67,13 +70,14 @@ jobs:
           else SYSD=0; echo "cgroup cap: unavailable, peak RSS is checked instead" | tee out/limits.txt; fi
           echo "cores $CORES threads $NT" | tee -a out/limits.txt
           for m in char2 Beetle_Car Female_Warrior; do
-            for tgt in 0; do
-              n=${m}_t$tgt
+            for bud in 16000 24000 32000; do
+              [ "$m" != char2 ] && [ $bud = 32000 ] && continue
+              n=${m}_v$bud
               if [ $SYSD = 1 ]; then LIM="sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c $CORES"; else LIM="sudo taskset -c $CORES"; fi
               ( while sleep 30; do echo "MON $(date +%T) rss_mb=$(( $(ps -C blender -o rss= | sort -n | tail -1) / 1024 )) free_mb=$(free -m | awk '/Mem/{print $7}')"; done ) >> out/mon_$n.txt 2>/dev/null &
               MON=$!
               /usr/bin/time -v -o out/time_$n.txt $LIM chroot $R env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 \
-                --python /w/p3sam_split.py -- --mesh /w/in/$m.glb --out /w/out/$n --name $m --target $tgt --pegs 1 --threads $NT > out/log_$n.txt 2>&1 \
+                --python /w/p3sam_split.py -- --mesh /w/in/$m.glb --out /w/out/$n --name $m --target 0 --pegs 1 --threads $NT --budget $bud > out/log_$n.txt 2>&1 \
                 && echo "OK $n" || echo "FAILED $n (exit $?)"
               kill $MON 2>/dev/null || true
               grep -E "Elapsed|Maximum resident" out/time_$n.txt || true

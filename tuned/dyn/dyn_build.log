@@ -1,0 +1,21 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading checkpoint from HuggingFace: sonata ...
+SONATA CONFIG {'in_channels': 9, 'order': ('z', 'z-trans', 'hilbert', 'hilbert-trans'), 'stride': (2, 2, 2, 2), 'enc_depths': (3, 3, 3, 12, 3), 'enc_channels': (48, 96, 192, 384, 512), 'enc_num_head': (3, 6, 12, 24, 32), 'enc_patch_size': (1024, 1024, 1024, 1024, 1024), 'mlp_ratio': 4, 'qkv_bias': True, 'qk_scale': None, 'attn_drop': 0.0, 'proj_drop': 0.0, 'drop_path': 0.3, 'shuffle_orders': True, 'pre_norm': True, 'enable_rpe': False, 'enable_flash': True, 'upcast_attention': False, 'upcast_softmax': False, 'traceable': True, 'enc_mode': True, 'mask_token': True}
+flash attention: False
+WEIGHTS loaded 513 tensors; missing=0 unexpected=0
+MESH char2: 28056 vertices, 40000 faces, watertight=False
+MESH Beetle_Car: 46211 vertices, 60000 faces, watertight=False
+MESH Female_Warrior: 49819 vertices, 59999 faces, watertight=False
+TABLES vs stock: {"n": true, "nbr": true, "cluster": true, "pgroup": true, "order_inverse": false, "order_detail": {"0_0": true, "0_1": true, "0_2": true, "1_0": true, "1_1": false, "1_2": false, "2_0": false, "2_1": false, "2_2": false, "3_0": false, "3_1": false, "3_2": false, "3_3": false, "4_0": false, "4_1": false, "4_2": true}}
+VOXELS own 16063 stock 16063
+EncDyn (torch) vs stock features: {'min_cos': 0.9658997654914856, 'max_abs': 0.3739430904388428} 9.7s
+EXPORT work/p3sam_enc.onnx: 418.9 MB
+EXPORT work/p3sam_heads.onnx: 11.9 MB
+ORT dyn enc vs stock features (stock tables): {'min_cos': 0.9659004807472229, 'max_abs': 0.37393462657928467}
+ORT dyn heads vs stock: {'max_logit': 1.2308359146118164e-05, 'max_iou': 5.364418029785156e-07}
+NUMPY PATH vs stock: {"mesh": "char2", "points": 16384, "voxels": [16075, 14752, 9702, 3250, 858], "tables_s": 0.28, "enc_s": 5.9, "cos_mean": 0.5519795417785645, "cos_min": 0.3314960300922394, "cos_p1": 0.4186228796839714}
+NUMPY PATH vs stock: {"mesh": "char2", "points": 24576, "voxels": [23756, 20617, 11302, 3381, 872], "tables_s": 0.37, "enc_s": 6.7, "cos_mean": 0.6160555481910706, "cos_min": 0.41978204250335693, "cos_p1": 0.5059597492218018}
+NUMPY PATH vs stock: {"mesh": "Beetle_Car", "points": 16384, "voxels": [16212, 15675, 13084, 6536, 1887], "tables_s": 0.28, "enc_s": 10.8, "cos_mean": 0.5826741456985474, "cos_min": 0.20202788710594177, "cos_p1": 0.3369736820459366}
+NUMPY PATH vs stock: {"mesh": "Beetle_Car", "points": 24576, "voxels": [24184, 22710, 17202, 7039, 1913], "tables_s": 0.39, "enc_s": 12.1, "cos_mean": 0.5880223512649536, "cos_min": 0.2154902219772339, "cos_p1": 0.32265836000442505}
+NUMPY PATH vs stock: {"mesh": "Female_Warrior", "points": 16384, "voxels": [16217, 15574, 12955, 6235, 1615], "tables_s": 0.29, "enc_s": 10.4, "cos_mean": 0.5636776685714722, "cos_min": 0.26158440113067627, "cos_p1": 0.3686958274245262}
+NUMPY PATH vs stock: {"mesh": "Female_Warrior", "points": 24576, "voxels": [24161, 22708, 17020, 6733, 1644], "tables_s": 0.41, "enc_s": 11.5, "cos_mean": 0.5221590995788574, "cos_min": 0.21877533197402954, "cos_p1": 0.32560769468545914}

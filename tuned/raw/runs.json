@@ -1,0 +1,146 @@
+[
+ {
+  "tag": "char2_16384_1",
+  "mesh": "char2",
+  "points": 16384,
+  "seed": 1,
+  "enc_s": 10.8,
+  "total_s": 73.2
+ },
+ {
+  "tag": "char2_16384_2",
+  "mesh": "char2",
+  "points": 16384,
+  "seed": 2,
+  "enc_s": 9.7,
+  "total_s": 72.6
+ },
+ {
+  "tag": "char2_16384_3",
+  "mesh": "char2",
+  "points": 16384,
+  "seed": 3,
+  "enc_s": 10.0,
+  "total_s": 72.7
+ },
+ {
+  "tag": "char2_24576_1",
+  "mesh": "char2",
+  "points": 24576,
+  "seed": 1,
+  "enc_s": 11.2,
+  "total_s": 115.3
+ },
+ {
+  "tag": "char2_24576_2",
+  "mesh": "char2",
+  "points": 24576,
+  "seed": 2,
+  "enc_s": 11.6,
+  "total_s": 116.1
+ },
+ {
+  "tag": "char2_24576_3",
+  "mesh": "char2",
+  "points": 24576,
+  "seed": 3,
+  "enc_s": 11.5,
+  "total_s": 115.9
+ },
+ {
+  "tag": "Beetle_Car_16384_1",
+  "mesh": "Beetle_Car",
+  "points": 16384,
+  "seed": 1,
+  "enc_s": 15.2,
+  "total_s": 86.5
+ },
+ {
+  "tag": "Beetle_Car_16384_2",
+  "mesh": "Beetle_Car",
+  "points": 16384,
+  "seed": 2,
+  "enc_s": 15.5,
+  "total_s": 86.6
+ },
+ {
+  "tag": "Beetle_Car_16384_3",
+  "mesh": "Beetle_Car",
+  "points": 16384,
+  "seed": 3,
+  "enc_s": 15.3,
+  "total_s": 70.1
+ },
+ {
+  "tag": "Beetle_Car_24576_1",
+  "mesh": "Beetle_Car",
+  "points": 24576,
+  "seed": 1,
+  "enc_s": 18.8,
+  "total_s": 125.5
+ },
+ {
+  "tag": "Beetle_Car_24576_2",
+  "mesh": "Beetle_Car",
+  "points": 24576,
+  "seed": 2,
+  "enc_s": 18.6,
+  "total_s": 121.1
+ },
+ {
+  "tag": "Beetle_Car_24576_3",
+  "mesh": "Beetle_Car",
+  "points": 24576,
+  "seed": 3,
+  "enc_s": 18.4,
+  "total_s": 124.8
+ },
+ {
+  "tag": "Female_Warrior_16384_1",
+  "mesh": "Female_Warrior",
+  "points": 16384,
+  "seed": 1,
+  "enc_s": 14.9,
+  "total_s": 81.6
+ },
+ {
+  "tag": "Female_Warrior_16384_2",
+  "mesh": "Female_Warrior",
+  "points": 16384,
+  "seed": 2,
+  "enc_s": 14.7,
+  "total_s": 77.6
+ },
+ {
+  "tag": "Female_Warrior_16384_3",
+  "mesh": "Female_Warrior",
+  "points": 16384,
+  "seed": 3,
+  "enc_s": 14.8,
+  "total_s": 82.6
+ },
+ {
+  "tag": "Female_Warrior_24576_1",
+  "mesh": "Female_Warrior",
+  "points": 24576,
+  "seed": 1,
+  "enc_s": 18.0,
+  "total_s": 119.2
+ },
+ {
+  "tag": "Female_Warrior_24576_2",
+  "mesh": "Female_Warrior",
+  "points": 24576,
+  "seed": 2,
+  "enc_s": 18.2,
+  "total_s": 123.6
+ },
+ {
+  "tag": "Female_Warrior_24576_3",
+  "mesh": "Female_Warrior",
+  "points": 24576,
+  "seed": 3,
+  "enc_s": 18.4,
+  "total_s": 123.8
+ }
+]

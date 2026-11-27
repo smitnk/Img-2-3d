@@ -1,93 +1,93 @@
 MESH char2: 28056 vertices, 40000 faces, watertight=False
-P3S voxels per stage [16072, 14775, 9686, 3238, 849]; tables 0.3s; rss 151 MB
-P3S encoder loaded 3.1s; rss 158 MB
-P3S encoder run 7.5s; peak rss 1136 MB
-P3S heads 128 prompts 62.2s; peak rss 1136 MB
-RAW {"tag": "char2_16384_1", "mesh": "char2", "points": 16384, "seed": 1, "enc_s": 10.8, "total_s": 73.2}
-P3S voxels per stage [16077, 14801, 9664, 3255, 863]; tables 0.2s; rss 208 MB
-P3S encoder loaded 3.0s; rss 214 MB
-P3S encoder run 6.4s; peak rss 1203 MB
-P3S heads 128 prompts 62.7s; peak rss 1203 MB
-RAW {"tag": "char2_16384_2", "mesh": "char2", "points": 16384, "seed": 2, "enc_s": 9.7, "total_s": 72.6}
-P3S voxels per stage [16091, 14825, 9726, 3268, 860]; tables 0.2s; rss 220 MB
-P3S encoder loaded 3.1s; rss 225 MB
-P3S encoder run 6.6s; peak rss 1223 MB
-P3S heads 128 prompts 62.6s; peak rss 1223 MB
-RAW {"tag": "char2_16384_3", "mesh": "char2", "points": 16384, "seed": 3, "enc_s": 10.0, "total_s": 72.7}
-P3S voxels per stage [23723, 20682, 11153, 3355, 868]; tables 0.3s; rss 223 MB
+P3S voxels per stage [16072, 14775, 9686, 3238, 849]; tables 0.3s; rss 156 MB
+P3S encoder loaded 3.1s; rss 163 MB
+P3S encoder run 7.1s; peak rss 1143 MB
+P3S heads 128 prompts 62.3s; peak rss 1143 MB
+RAW {"tag": "char2_16384_1", "mesh": "char2", "points": 16384, "seed": 1, "enc_s": 10.5, "total_s": 73.0}
+P3S voxels per stage [16077, 14801, 9664, 3255, 863]; tables 0.2s; rss 210 MB
+P3S encoder loaded 3.1s; rss 215 MB
+P3S encoder run 6.5s; peak rss 1312 MB
+P3S heads 128 prompts 62.3s; peak rss 1312 MB
+RAW {"tag": "char2_16384_2", "mesh": "char2", "points": 16384, "seed": 2, "enc_s": 9.9, "total_s": 72.3}
+P3S voxels per stage [16091, 14825, 9726, 3268, 860]; tables 0.3s; rss 223 MB
 P3S encoder loaded 3.1s; rss 228 MB
-P3S encoder run 7.8s; peak rss 1452 MB
-P3S heads 128 prompts 103.8s; peak rss 1452 MB
-RAW {"tag": "char2_24576_1", "mesh": "char2", "points": 24576, "seed": 1, "enc_s": 11.2, "total_s": 115.3}
-P3S voxels per stage [23766, 20612, 11169, 3356, 872]; tables 0.3s; rss 253 MB
-P3S encoder loaded 3.0s; rss 258 MB
-P3S encoder run 8.1s; peak rss 1478 MB
-P3S heads 128 prompts 104.3s; peak rss 1478 MB
-RAW {"tag": "char2_24576_2", "mesh": "char2", "points": 24576, "seed": 2, "enc_s": 11.6, "total_s": 116.1}
-P3S voxels per stage [23702, 20588, 11235, 3369, 875]; tables 0.3s; rss 265 MB
-P3S encoder loaded 3.0s; rss 271 MB
-P3S encoder run 8.1s; peak rss 1521 MB
-P3S heads 128 prompts 104.1s; peak rss 1521 MB
+P3S encoder run 6.5s; peak rss 1312 MB
+P3S heads 128 prompts 62.6s; peak rss 1312 MB
+RAW {"tag": "char2_16384_3", "mesh": "char2", "points": 16384, "seed": 3, "enc_s": 9.9, "total_s": 72.6}
+P3S voxels per stage [23723, 20682, 11153, 3355, 868]; tables 0.3s; rss 224 MB
+P3S encoder loaded 3.1s; rss 230 MB
+P3S encoder run 8.1s; peak rss 1318 MB
+P3S heads 128 prompts 100.5s; peak rss 1318 MB
+RAW {"tag": "char2_24576_1", "mesh": "char2", "points": 24576, "seed": 1, "enc_s": 11.6, "total_s": 112.3}
+P3S voxels per stage [23766, 20612, 11169, 3356, 872]; tables 0.3s; rss 258 MB
+P3S encoder loaded 3.1s; rss 263 MB
+P3S encoder run 8.2s; peak rss 1459 MB
+P3S heads 128 prompts 104.7s; peak rss 1459 MB
+RAW {"tag": "char2_24576_2", "mesh": "char2", "points": 24576, "seed": 2, "enc_s": 11.7, "total_s": 116.5}
+P3S voxels per stage [23702, 20588, 11235, 3369, 875]; tables 0.3s; rss 276 MB
+P3S encoder loaded 3.1s; rss 282 MB
+P3S encoder run 8.0s; peak rss 1502 MB
+P3S heads 128 prompts 104.2s; peak rss 1502 MB
 RAW {"tag": "char2_24576_3", "mesh": "char2", "points": 24576, "seed": 3, "enc_s": 11.5, "total_s": 115.9}
 MESH Beetle_Car: 46211 vertices, 60000 faces, watertight=False
-P3S voxels per stage [16245, 15655, 13079, 6484, 1845]; tables 0.3s; rss 661 MB
-P3S encoder loaded 2.9s; rss 663 MB
-P3S encoder run 11.9s; peak rss 1743 MB
-P3S heads 128 prompts 71.2s; peak rss 1743 MB
-RAW {"tag": "Beetle_Car_16384_1", "mesh": "Beetle_Car", "points": 16384, "seed": 1, "enc_s": 15.2, "total_s": 86.5}
+P3S voxels per stage [16245, 15655, 13079, 6484, 1845]; tables 0.3s; rss 667 MB
+P3S encoder loaded 3.1s; rss 669 MB
+P3S encoder run 12.0s; peak rss 1708 MB
+P3S heads 128 prompts 70.4s; peak rss 1708 MB
+RAW {"tag": "Beetle_Car_16384_1", "mesh": "Beetle_Car", "points": 16384, "seed": 1, "enc_s": 15.5, "total_s": 85.9}
 P3S voxels per stage [16243, 15699, 13077, 6526, 1863]; tables 0.3s; rss 564 MB
+P3S encoder loaded 3.1s; rss 571 MB
+P3S encoder run 12.0s; peak rss 1708 MB
+P3S heads 128 prompts 70.3s; peak rss 1708 MB
+RAW {"tag": "Beetle_Car_16384_2", "mesh": "Beetle_Car", "points": 16384, "seed": 2, "enc_s": 15.6, "total_s": 86.0}
+P3S voxels per stage [16230, 15617, 12983, 6496, 1853]; tables 0.3s; rss 564 MB
 P3S encoder loaded 3.0s; rss 569 MB
-P3S encoder run 12.2s; peak rss 1743 MB
-P3S heads 128 prompts 70.9s; peak rss 1743 MB
-RAW {"tag": "Beetle_Car_16384_2", "mesh": "Beetle_Car", "points": 16384, "seed": 2, "enc_s": 15.5, "total_s": 86.6}
-P3S voxels per stage [16230, 15617, 12983, 6496, 1853]; tables 0.3s; rss 559 MB
-P3S encoder loaded 3.0s; rss 566 MB
-P3S encoder run 11.9s; peak rss 1951 MB
-P3S heads 128 prompts 54.6s; peak rss 1951 MB
-RAW {"tag": "Beetle_Car_16384_3", "mesh": "Beetle_Car", "points": 16384, "seed": 3, "enc_s": 15.3, "total_s": 70.1}
-P3S voxels per stage [24190, 22827, 17341, 7133, 1880]; tables 0.4s; rss 556 MB
-P3S encoder loaded 3.0s; rss 560 MB
-P3S encoder run 15.4s; peak rss 1951 MB
-P3S heads 128 prompts 106.5s; peak rss 1951 MB
-RAW {"tag": "Beetle_Car_24576_1", "mesh": "Beetle_Car", "points": 24576, "seed": 1, "enc_s": 18.8, "total_s": 125.5}
-P3S voxels per stage [24193, 22803, 17305, 7104, 1918]; tables 0.4s; rss 594 MB
-P3S encoder loaded 3.0s; rss 598 MB
-P3S encoder run 15.2s; peak rss 1951 MB
-P3S heads 128 prompts 102.3s; peak rss 1951 MB
-RAW {"tag": "Beetle_Car_24576_2", "mesh": "Beetle_Car", "points": 24576, "seed": 2, "enc_s": 18.6, "total_s": 121.1}
-P3S voxels per stage [24215, 22844, 17261, 7061, 1924]; tables 0.4s; rss 602 MB
-P3S encoder loaded 3.0s; rss 607 MB
-P3S encoder run 14.9s; peak rss 1951 MB
-P3S heads 128 prompts 106.2s; peak rss 1951 MB
-RAW {"tag": "Beetle_Car_24576_3", "mesh": "Beetle_Car", "points": 24576, "seed": 3, "enc_s": 18.4, "total_s": 124.8}
+P3S encoder run 12.0s; peak rss 1792 MB
+P3S heads 128 prompts 71.1s; peak rss 1792 MB
+RAW {"tag": "Beetle_Car_16384_3", "mesh": "Beetle_Car", "points": 16384, "seed": 3, "enc_s": 15.5, "total_s": 86.7}
+P3S voxels per stage [24190, 22827, 17341, 7133, 1880]; tables 0.4s; rss 570 MB
+P3S encoder loaded 3.1s; rss 575 MB
+P3S encoder run 15.2s; peak rss 1890 MB
+P3S heads 128 prompts 107.1s; peak rss 1890 MB
+RAW {"tag": "Beetle_Car_24576_1", "mesh": "Beetle_Car", "points": 24576, "seed": 1, "enc_s": 18.8, "total_s": 126.0}
+P3S voxels per stage [24193, 22803, 17305, 7104, 1918]; tables 0.4s; rss 597 MB
+P3S encoder loaded 3.0s; rss 602 MB
+P3S encoder run 15.2s; peak rss 1909 MB
+P3S heads 128 prompts 105.3s; peak rss 1909 MB
+RAW {"tag": "Beetle_Car_24576_2", "mesh": "Beetle_Car", "points": 24576, "seed": 2, "enc_s": 18.7, "total_s": 124.2}
+P3S voxels per stage [24215, 22844, 17261, 7061, 1924]; tables 0.4s; rss 610 MB
+P3S encoder loaded 3.1s; rss 617 MB
+P3S encoder run 15.3s; peak rss 1909 MB
+P3S heads 128 prompts 105.2s; peak rss 1909 MB
+RAW {"tag": "Beetle_Car_24576_3", "mesh": "Beetle_Car", "points": 24576, "seed": 3, "enc_s": 18.8, "total_s": 124.3}
 MESH Female_Warrior: 49819 vertices, 59999 faces, watertight=False
-P3S voxels per stage [16220, 15606, 12980, 6223, 1615]; tables 0.3s; rss 910 MB
-P3S encoder loaded 3.0s; rss 917 MB
-P3S encoder run 11.5s; peak rss 2178 MB
-P3S heads 128 prompts 66.6s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_16384_1", "mesh": "Female_Warrior", "points": 16384, "seed": 1, "enc_s": 14.9, "total_s": 81.6}
-P3S voxels per stage [16249, 15652, 12979, 6154, 1604]; tables 0.3s; rss 860 MB
-P3S encoder loaded 3.0s; rss 869 MB
-P3S encoder run 11.2s; peak rss 2178 MB
-P3S heads 128 prompts 62.8s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_16384_2", "mesh": "Female_Warrior", "points": 16384, "seed": 2, "enc_s": 14.7, "total_s": 77.6}
-P3S voxels per stage [16235, 15636, 12972, 6232, 1599]; tables 0.3s; rss 852 MB
-P3S encoder loaded 3.1s; rss 861 MB
-P3S encoder run 11.3s; peak rss 2178 MB
-P3S heads 128 prompts 67.6s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_16384_3", "mesh": "Female_Warrior", "points": 16384, "seed": 3, "enc_s": 14.8, "total_s": 82.6}
-P3S voxels per stage [24164, 22734, 17052, 6665, 1628]; tables 0.4s; rss 818 MB
-P3S encoder loaded 3.1s; rss 823 MB
-P3S encoder run 14.4s; peak rss 2178 MB
-P3S heads 128 prompts 100.9s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_24576_1", "mesh": "Female_Warrior", "points": 24576, "seed": 1, "enc_s": 18.0, "total_s": 119.2}
-P3S voxels per stage [24178, 22748, 17113, 6724, 1636]; tables 0.4s; rss 591 MB
-P3S encoder loaded 3.1s; rss 596 MB
-P3S encoder run 14.6s; peak rss 2178 MB
-P3S heads 128 prompts 105.1s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_24576_2", "mesh": "Female_Warrior", "points": 24576, "seed": 2, "enc_s": 18.2, "total_s": 123.6}
-P3S voxels per stage [24175, 22672, 17146, 6743, 1639]; tables 0.4s; rss 600 MB
-P3S encoder loaded 3.1s; rss 605 MB
-P3S encoder run 14.9s; peak rss 2178 MB
-P3S heads 128 prompts 105.1s; peak rss 2178 MB
-RAW {"tag": "Female_Warrior_24576_3", "mesh": "Female_Warrior", "points": 24576, "seed": 3, "enc_s": 18.4, "total_s": 123.8}
+P3S voxels per stage [16220, 15606, 12980, 6223, 1615]; tables 0.3s; rss 930 MB
+P3S encoder loaded 3.1s; rss 936 MB
+P3S encoder run 11.5s; peak rss 2189 MB
+P3S heads 128 prompts 72.2s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_16384_1", "mesh": "Female_Warrior", "points": 16384, "seed": 1, "enc_s": 14.9, "total_s": 87.3}
+P3S voxels per stage [16249, 15652, 12979, 6154, 1604]; tables 0.3s; rss 864 MB
+P3S encoder loaded 3.1s; rss 872 MB
+P3S encoder run 11.9s; peak rss 2189 MB
+P3S heads 128 prompts 70.1s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_16384_2", "mesh": "Female_Warrior", "points": 16384, "seed": 2, "enc_s": 15.3, "total_s": 85.6}
+P3S voxels per stage [16235, 15636, 12972, 6232, 1599]; tables 0.3s; rss 858 MB
+P3S encoder loaded 3.1s; rss 869 MB
+P3S encoder run 11.6s; peak rss 2189 MB
+P3S heads 128 prompts 67.4s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_16384_3", "mesh": "Female_Warrior", "points": 16384, "seed": 3, "enc_s": 15.1, "total_s": 82.7}
+P3S voxels per stage [24164, 22734, 17052, 6665, 1628]; tables 0.4s; rss 828 MB
+P3S encoder loaded 3.1s; rss 834 MB
+P3S encoder run 14.1s; peak rss 2189 MB
+P3S heads 128 prompts 107.7s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_24576_1", "mesh": "Female_Warrior", "points": 24576, "seed": 1, "enc_s": 17.7, "total_s": 125.5}
+P3S voxels per stage [24178, 22748, 17113, 6724, 1636]; tables 0.4s; rss 592 MB
+P3S encoder loaded 3.1s; rss 598 MB
+P3S encoder run 15.0s; peak rss 2189 MB
+P3S heads 128 prompts 107.0s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_24576_2", "mesh": "Female_Warrior", "points": 24576, "seed": 2, "enc_s": 18.6, "total_s": 125.8}
+P3S voxels per stage [24175, 22672, 17146, 6743, 1639]; tables 0.4s; rss 602 MB
+P3S encoder loaded 3.1s; rss 609 MB
+P3S encoder run 15.1s; peak rss 2189 MB
+P3S heads 128 prompts 107.0s; peak rss 2189 MB
+RAW {"tag": "Female_Warrior_24576_3", "mesh": "Female_Warrior", "points": 24576, "seed": 3, "enc_s": 18.7, "total_s": 125.9}

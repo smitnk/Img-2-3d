@@ -1,0 +1,51 @@
+MESH char2: 20002 vertices, 40000 faces, watertight=True
+P3S grid 0.0215, voxels per stage [11990, 3085, 773, 177, 41]; tables 0.3s; rss 133 MB
+P3S encoder loaded 3.0s; rss 152 MB
+P3S encoder run 1.1s; peak rss 762 MB
+P3S heads 128 prompts 70.9s; peak rss 762 MB
+RAW {"tag": "char2__v12k__1", "mesh": "char2", "cfg": "v12k", "seed": 1, "grid": 0.02151, "voxels": [11990, 3085, 773, 177, 41], "enc_s": 4.5, "total_s": 75.4}
+P3S grid 0.0215, voxels per stage [11992, 3081, 771, 176, 41]; tables 0.3s; rss 211 MB
+P3S encoder loaded 3.0s; rss 219 MB
+P3S encoder run 1.0s; peak rss 827 MB
+P3S heads 128 prompts 70.5s; peak rss 827 MB
+RAW {"tag": "char2__v12k__2", "mesh": "char2", "cfg": "v12k", "seed": 2, "grid": 0.02153, "voxels": [11992, 3081, 771, 176, 41], "enc_s": 4.5, "total_s": 75.1}
+P3S grid 0.0215, voxels per stage [11998, 3073, 775, 177, 41]; tables 0.3s; rss 215 MB
+P3S encoder loaded 3.0s; rss 225 MB
+P3S encoder run 1.0s; peak rss 827 MB
+P3S heads 128 prompts 70.5s; peak rss 827 MB
+RAW {"tag": "char2__v12k__3", "mesh": "char2", "cfg": "v12k", "seed": 3, "grid": 0.02154, "voxels": [11998, 3073, 775, 177, 41], "enc_s": 4.4, "total_s": 75.0}
+P3S grid 0.0184, voxels per stage [15990, 4232, 1054, 243, 60]; tables 0.3s; rss 215 MB
+P3S encoder loaded 3.0s; rss 221 MB
+P3S encoder run 1.3s; peak rss 883 MB
+P3S heads 128 prompts 70.4s; peak rss 883 MB
+RAW {"tag": "char2__v16k__1", "mesh": "char2", "cfg": "v16k", "seed": 1, "grid": 0.01844, "voxels": [15990, 4232, 1054, 243, 60], "enc_s": 4.7, "total_s": 75.2}
+P3S grid 0.0185, voxels per stage [15981, 4236, 1048, 244, 60]; tables 0.3s; rss 230 MB
+P3S encoder loaded 3.0s; rss 237 MB
+P3S encoder run 1.3s; peak rss 883 MB
+P3S heads 128 prompts 69.7s; peak rss 883 MB
+RAW {"tag": "char2__v16k__2", "mesh": "char2", "cfg": "v16k", "seed": 2, "grid": 0.01847, "voxels": [15981, 4236, 1048, 244, 60], "enc_s": 4.8, "total_s": 74.6}
+P3S grid 0.0185, voxels per stage [15973, 4212, 1049, 243, 60]; tables 0.3s; rss 224 MB
+P3S encoder loaded 3.0s; rss 230 MB
+P3S encoder run 1.3s; peak rss 890 MB
+P3S heads 128 prompts 68.4s; peak rss 890 MB
+RAW {"tag": "char2__v16k__3", "mesh": "char2", "cfg": "v16k", "seed": 3, "grid": 0.01846, "voxels": [15973, 4212, 1049, 243, 60], "enc_s": 4.7, "total_s": 73.2}
+P3S grid 0.0147, voxels per stage [23991, 6548, 1641, 385, 93]; tables 0.4s; rss 231 MB
+P3S encoder loaded 3.0s; rss 239 MB
+P3S encoder run 1.9s; peak rss 1039 MB
+P3S heads 128 prompts 69.7s; peak rss 1039 MB
+RAW {"tag": "char2__v24k__1", "mesh": "char2", "cfg": "v24k", "seed": 1, "grid": 0.01474, "voxels": [23991, 6548, 1641, 385, 93], "enc_s": 5.5, "total_s": 75.3}
+P3S grid 0.0147, voxels per stage [23983, 6557, 1649, 388, 94]; tables 0.4s; rss 217 MB
+P3S encoder loaded 3.0s; rss 224 MB
+P3S encoder run 1.9s; peak rss 1039 MB
+P3S heads 128 prompts 69.4s; peak rss 1039 MB
+RAW {"tag": "char2__v24k__2", "mesh": "char2", "cfg": "v24k", "seed": 2, "grid": 0.01471, "voxels": [23983, 6557, 1649, 388, 94], "enc_s": 5.5, "total_s": 75.0}
+P3S grid 0.0147, voxels per stage [23996, 6565, 1646, 391, 94]; tables 0.4s; rss 211 MB
+P3S encoder loaded 3.0s; rss 219 MB
+P3S encoder run 2.0s; peak rss 1039 MB
+P3S heads 128 prompts 70.0s; peak rss 1039 MB
+RAW {"tag": "char2__v24k__3", "mesh": "char2", "cfg": "v24k", "seed": 3, "grid": 0.01471, "voxels": [23996, 6565, 1646, 391, 94], "enc_s": 5.5, "total_s": 75.6}
+P3S grid 0.0050, voxels per stage [16072, 14775, 9686, 3238, 849]; tables 0.2s; rss 210 MB
+P3S encoder loaded 3.0s; rss 215 MB
+P3S encoder run 6.9s; peak rss 1246 MB
+P3S heads 128 prompts 58.9s; peak rss 1246 MB
+RAW {"tag": "char2__p16k__1", "mesh": "char2", "cfg": "p16k", "seed": 1, "grid": 0.005, "voxels": [16072, 14775, 9686, 3238, 849], "enc_s": 10.3, "total_s": 69.3}

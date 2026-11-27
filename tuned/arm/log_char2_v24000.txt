@@ -1,21 +1,16 @@
-04:42:48 | INFO: Data are loaded, start creating Blender stuff
-04:42:48 | INFO: Blender create Mesh node Mesh_0.002
-04:42:48 | INFO: glTF import finished in 0.14s
+04:54:21 | INFO: Data are loaded, start creating Blender stuff
+04:54:21 | INFO: Blender create Mesh node Mesh_0.002
+04:54:21 | INFO: glTF import finished in 0.13s
 Auto Split: 28152 vertices, 40080 triangles read
 P3S mesh 20044 vertices, 40080 triangles
-P3S grid 0.0251, voxels per stage [23971, 6790, 1770, 443, 103]; tables 0.3s; rss 215 MB
-P3S encoder loaded 4.6s; rss 248 MB
-P3S encoder run 2.4s; peak rss 900 MB
-P3S heads 128 prompts 61.1s; peak rss 900 MB
-P3S 4 parts ({'level': 0, 'instances': 2, 'parts': 4}); post 0.2s
-PART 0: faces=326 caps=7 manifold=ok volume=3.65872
-PART 1: faces=22614 caps=4 manifold=ok volume=0.01920
-PART 2: faces=13804 caps=1 manifold=ok volume=0.01720
-PART 3: faces=4490 caps=1 manifold=ok volume=0.00256
-PEG male=2 hole=1 r=0.0653 ok=True
-PEG male=3 hole=1 r=0.0499 ok=True
-PEG male=1 hole=0 r=0.1013 ok=True
-P3S done {"script": "p3sam_split", "name": "char2", "vertices": 20044, "triangles": 40080, "parts": 4, "pegs_ok": 3, "pegs_total": 3, "grid": 0.02506, "voxels": [23971, 6790, 1770, 443, 103], "closed_parts": 4, "manifold_parts": 4, "seconds": {"encoder": 7.4, "heads": 61.1, "post": 0.2, "split": 0.2, "total": 69.0}, "peak_rss_mb": 900, "zip_bytes": 621787}
+P3S grid 0.0251, voxels per stage [23971, 6790, 1770, 443, 103]; tables 0.3s; rss 216 MB
+P3S encoder loaded 4.3s; rss 249 MB
+P3S encoder run 2.3s; peak rss 903 MB
+P3S heads 128 prompts 59.8s; peak rss 903 MB
+P3S 2 parts ({'level': 0, 'instances': 1, 'parts': 2}); post 0.1s
+PART 0: faces=80 caps=0 manifold=ok volume=3.65871
+PART 1: faces=40000 caps=0 manifold=ok volume=0.03857
+P3S done {"script": "p3sam_split", "name": "char2", "vertices": 20044, "triangles": 40080, "parts": 2, "pegs_ok": 0, "pegs_total": 0, "grid": 0.02506, "voxels": [23971, 6790, 1770, 443, 103], "closed_parts": 2, "manifold_parts": 2, "seconds": {"encoder": 6.9, "heads": 59.8, "post": 0.1, "split": 0.1, "total": 67.2}, "peak_rss_mb": 903, "zip_bytes": 590808}
 Auto Split done
 Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
 

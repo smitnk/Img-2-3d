@@ -1,52 +1,15 @@
-04:47:50 | INFO: Data are loaded, start creating Blender stuff
-04:47:50 | INFO: Blender create Mesh node texture_pbr_v128.001
-04:47:51 | INFO: glTF import finished in 0.58s
+04:59:18 | INFO: Data are loaded, start creating Blender stuff
+04:59:18 | INFO: Blender create Mesh node texture_pbr_v128.001
+04:59:18 | INFO: glTF import finished in 0.56s
 Auto Split: 337262 vertices, 499588 triangles read
 P3S mesh 249573 vertices, 499588 triangles
 P3S grid 0.0280, voxels per stage [15989, 3758, 819, 165, 34]; tables 0.2s; rss 376 MB
-P3S encoder loaded 4.7s; rss 409 MB
-P3S encoder run 1.4s; peak rss 991 MB
-P3S heads 128 prompts 62.2s; peak rss 991 MB
-P3S 14 parts ({'level': 0, 'instances': 13, 'parts': 14}); post 9.7s
-PART 0: faces=58088 caps=41 manifold=ok volume=0.00363
-PART 1: faces=36420 caps=35 manifold=ok volume=0.00226
-PART 2: faces=17954 caps=41 manifold=ok volume=0.00081
-PART 3: faces=86554 caps=61 manifold=ok volume=0.00825
-PART 4: faces=110248 caps=32 manifold=ok volume=0.00589
-PART 5: faces=64696 caps=44 manifold=ok volume=0.01170
-PART 6: faces=11752 caps=10 manifold=ok volume=0.00060
-PART 7: faces=31678 caps=13 manifold=ok volume=0.00685
-PART 8: faces=8726 caps=7 manifold=ok volume=0.00039
-PART 9: faces=14752 caps=6 manifold=ok volume=0.00095
-PART 10: faces=58572 caps=28 manifold=ok volume=0.00900
-PART 11: faces=3552 caps=3 manifold=ok volume=0.00015
-PART 12: faces=11704 caps=12 manifold=ok volume=0.00063
-PART 13: faces=8078 caps=1 manifold=ok volume=0.00042
-PEG male=10 hole=5 r=0.0681 ok=True
-PEG male=0 hole=4 r=0.0439 ok=True
-PEG male=7 hole=3 r=0.0460 ok=True
-PEG male=2 hole=10 r=0.0449 ok=True
-PEG male=7 hole=10 r=0.0683 ok=True
-PEG male=12 hole=2 r=0.0337 ok=True
-PEG male=8 hole=6 r=0.0271 ok=True
-PEG male=13 hole=4 r=0.0198 ok=True
-PEG male=1 hole=0 r=0.0500 ok=True
-PEG male=8 hole=9 r=0.0250 ok=True
-PEG male=0 hole=10 r=0.0256 ok=True
-PEG male=2 hole=0 r=0.0417 ok=True
-PEG male=12 hole=4 r=0.0391 ok=True
-PEG male=3 hole=5 r=0.0546 ok=True
-PEG male=1 hole=4 r=0.0427 ok=True
-PEG male=6 hole=9 r=0.0184 ok=True
-PEG male=6 hole=4 r=0.0144 ok=True
-PEG male=13 hole=2 r=0.0261 ok=True
-PEG male=2 hole=5 r=0.0431 ok=True
-PEG male=2 hole=1 r=0.0504 ok=True
-PEG male=2 hole=4 r=0.0374 ok=True
-PEG male=12 hole=0 r=0.0362 ok=True
-PEG male=4 hole=10 r=0.0183 ok=True
-PEG male=11 hole=0 r=0.0264 ok=True
-P3S done {"script": "p3sam_split", "name": "Female_Warrior", "vertices": 249573, "triangles": 499588, "parts": 14, "pegs_ok": 24, "pegs_total": 24, "grid": 0.02802, "voxels": [15989, 3758, 819, 165, 34], "closed_parts": 14, "manifold_parts": 14, "seconds": {"encoder": 6.4, "heads": 62.2, "post": 9.7, "split": 2.8, "total": 83.0}, "peak_rss_mb": 991, "zip_bytes": 8008986}
+P3S encoder loaded 4.4s; rss 409 MB
+P3S encoder run 1.3s; peak rss 993 MB
+P3S heads 128 prompts 61.7s; peak rss 993 MB
+P3S 1 parts ({'level': 0, 'instances': 1, 'parts': 1}); post 3.1s
+PART 0: faces=499594 caps=2 manifold=ok volume=0.05903
+P3S done {"script": "p3sam_split", "name": "Female_Warrior", "vertices": 249573, "triangles": 499588, "parts": 1, "pegs_ok": 0, "pegs_total": 0, "grid": 0.02802, "voxels": [15989, 3758, 819, 165, 34], "closed_parts": 1, "manifold_parts": 1, "seconds": {"encoder": 6.0, "heads": 61.7, "post": 3.1, "split": 1.5, "total": 74.2}, "peak_rss_mb": 993, "zip_bytes": 7294204}
 Auto Split done
 Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
 

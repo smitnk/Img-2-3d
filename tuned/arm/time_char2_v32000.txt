@@ -1,18 +1,18 @@
 	Command being timed: "sudo systemd-run --scope -q -p MemoryMax=2G -p MemorySwapMax=0 taskset -c 0-3 chroot /home/runner/work/Img-2-3d/Img-2-3d/x env HOME=/root /opt/blender/blender -b --factory-startup --python-exit-code 1 --python /w/p3sam_split.py -- --mesh /w/in/char2.glb --out /w/out/char2_v32000 --name char2 --target 0 --pegs 1 --threads 4 --budget 32000"
-	User time (seconds): 221.75
-	System time (seconds): 31.34
+	User time (seconds): 220.56
+	System time (seconds): 31.27
 	Percent of CPU this job got: 357%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:10.75
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:10.48
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 994664
+	Maximum resident set size (kbytes): 992780
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 3
-	Minor (reclaiming a frame) page faults: 19253136
-	Voluntary context switches: 4846
-	Involuntary context switches: 11030
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 19230990
+	Voluntary context switches: 4804
+	Involuntary context switches: 11457
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 4168

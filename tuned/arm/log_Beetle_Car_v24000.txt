@@ -1,39 +1,25 @@
-04:46:28 | INFO: Data are loaded, start creating Blender stuff
-04:46:28 | INFO: Blender create Mesh node texture_v128_768
-04:46:28 | INFO: glTF import finished in 0.58s
+04:57:55 | INFO: Data are loaded, start creating Blender stuff
+04:57:55 | INFO: Blender create Mesh node texture_v128_768
+04:57:56 | INFO: glTF import finished in 0.55s
 Auto Split: 320345 vertices, 500000 triangles read
 P3S mesh 249968 vertices, 500000 triangles
 P3S grid 0.0228, voxels per stage [23993, 6150, 1500, 340, 78]; tables 0.3s; rss 378 MB
 P3S encoder loaded 4.4s; rss 412 MB
-P3S encoder run 2.2s; peak rss 1058 MB
-P3S heads 128 prompts 61.6s; peak rss 1058 MB
-P3S 11 parts ({'level': 0, 'instances': 7, 'parts': 11}); post 8.7s
-PART 0: faces=69800 caps=48 manifold=ok volume=0.00187
-PART 1: faces=160144 caps=42 manifold=ok volume=0.04355
-PART 2: faces=65928 caps=3 manifold=ok volume=0.00505
-PART 3: faces=57776 caps=2 manifold=ok volume=0.00480
-PART 4: faces=24064 caps=1 manifold=ok volume=0.00084
-PART 5: faces=14656 caps=1 manifold=ok volume=0.00019
-PART 6: faces=13982 caps=2 manifold=ok volume=0.00019
-PART 7: faces=35096 caps=2 manifold=ok volume=0.00096
-PART 8: faces=4820 caps=2 manifold=ok volume=0.00020
-PART 9: faces=21394 caps=1 manifold=ok volume=0.00048
-PART 10: faces=40184 caps=3 manifold=ok volume=0.00098
-PEG male=0 hole=1 r=0.0629 ok=True
-PEG male=8 hole=1 r=0.0161 ok=True
-PEG male=0 hole=2 r=0.0177 ok=True
-PEG male=10 hole=1 r=0.0153 ok=True
-PEG male=7 hole=1 r=0.0139 ok=True
-PEG male=0 hole=3 r=0.0220 ok=True
-PEG male=5 hole=1 r=0.0104 ok=True
-PEG male=8 hole=2 r=0.0129 ok=True
-PEG male=6 hole=1 r=0.0082 ok=True
-PEG male=4 hole=0 r=0.0121 ok=True
-PEG male=8 hole=9 r=0.0221 ok=True
-PEG male=4 hole=1 r=0.0102 ok=True
-PEG male=2 hole=1 r=0.0095 ok=True
-PEG male=9 hole=1 r=0.0069 ok=True
-P3S done {"script": "p3sam_split", "name": "Beetle_Car", "vertices": 249968, "triangles": 500000, "parts": 11, "pegs_ok": 14, "pegs_total": 15, "grid": 0.02284, "voxels": [23993, 6150, 1500, 340, 78], "closed_parts": 11, "manifold_parts": 11, "seconds": {"encoder": 6.9, "heads": 61.7, "post": 8.7, "split": 2.1, "total": 81.2}, "peak_rss_mb": 1058, "zip_bytes": 7382591}
+P3S encoder run 2.3s; peak rss 1058 MB
+P3S heads 128 prompts 62.2s; peak rss 1058 MB
+P3S 6 parts ({'level': 0, 'instances': 6, 'parts': 6}); post 8.2s
+PART 0: faces=282630 caps=18 manifold=ok volume=0.04704
+PART 1: faces=94348 caps=3 manifold=ok volume=0.00579
+PART 2: faces=44966 caps=13 manifold=ok volume=0.00350
+PART 3: faces=39450 caps=6 manifold=ok volume=0.00097
+PART 4: faces=24462 caps=1 manifold=ok volume=0.00087
+PART 5: faces=18024 caps=5 manifold=ok volume=0.00149
+PEG male=5 hole=2 r=0.0391 ok=True
+PEG male=1 hole=0 r=0.0414 ok=True
+PEG male=2 hole=0 r=0.0635 ok=True
+PEG male=3 hole=0 r=0.0151 ok=True
+PEG male=4 hole=0 r=0.0131 ok=True
+P3S done {"script": "p3sam_split", "name": "Beetle_Car", "vertices": 249968, "triangles": 500000, "parts": 6, "pegs_ok": 5, "pegs_total": 5, "grid": 0.02284, "voxels": [23993, 6150, 1500, 340, 78], "closed_parts": 6, "manifold_parts": 6, "seconds": {"encoder": 7.0, "heads": 62.2, "post": 8.2, "split": 1.9, "total": 81.2}, "peak_rss_mb": 1058, "zip_bytes": 7231443}
 Auto Split done
 Blender 4.2.3 LTS (hash 0e22e4fcea03 built 2026-11-01 06:03:14)
 

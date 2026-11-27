@@ -126,7 +126,7 @@ jobs:
           gh release view p3sam-v1 >/dev/null 2>&1 || gh release create p3sam-v1 --title "Auto Split (P3-SAM) for phones v1" \
             --notes "Tencent Hunyuan3D-Part P3-SAM as ONNX + numpy/scipy/onnxruntime/manifold3d libs for the app's Blender 4.2. Used by Auto Split into parts. Licence: Tencent Hunyuan3D-Part (not for the EU, UK, South Korea), see LICENSE.txt."
           for f in $(gh release view p3sam-v1 --json assets -q '.assets[].name'); do [ -e "$f" ] || gh release delete-asset p3sam-v1 "$f" -y; done
-          for f in $(ls | grep -v '^p3sam_info.json$'); do gh release upload p3sam-v1 --clobber "$f"; done
+          for f in $(find . -maxdepth 1 -type f -printf '%f\n' | grep -v '^p3sam_info.json$'); do gh release upload p3sam-v1 --clobber "$f"; done
           gh release upload p3sam-v1 --clobber p3sam_info.json
       - uses: actions/upload-artifact@v4
         if: always()

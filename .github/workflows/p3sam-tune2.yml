@@ -3,6 +3,9 @@ name: P3-SAM tune 2 (voxel budget vs the 100k-point reference; numpy + onnxrunti
 # Needs the "p3sam-dyn-onnx" artifact of p3sam-tune.yml. The reference is what the model was built for (100k points, 400 prompts, grid 0.005);
 # the candidates are phone-sized (voxel budget, 16k head points, 128 prompts).
 on:
+  push:
+    branches: [batch-repair-enhance]
+    paths: [".github/workflows/p3sam-tune2.yml"]
   workflow_dispatch:
     inputs:
       tune_run: { description: "run id of p3sam-tune.yml", required: false }
